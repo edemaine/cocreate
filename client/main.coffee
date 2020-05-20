@@ -6,9 +6,10 @@ width = 5
 pointerEvents = ->
   pointers = {}
   makeDot = (e) ->
-    #pressureWidth = (0.5 + e.pressure) * width
-    pressureWidth = 2 * e.pressure * width
-    #pressureWidth = (2 * e.pressure) ** 3 * width
+    pressureWidth = (0.5 + e.pressure) * width
+    #pressureWidth = 2 * e.pressure * width
+    #t = e.pressure ** 3
+    #pressureWidth = (0.5 + (1.5 - 0.5) * t) * width
     if pointers[e.pointerId]
       line = document.createElementNS SVGNS, 'line'
       line.setAttribute 'x1', pointers[e.pointerId].getAttribute 'cx'
