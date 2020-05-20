@@ -1,0 +1,18 @@
+head
+  title Cocreate Shared Whiteboard
+  link(href="https://fonts.googleapis.com/css?family=Merriweather:400,400i,700&subset=latin-ext", rel="stylesheet", crossorigin="anonymous")
+  meta(name="viewport", content="width=device-width, initial-scale=1")
+
+body
+  //-nav.navbar.navbar-default.navbar-flex(role="navigation")#top
+    .navbar-header
+      button.navbar-toggle.collapsed(type="button", data-toggle="collapse", data-target="#navbar")
+        span.sr-only Toggle navigation
+        span.icon-bar
+        span.icon-bar
+        span.icon-bar
+      a.navbar-brand Cocreate
+    .collapse.navbar-collapse#navbar
+      ul.nav.navbar-nav.navbar-right
+        +loginButtons
+  svg#board
