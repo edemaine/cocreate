@@ -14,11 +14,12 @@ eventToPoint = (e) ->
   y: e.clientY
   w: pressureWidth e
 
+pointers = {}
 pointerEvents = ->
-  pointers = {}
   board.addEventListener 'pointerdown', (e) ->
     e.preventDefault()
     pointers[e.pointerId] = Objects.insert
+      room: currentRoom
       type: 'pen'
       pts: [eventToPoint e]
   board.addEventListener 'pointerup', stop = (e) ->
@@ -34,8 +35,8 @@ pointerEvents = ->
       Objects.update pointers[e.pointerId],
         $push: pts: eventToPoint e
 
-observeRender = ->
-  rendered = {}
+rendered = {}
+observeRender = (room) ->
   dot = (p) ->
     circle = document.createElementNS SVGNS, 'circle'
     circle.setAttribute 'cx', p.x
@@ -51,7 +52,8 @@ observeRender = ->
     line.setAttribute 'stroke', 'black'
     line.setAttribute 'stroke-width', (p1.w + p2.w) / 2
     board.appendChild line
-  Objects.find().observe
+  Objects.find room: room
+  .observe
     # Currently assuming all objects are of type 'pen'
     added: (obj) ->
       rendered[obj._id] =
@@ -75,7 +77,33 @@ observeRender = ->
           board.removeChild elt
       delete rendered[obj._id]
 
+currentRoom = null
+roomSub = null
+roomObserve = null
+changeRoom = (room) ->
+  return if room == currentRoom
+  roomObserve?.stop()
+  roomSub?.stop()
+  pointers = {}
+  rendered = {}
+  board.innerHTML = ''
+  currentRoom = room
+  if room?
+    roomObserve = observeRender room
+    roomSub = Meteor.subscribe 'room', room
+
+pageChange = ->
+  if document.location.pathname == '/'
+    room = Rooms.insert {}
+    history.pushState null, 'new room', "/r/#{room}"
+    pageChange()
+  else if match = document.location.pathname.match /^\/r\/(\w+)$/
+    changeRoom match[1]
+  else
+    changeRoom null
+
 Meteor.startup ->
   board = document.getElementById 'board'
-  observeRender()
   pointerEvents()
+  window.addEventListener 'popstate', pageChange
+  pageChange()

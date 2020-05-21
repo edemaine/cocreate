@@ -19,8 +19,6 @@ ecmascript@0.14.3              # Enable ECMAScript2015+ syntax in app code
 typescript@3.7.6              # Enable TypeScript syntax in .ts and .tsx modules
 shell-server@0.5.0            # Server-side component of the `meteor shell` command
 
-autopublish@1.0.7             # Publish all data to the clients (for prototyping)
-insecure@1.0.7                # Allow all DB writes from clients (for prototyping)
 mquandalle:jade
 coffeescript
 accounts-password
@@ -28,3 +26,4 @@ edemaine:accounts-ui-bootstrap-3
 twbs:bootstrap
 coagmano:stylus
 reload
+check
