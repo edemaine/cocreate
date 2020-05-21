@@ -9,27 +9,22 @@ pressureWidth = (e) -> (0.5 + e.pressure) * width
 #  t = e.pressure ** 3
 #  (0.5 + (1.5 - 0.5) * t) * width
 
-zeroPressureHack = false
 eventToPoint = (e) ->
-  ## iPhone (iOS 13.4, Safari 13.1) sends zero pressure for touch events.
-  ## Fix such pressures to 0.5 (as in spec).
-  w = pressureWidth e
-  if zeroPressureHack
-    if e.pressure == 0
-      w = width
-    else
-      zeroPressureHack = false
   x: e.clientX
   y: e.clientY
-  w: w
+  w:
+    ## iPhone (iOS 13.4, Safari 13.1) sends pressure 0 for touch events.
+    ## Android Chrome (Samsung Note 8) sends pressure 1 for touch events.
+    ## Just ignore pressure on touch and mouse events; could they make sense?
+    if e.pointerType == 'pen'
+      w = pressureWidth e
+    else
+      w = width
 
 pointers = {}
 pointerEvents = ->
   board.addEventListener 'pointerdown', (e) ->
     e.preventDefault()
-    ## Assume that, if pressure initially 0, then all pressure events will be
-    ## zero for this stroke.
-    zeroPressureHack = (e.pressure == 0)
     pointers[e.pointerId] = Objects.insert
       room: currentRoom
       type: 'pen'
