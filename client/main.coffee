@@ -21,14 +21,18 @@ pointerEvents = ->
     pointers[e.pointerId] = Objects.insert
       type: 'pen'
       pts: [eventToPoint e]
-  board.addEventListener 'pointerup', (e) ->
+  board.addEventListener 'pointerup', stop = (e) ->
     e.preventDefault()
     delete pointers[e.pointerId]
+  board.addEventListener 'pointerleave', stop
   board.addEventListener 'pointermove', (e) ->
     e.preventDefault()
     return unless pointers[e.pointerId]
-    Objects.update pointers[e.pointerId],
-      $push: pts: eventToPoint e
+    if e.pressure == 0
+      stop e
+    else
+      Objects.update pointers[e.pointerId],
+        $push: pts: eventToPoint e
 
 observeRender = ->
   rendered = {}
