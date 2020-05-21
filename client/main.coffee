@@ -59,6 +59,8 @@ observeRender = (room) ->
     line.setAttribute 'y2', p2.y
     line.setAttribute 'stroke', 'black'
     line.setAttribute 'stroke-width', (p1.w + p2.w) / 2
+    # Lines mode:
+    #line.setAttribute 'stroke-width', 1
     board.appendChild line
   Objects.find room: room
   .observe
