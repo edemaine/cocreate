@@ -1,12 +1,31 @@
+:root
+  --palette-width: 32px
+
 body
   font-family: 'Merriweather', serif
 
 #board
   position: absolute
   top: 0
-  left: 0
+  left: var(--palette-width)
   width: 100%
   height: 100%
 
   cursor: url(/favicon32.png) 0 31, crosshair
   touch-action: none
+
+#palette
+  position: absolute
+  left: 0
+  width: var(--palette-width)
+  height: 100%
+  background: #cccccc
+
+.color
+  width: var(--palette-width)
+  height: var(--palette-width)
+  border: 2px outset #cccccc
+  cursor: pointer
+
+  &.selected
+    border: 3px inset #cccccc

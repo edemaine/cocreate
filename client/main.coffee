@@ -1,6 +1,22 @@
 SVGNS = 'http://www.w3.org/2000/svg'
 
-board = null  # set to svg#board element
+colors = [
+  'black'
+  '#666666'
+  '#333399'
+  '#3366ff'
+  '#008000'
+  '#800080'
+  '#c700c7'
+  '#ff0000'
+  '#ff9900'
+  'white'
+]
+colorDivs = null
+currentColor = 'black'
+
+board = null    # set to svg#board element
+boardBB = null  # bounding box (top/left/bottom/right) of board
 width = 5
 
 pressureWidth = (e) -> (0.5 + e.pressure) * width
@@ -10,8 +26,8 @@ pressureWidth = (e) -> (0.5 + e.pressure) * width
 #  (0.5 + (1.5 - 0.5) * t) * width
 
 eventToPoint = (e) ->
-  x: e.clientX
-  y: e.clientY
+  x: e.clientX - boardBB.left
+  y: e.clientY - boardBB.top
   w:
     ## iPhone (iOS 13.4, Safari 13.1) sends pressure 0 for touch events.
     ## Android Chrome (Samsung Note 8) sends pressure 1 for touch events.
@@ -23,12 +39,15 @@ eventToPoint = (e) ->
 
 pointers = {}
 pointerEvents = ->
-  board.addEventListener 'pointerdown', (e) ->
+  board.addEventListener 'pointerdown', down = (e) ->
     e.preventDefault()
     pointers[e.pointerId] = Objects.insert
       room: currentRoom
       type: 'pen'
       pts: [eventToPoint e]
+      color: currentColor
+  board.addEventListener 'pointerenter', (e) ->
+    down e if e.buttons
   board.addEventListener 'pointerup', stop = (e) ->
     e.preventDefault()
     delete pointers[e.pointerId]
@@ -45,19 +64,20 @@ pointerEvents = ->
 
 rendered = {}
 observeRender = (room) ->
-  dot = (p) ->
+  dot = (obj, p) ->
     circle = document.createElementNS SVGNS, 'circle'
     circle.setAttribute 'cx', p.x
     circle.setAttribute 'cy', p.y
     circle.setAttribute 'r', p.w / 2
+    circle.setAttribute 'fill', obj.color
     board.appendChild circle
-  edge = (p1, p2) ->
+  edge = (obj, p1, p2) ->
     line = document.createElementNS SVGNS, 'line'
     line.setAttribute 'x1', p1.x
     line.setAttribute 'y1', p1.y
     line.setAttribute 'x2', p2.x
     line.setAttribute 'y2', p2.y
-    line.setAttribute 'stroke', 'black'
+    line.setAttribute 'stroke', obj.color
     line.setAttribute 'stroke-width', (p1.w + p2.w) / 2
     # Lines mode:
     #line.setAttribute 'stroke-width', 1
@@ -69,8 +89,8 @@ observeRender = (room) ->
       rendered[obj._id] =
         for pt, i in obj.pts
           [
-            edge obj.pts[i-1], pt if i > 0
-            dot pt
+            edge obj, obj.pts[i-1], pt if i > 0
+            dot obj, pt
           ]
     changed: (obj, old) ->
       # Assumes that pen changes only append to `pts` field
@@ -78,8 +98,8 @@ observeRender = (room) ->
       for i in [old.pts.length...obj.pts.length]
         pt = obj.pts[i]
         r.push [
-          edge obj.pts[i-1], pt if i > 0
-          dot pt
+          edge obj, obj.pts[i-1], pt if i > 0
+          dot obj, pt
         ]
     removed: (obj) ->
       for elts in rendered[obj._id]
@@ -112,8 +132,29 @@ pageChange = ->
   else
     changeRoom null
 
+paletteColors = ->
+  colorsDiv = document.getElementById 'colors'
+  colorDivs =
+    for color in colors
+      do (color) ->
+        colorDiv = document.createElement 'div'
+        colorDiv.className = 'color'
+        colorDiv.style.backgroundColor = color
+        colorDiv.addEventListener 'click', -> selectColor color
+        colorsDiv.appendChild colorDiv
+        colorDiv
+
+selectColor = (color) ->
+  currentColor = color if color?
+  for div in document.querySelectorAll '.color.selected'
+    div.classList.remove 'selected'
+  colorDivs[colors.indexOf currentColor].classList.add 'selected'
+
 Meteor.startup ->
   board = document.getElementById 'board'
+  boardBB = board.getBoundingClientRect()
+  paletteColors()
+  selectColor()
   pointerEvents()
   window.addEventListener 'popstate', pageChange
   pageChange()
