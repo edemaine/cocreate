@@ -3,6 +3,7 @@
 
 body
   font-family: 'Merriweather', serif
+  touch-action: none  // Prevent mobile zooming
 
 #board
   position: absolute
@@ -12,7 +13,7 @@ body
   height: 100%
 
   cursor: url(/favicon32.png) 0 31, crosshair
-  touch-action: none
+  touch-action: none  // PointerEvents only
 
 #palette
   position: absolute
