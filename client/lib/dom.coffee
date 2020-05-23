@@ -15,3 +15,10 @@ export attr = (elt, attrs) ->
 export listen = (elt, events) ->
   for key, value of events when value?
     elt.addEventListener key, value
+
+export select = (allQuery, subQuery) ->
+  for elt in document.querySelectorAll "#{allQuery}.selected"
+    elt.classList.remove 'selected'
+  if subQuery?
+    document.querySelector "#{allQuery}#{subQuery}"
+    .classList.add 'selected'

@@ -144,20 +144,17 @@ pageChange = ->
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
   for color in colors
-    do (color) ->
-      colorsDiv.appendChild colorDiv = dom.create 'div',
-        className: 'color'
-        style: backgroundColor: color
-        dataset: color: color
-      , click: -> selectColor color
+    colorsDiv.appendChild colorDiv = dom.create 'div',
+      className: 'color'
+      style: backgroundColor: color
+      dataset: color: color
+    ,
+      click: (e) -> selectColor e.currentTarget.dataset.color
 
 selectColor = (color) ->
   currentColor = color if color?
-  for div in document.querySelectorAll '.color.selected'
-    div.classList.remove 'selected'
-  document.querySelector ".color[data-color='#{currentColor}']"
-  .classList.add 'selected'
-  ## Set cursor to colored pen(cil)
+  dom.select '.color', "[data-color='#{currentColor}']"
+  ## Set cursor to colored pencil
   icons.iconCursor board, (icons.modIcon 'pencil-alt-solid',
     fill: currentColor
     stroke: 'black'
