@@ -1,6 +1,7 @@
 SVGNS = 'http://www.w3.org/2000/svg'
 
 import * as icons from './lib/icons.coffee'
+import * as dom from './lib/dom.coffee'
 
 colors = [
   'black'   # Windows Journal black
@@ -21,7 +22,6 @@ colors = [
   '#b0b0b0' # lighter grey
   'white'
 ]
-colorDivs = null
 currentColor = 'black'
 
 board = null    # set to svg#board element
@@ -143,21 +143,20 @@ pageChange = ->
 
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
-  colorDivs =
-    for color in colors
-      do (color) ->
-        colorDiv = document.createElement 'div'
-        colorDiv.className = 'color'
-        colorDiv.style.backgroundColor = color
-        colorDiv.addEventListener 'click', -> selectColor color
-        colorsDiv.appendChild colorDiv
-        colorDiv
+  for color in colors
+    do (color) ->
+      colorsDiv.appendChild colorDiv = dom.create 'div',
+        className: 'color'
+        style: backgroundColor: color
+        dataset: color: color
+      , click: -> selectColor color
 
 selectColor = (color) ->
   currentColor = color if color?
   for div in document.querySelectorAll '.color.selected'
     div.classList.remove 'selected'
-  colorDivs[colors.indexOf currentColor].classList.add 'selected'
+  document.querySelector ".color[data-color='#{currentColor}']"
+  .classList.add 'selected'
   ## Set cursor to colored pen(cil)
   icons.iconCursor board, (icons.modIcon 'pencil-alt-solid',
     fill: currentColor
