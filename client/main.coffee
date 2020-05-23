@@ -1,5 +1,3 @@
-SVGNS = 'http://www.w3.org/2000/svg'
-
 import * as icons from './lib/icons.coffee'
 import * as dom from './lib/dom.coffee'
 
@@ -75,46 +73,39 @@ pointerEvents = ->
 rendered = {}
 observeRender = (room) ->
   dot = (obj, p) ->
-    circle = document.createElementNS SVGNS, 'circle'
-    circle.setAttribute 'cx', p.x
-    circle.setAttribute 'cy', p.y
-    circle.setAttribute 'r', p.w / 2
-    circle.setAttribute 'fill', obj.color
-    board.appendChild circle
+    rendered[obj._id].appendChild dom.create 'circle',
+      cx: p.x
+      cy: p.y
+      r: p.w / 2
+      fill: obj.color
   edge = (obj, p1, p2) ->
-    line = document.createElementNS SVGNS, 'line'
-    line.setAttribute 'x1', p1.x
-    line.setAttribute 'y1', p1.y
-    line.setAttribute 'x2', p2.x
-    line.setAttribute 'y2', p2.y
-    line.setAttribute 'stroke', obj.color
-    line.setAttribute 'stroke-width', (p1.w + p2.w) / 2
-    # Lines mode:
-    #line.setAttribute 'stroke-width', 1
-    board.appendChild line
+    rendered[obj._id].appendChild dom.create 'line',
+      x1: p1.x
+      y1: p1.y
+      x2: p2.x
+      y2: p2.y
+      stroke: obj.color
+      'stroke-width': (p1.w + p2.w) / 2
+      # Lines mode:
+      #'stroke-width': 1
   Objects.find room: room
   .observe
     # Currently assuming all objects are of type 'pen'
     added: (obj) ->
-      rendered[obj._id] =
-        for pt, i in obj.pts
-          [
-            edge obj, obj.pts[i-1], pt if i > 0
-            dot obj, pt
-          ]
+      board.appendChild rendered[obj._id] = dom.create 'g', null,
+        dataset: id: obj._id
+      for pt, i in obj.pts
+        edge obj, obj.pts[i-1], pt if i > 0
+        dot obj, pt
     changed: (obj, old) ->
       # Assumes that pen changes only append to `pts` field
-      r = rendered[obj._id]
       for i in [old.pts.length...obj.pts.length]
         pt = obj.pts[i]
-        r.push [
-          edge obj, obj.pts[i-1], pt if i > 0
-          dot obj, pt
-        ]
+        edge obj, obj.pts[i-1], pt if i > 0
+        dot obj, pt
     removed: (obj) ->
-      for elts in rendered[obj._id]
-        for elt in elts when elt?
-          board.removeChild elt
+      return unless rendered[obj._id]?
+      board.removeChild rendered[obj._id]
       delete rendered[obj._id]
 
 currentRoom = null
@@ -145,7 +136,7 @@ pageChange = ->
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
   for color in colors
-    colorsDiv.appendChild colorDiv = dom.create 'div',
+    colorsDiv.appendChild colorDiv = dom.create 'div', null,
       className: 'color'
       style: backgroundColor: color
       dataset: color: color
