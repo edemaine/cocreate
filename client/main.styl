@@ -7,6 +7,7 @@ body
 
 #board
   position: absolute
+  overflow: hidden
   top: 0
   left: var(--palette-width)
   width: calc(100% - var(--palette-width))
@@ -22,7 +23,7 @@ body
   height: 100%
   background: #cccccc
 
-.color
+.tool, .color
   width: var(--palette-width)
   height: var(--palette-width)
   border: 2px outset #cccccc
@@ -30,3 +31,6 @@ body
 
   &.selected
     border: 3px inset #cccccc
+
+.tool
+  padding: 2px
