@@ -1,5 +1,7 @@
 SVGNS = 'http://www.w3.org/2000/svg'
 
+import * as icons from './lib/icons.coffee'
+
 colors = [
   'black'
   '#666666'
@@ -150,26 +152,13 @@ selectColor = (color) ->
     div.classList.remove 'selected'
   colorDivs[colors.indexOf currentColor].classList.add 'selected'
   ## Set cursor to colored pen(cil)
-  if currentColor in ['black', '#000000']
-    iconCursor board, [
-      icon: 'pencil-alt-solid'
-      color: currentColor
-    ], 0, 1
-  else
-    iconCursor board, [
-      icon: 'pen-solid'
-      color: currentColor
-    ,
-      icon: 'pencil-alt-solid'
-      color: 'rgba(0,0,0,0.3)'
-    ], 0, 1
-  #iconCursor board, [
-  #  icon: 'pen-solid'
-  #  color: currentColor
-  #,
-  #  icon: 'pencil-alt-solid'
-  #  color: 'black'
-  #], 0, 1
+  icons.iconCursor board, (icons.modIcon 'pencil-alt-solid',
+    fill: currentColor
+    stroke: 'black'
+    'stroke-width': '15'
+    'stroke-linecap': 'round'
+    'stroke-linejoin': 'round'
+  ), 0, 1
 
 Meteor.startup ->
   board = document.getElementById 'board'
