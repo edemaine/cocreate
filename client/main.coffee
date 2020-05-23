@@ -149,6 +149,27 @@ selectColor = (color) ->
   for div in document.querySelectorAll '.color.selected'
     div.classList.remove 'selected'
   colorDivs[colors.indexOf currentColor].classList.add 'selected'
+  ## Set cursor to colored pen(cil)
+  if currentColor in ['black', '#000000']
+    iconCursor board, [
+      icon: 'pencil-alt-solid'
+      color: currentColor
+    ], 0, 1
+  else
+    iconCursor board, [
+      icon: 'pen-solid'
+      color: currentColor
+    ,
+      icon: 'pencil-alt-solid'
+      color: 'rgba(0,0,0,0.3)'
+    ], 0, 1
+  #iconCursor board, [
+  #  icon: 'pen-solid'
+  #  color: currentColor
+  #,
+  #  icon: 'pencil-alt-solid'
+  #  color: 'black'
+  #], 0, 1
 
 Meteor.startup ->
   board = document.getElementById 'board'
