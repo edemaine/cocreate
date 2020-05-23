@@ -93,19 +93,20 @@ eventToPoint = (e) ->
       w = width
 
 pointerEvents = ->
-  board.addEventListener 'pointerdown', (e) ->
-    e.preventDefault()
-    tools[currentTool].down e
-  board.addEventListener 'pointerenter', (e) ->
-    e.preventDefault()
-    tools[currentTool].down e if e.buttons
-  board.addEventListener 'pointerup', stop = (e) ->
-    e.preventDefault()
-    tools[currentTool].up e
-  board.addEventListener 'pointerleave', stop
-  board.addEventListener 'pointermove', (e) ->
-    e.preventDefault()
-    tools[currentTool].move e
+  dom.listen board,
+    pointerdown: (e) ->
+      e.preventDefault()
+      tools[currentTool].down e
+    pointerenter: (e) ->
+      e.preventDefault()
+      tools[currentTool].down e if e.buttons
+    pointerup: stop = (e) ->
+      e.preventDefault()
+      tools[currentTool].up e
+    pointerleave: stop
+    pointermove: (e) ->
+      e.preventDefault()
+      tools[currentTool].move e
 
 rendered = {}
 observeRender = (room) ->
@@ -224,5 +225,6 @@ Meteor.startup ->
   selectTool()
   #selectColor()
   pointerEvents()
-  window.addEventListener 'popstate', pageChange
+  dom.listen window,
+    popstate: pageChange
   pageChange()
