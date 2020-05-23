@@ -6,6 +6,9 @@ import * as dom from './lib/dom.coffee'
 colors = [
   'black'   # Windows Journal black
   '#666666' # Windows Journal grey
+  '#989898' # medium grey
+  '#bbbbbb' # lighter grey
+  'white'
   '#333399' # Windows Journal dark blue
   '#3366ff' # Windows Journal light blue
   '#00c7c7' # custom light cyan
@@ -19,8 +22,6 @@ colors = [
   #'#ff9900' # Windows Journal orange
   '#ed8e00' # custom orange
   '#eced00' # custom yellow
-  '#b0b0b0' # lighter grey
-  'white'
 ]
 currentColor = 'black'
 
