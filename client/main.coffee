@@ -3,15 +3,22 @@ SVGNS = 'http://www.w3.org/2000/svg'
 import * as icons from './lib/icons.coffee'
 
 colors = [
-  'black'
-  '#666666'
-  '#333399'
-  '#3366ff'
-  '#008000'
-  '#800080'
-  '#c700c7'
-  '#ff0000'
-  '#ff9900'
+  'black'   # Windows Journal black
+  '#666666' # Windows Journal grey
+  '#333399' # Windows Journal dark blue
+  '#3366ff' # Windows Journal light blue
+  '#00c7c7' # custom light cyan
+  '#008000' # Windows Journal green
+  '#00c000' # lighter green
+  '#800080' # Windows Journal purple
+  '#d000d0' # lighter magenta
+  '#a00000' # darker red
+  '#ff0000' # Windows Journal red
+  '#855723' # custom brown
+  #'#ff9900' # Windows Journal orange
+  '#ed8e00' # custom orange
+  '#eced00' # custom yellow
+  '#b0b0b0' # lighter grey
   'white'
 ]
 colorDivs = null
