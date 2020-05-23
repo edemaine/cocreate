@@ -1,5 +1,6 @@
 :root
   --palette-width: 32px
+  --palette-offset-width: var(--palette-width)
 
 body
   font-family: 'Merriweather', serif
@@ -9,8 +10,8 @@ body
   position: absolute
   overflow: hidden
   top: 0
-  left: var(--palette-width)
-  width: calc(100% - var(--palette-width))
+  left: var(--palette-offset-width)
+  width: calc(100% - var(--palette-offset-width))
   height: 100%
 
   cursor: url(/fa/pencil-alt-solid.svg) 0 31, crosshair
@@ -18,8 +19,10 @@ body
 
 #palette
   position: absolute
+  overflow-x: hidden
+  overflow-y: auto
   left: 0
-  width: var(--palette-width)
+  width: var(--palette-offset-width)
   height: 100%
   background: #cccccc
 

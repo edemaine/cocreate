@@ -216,9 +216,17 @@ selectColor = (color) ->
     'stroke-linejoin': 'round'
   ), ...tools[currentTool].hotspot
 
+resize = ->
+  palette = document.getElementById 'palette'
+  paletteWidth = parseFloat (getComputedStyle document.documentElement
+  .getPropertyValue '--palette-width')
+  document.documentElement.style.setProperty '--palette-offset-width',
+    "#{palette.offsetWidth - palette.clientWidth + # scrollbar width
+       paletteWidth}px"
+  boardBB = board.getBoundingClientRect()
+
 Meteor.startup ->
   board = document.getElementById 'board'
-  boardBB = board.getBoundingClientRect()
   board.appendChild boardRoot = dom.create 'g'
   paletteTools()
   paletteColors()
@@ -226,5 +234,7 @@ Meteor.startup ->
   #selectColor()
   pointerEvents()
   dom.listen window,
+    resize: resize
     popstate: pageChange
+  resize()
   pageChange()
