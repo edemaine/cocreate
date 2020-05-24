@@ -7,6 +7,7 @@ boardRoot = null # root <g> element within board for transform
 boardTransform = # board translation/rotation
   x: 0
   y: 0
+historyBoard = historyRoot = historyTransform = null
 
 pointers = {}   # maps pointerId to tool-specific data
 tools =
@@ -33,11 +34,12 @@ tools =
     hotspot: [0, 1]
     title: 'Freehand drawing'
     down: (e) ->
-      pointers[e.pointerId] = Objects.insert
+      pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
         type: 'pen'
         pts: [eventToPoint e]
         color: currentColor
+      ], returnStubValue: true
     up: (e) ->
       delete pointers[e.pointerId]
     move: (e) ->
@@ -46,8 +48,9 @@ tools =
       #if e.pressure == 0
       #  stop e
       #else
-      Objects.update pointers[e.pointerId],
-        $push: pts: eventToPoint e
+      Meteor.call 'objectPush',
+        id: pointers[e.pointerId]
+        pts: eventToPoint e
   eraser:
     icon: 'eraser'
     hotspot: [0.35, 1]
@@ -56,7 +59,7 @@ tools =
       pointers[e.pointerId] ?= new Highlighter
       pointers[e.pointerId].down = true
       if pointers[e.pointerId]?.id?
-        Objects.remove pointers[e.pointerId].id
+        Meteor.call 'objectDel', pointers[e.pointerId].id
         pointers[e.pointerId].clear()
     up: (e) ->
       pointers[e.pointerId]?.clear()
@@ -66,12 +69,88 @@ tools =
       target = pointers[e.pointerId].findGroup e
       if target?
         if pointers[e.pointerId].down
-          Objects.remove target.dataset.id
+          Meteor.call 'objectDel', target.dataset.id
           pointers[e.pointerId].clear()
         else
           pointers[e.pointerId].highlight target
       else
         pointers[e.pointerId].clear()
+  history:
+    icon: 'history'
+    hotspot: [0.5, 0.5]
+    title: 'Time travel to the past'
+    start: ->
+      document.getElementById('colors').style.visibility = 'hidden'
+      document.getElementById('history').style.visibility = 'visible'
+      document.getElementById('board').style.visibility = 'hidden'
+      document.getElementById('historyBoard').style.visibility = 'visible'
+      historyBoard = document.getElementById 'historyBoard'
+      historyTransform =
+        x: 0
+        y: 0
+      historyRender = {}
+      historyObjects = {}
+      range = document.getElementById 'historyRange'
+      range.value = 0
+      range.addEventListener 'change', pointers.listen = (e) ->
+        historyBoard.innerHTML = ''
+        historyBoard.appendChild historyRoot = dom.create 'g'
+        historyRoot.setAttribute 'transform',
+          "translate(#{historyTransform.x} #{historyTransform.y})"
+        max = range.max
+        value = range.value
+        count = 0
+        for diff from ObjectsDiff.find room: currentRoom
+          count++
+          break if count > value
+          switch diff.type
+            when 'pen'
+              obj = diff
+              historyObjects[obj.id] = obj
+              historyRoot.appendChild historyRender[obj.id] =
+                dom.create 'g', null, dataset: id: obj.id
+              for pt, i in obj.pts
+                historyRender[obj.id].appendChild edge obj, obj.pts[i-1], pt if i > 0
+                historyRender[obj.id].appendChild dot obj, pt
+            when 'push'
+              obj = historyObjects[diff.id]
+              obj.pts.push diff.pts
+              i = obj.pts.length - 1
+              pt = obj.pts[i]
+              historyRender[obj.id].appendChild edge obj, obj.pts[i-1], pt if i > 0
+              historyRender[obj.id].appendChild dot obj, pt
+            when 'del'
+              historyRoot.removeChild historyRender[diff.id]
+              delete historyRender[diff.id]
+              delete historyObjects[diff.id]
+          #break if max != range.max or value != range.value
+      pointers.sub = Meteor.subscribe 'history', currentRoom
+      pointers.auto = Tracker.autorun ->
+        range.max = ObjectsDiff.find(room: currentRoom).count()
+        pointers.listen()
+    stop: ->
+      document.getElementById('colors').style.visibility = 'visible'
+      document.getElementById('history').style.visibility = 'hidden'
+      document.getElementById('board').style.visibility = 'visible'
+      document.getElementById('historyBoard').style.visibility = 'hidden'
+      document.getElementById('historyRange').removeEventListener 'change', pointers.listen
+      document.getElementById('historyBoard').innerHTML = ''
+      pointers.sub.stop()
+      pointers.auto.stop()
+    down: (e) ->
+      pointers[e.pointerId] = eventToPoint e
+    up: (e) ->
+      delete pointers[e.pointerId]
+      if pointers.x? and pointers.y?
+        historyTransform.x = pointers.x
+        historyTransform.y = pointers.y
+    move: (e) ->
+      return unless start = pointers[e.pointerId]
+      current = eventToPoint e
+      pointers.x = historyTransform.x + current.x - start.x
+      pointers.y = historyTransform.y + current.y - start.y
+      historyRoot.setAttribute 'transform',
+        "translate(#{pointers.x} #{pointers.y})"
 currentTool = 'pan'
 
 colors = [
@@ -117,20 +196,20 @@ eventToPoint = (e) ->
       w = width
 
 pointerEvents = ->
-  dom.listen board,
+  dom.listen [board, historyBoard],
     pointerdown: (e) ->
       e.preventDefault()
-      tools[currentTool].down e
+      tools[currentTool].down? e
     pointerenter: (e) ->
       e.preventDefault()
-      tools[currentTool].down e if e.buttons
+      tools[currentTool].down? e if e.buttons
     pointerup: stop = (e) ->
       e.preventDefault()
-      tools[currentTool].up e
+      tools[currentTool].up? e
     pointerleave: stop
     pointermove: (e) ->
       e.preventDefault()
-      tools[currentTool].move e
+      tools[currentTool].move? e
 
 class Highlighter
   findGroup: (target) ->
@@ -155,24 +234,25 @@ class Highlighter
       boardRoot.removeChild @highlighted
       @highlighted = @id = null
 
+dot = (obj, p) ->
+  dom.create 'circle',
+    cx: p.x
+    cy: p.y
+    r: p.w / 2
+    fill: obj.color
+edge = (obj, p1, p2) ->
+  dom.create 'line',
+    x1: p1.x
+    y1: p1.y
+    x2: p2.x
+    y2: p2.y
+    stroke: obj.color
+    'stroke-width': (p1.w + p2.w) / 2
+    # Lines mode:
+    #'stroke-width': 1
+
 rendered = {}
 observeRender = (room) ->
-  dot = (obj, p) ->
-    rendered[obj._id].appendChild dom.create 'circle',
-      cx: p.x
-      cy: p.y
-      r: p.w / 2
-      fill: obj.color
-  edge = (obj, p1, p2) ->
-    rendered[obj._id].appendChild dom.create 'line',
-      x1: p1.x
-      y1: p1.y
-      x2: p2.x
-      y2: p2.y
-      stroke: obj.color
-      'stroke-width': (p1.w + p2.w) / 2
-      # Lines mode:
-      #'stroke-width': 1
   Objects.find room: room
   .observe
     # Currently assuming all objects are of type 'pen'
@@ -180,14 +260,14 @@ observeRender = (room) ->
       boardRoot.appendChild rendered[obj._id] = dom.create 'g', null,
         dataset: id: obj._id
       for pt, i in obj.pts
-        edge obj, obj.pts[i-1], pt if i > 0
-        dot obj, pt
+        rendered[obj._id].appendChild edge obj, obj.pts[i-1], pt if i > 0
+        rendered[obj._id].appendChild dot obj, pt
     changed: (obj, old) ->
       # Assumes that pen changes only append to `pts` field
       for i in [old.pts.length...obj.pts.length]
         pt = obj.pts[i]
-        edge obj, obj.pts[i-1], pt if i > 0
-        dot obj, pt
+        rendered[obj._id].appendChild edge obj, obj.pts[i-1], pt if i > 0
+        rendered[obj._id].appendChild dot obj, pt
     removed: (obj) ->
       return unless rendered[obj._id]?
       boardRoot.removeChild rendered[obj._id]
@@ -200,13 +280,15 @@ changeRoom = (room) ->
   return if room == currentRoom
   roomObserve?.stop()
   roomSub?.stop()
-  pointers = {}
+  tool = currentTool
+  selectTool null
   rendered = {}
   boardRoot.innerHTML = ''
   currentRoom = room
   if room?
     roomObserve = observeRender room
     roomSub = Meteor.subscribe 'room', room
+  selectTool tool
 
 pageChange = ->
   if document.location.pathname == '/'
@@ -229,16 +311,27 @@ paletteTools = ->
     ,
       click: (e) -> selectTool e.currentTarget.dataset.tool
 
+lastTool = null
 selectTool = (tool) ->
-  currentTool = tool if tool?
+  tools[currentTool]?.stop?()
+  if tool == currentTool == 'history'  # treat history as a toggle
+    tool = lastTool
+  lastTool = currentTool
+  currentTool = tool if tool?  # tool is null if initializing
   dom.select '.tool', "[data-tool='#{currentTool}']"
   if currentTool == 'pen'
     selectColor()
+  else if currentTool == 'history'
+    icons.iconCursor document.getElementById('historyRange'),
+      tools['history'].icon, ...tools['history'].hotspot
+    icons.iconCursor document.getElementById('historyBoard'),
+      tools['pan'].icon, ...tools['pan'].hotspot
   else
     dom.select '.color'  # deselect color
     icons.iconCursor board, tools[currentTool].icon,
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
+  tools[currentTool]?.start?()
 
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
@@ -264,17 +357,22 @@ selectColor = (color) ->
   ), ...tools[currentTool].hotspot
 
 resize = ->
-  palette = document.getElementById 'palette'
-  paletteWidth = parseFloat (getComputedStyle document.documentElement
-  .getPropertyValue '--palette-width')
+  paletteSize = parseFloat (getComputedStyle document.documentElement
+  .getPropertyValue '--palette-size')
+  toolsDiv = document.getElementById 'tools'
   document.documentElement.style.setProperty '--palette-offset-width',
-    "#{palette.offsetWidth - palette.clientWidth + # scrollbar width
-       paletteWidth}px"
+    "#{toolsDiv.offsetWidth - toolsDiv.clientWidth + # scrollbar width
+       paletteSize}px"
+  colorsDiv = document.getElementById 'colors'
+  document.documentElement.style.setProperty '--palette-offset-height',
+    "#{colorsDiv.offsetHeight - colorsDiv.clientHeight + # scrollbar height
+       paletteSize}px"
   boardBB = board.getBoundingClientRect()
 
 Meteor.startup ->
   board = document.getElementById 'board'
   board.appendChild boardRoot = dom.create 'g'
+  historyBoard = document.getElementById 'historyBoard'
   paletteTools()
   paletteColors()
   selectTool()

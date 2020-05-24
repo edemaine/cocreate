@@ -15,7 +15,9 @@ body
     .collapse.navbar-collapse#navbar
       ul.nav.navbar-nav.navbar-right
         +loginButtons
-  #palette
-    #tools
-    #colors
+  #tools
+  #colors
+  #history(style="visibility:hidden")
+    input#historyRange(type="range", min="0", max="0")
   svg#board
+  svg#historyBoard(style="visibility:hidden")

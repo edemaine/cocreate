@@ -29,8 +29,11 @@ export prop = (elt, props) ->
       elt[key] = value
 
 export listen = (elt, events) ->
-  for key, value of events when value?
-    elt.addEventListener key, value
+  if elt.length?
+    listen sub, events for sub in elt
+  else
+    for key, value of events when value?
+      elt.addEventListener key, value
 
 export select = (allQuery, subQuery) ->
   for elt in document.querySelectorAll "#{allQuery}.selected"

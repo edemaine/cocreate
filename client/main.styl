@@ -1,34 +1,49 @@
 :root
-  --palette-width: 32px
-  --palette-offset-width: var(--palette-width)
+  --palette-size: 32px
+  // The following grow to accomodate scrollbars if needed:
+  --palette-offset-width: var(--palette-size)
+  --palette-offset-height: var(--palette-size)
 
 body
   font-family: 'Merriweather', serif
   touch-action: none  // Prevent mobile zooming
 
-#board
+#board, #historyBoard
   position: absolute
   overflow: hidden
   top: 0
   left: var(--palette-offset-width)
   width: calc(100% - var(--palette-offset-width))
-  height: 100%
+  height: calc(100% - var(--palette-offset-height))
 
-  cursor: url(/fa/pencil-alt-solid.svg) 0 31, crosshair
+  cursor: crosshair
   touch-action: none  // PointerEvents only
 
-#palette
+#tools, #colors, #history
   position: absolute
+  background: #cccccc
+  display: flex
+#tools
+  flex-direction: column
   overflow-x: hidden
   overflow-y: auto
   left: 0
   width: var(--palette-offset-width)
   height: 100%
-  background: #cccccc
+#colors, #history
+  flex-direction: row
+  overflow-x: auto
+  overflow-y: hidden
+  bottom: 0
+  width: 100%
+  height: var(--palette-offset-height)
+#historyRange
+  margin: 0 10px
 
 .tool, .color
-  width: var(--palette-width)
-  height: var(--palette-width)
+  flex: none
+  width: var(--palette-size)
+  height: var(--palette-size)
   border: 2px outset #cccccc
   cursor: pointer
 
@@ -39,5 +54,5 @@ body
   padding: 2px
 
 .highlight
-  opacity: 50%
+  opacity: 0.5
   pointer-events: none
