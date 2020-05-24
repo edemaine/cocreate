@@ -48,8 +48,8 @@ body
   cursor: pointer
 
   &.selected
-    background: #aaa
-    border: 3px inset #aaa
+    background: rgba(0,0,0,0.25)
+    border: 3px inset rgba(0,0,0,0.25)
 
 .tool
   padding: 2px
@@ -64,3 +64,5 @@ body:not(.history)
 body.history
   #colors, #board
     visibility: hidden
+  #tools, #history
+    background: #f7cca1
