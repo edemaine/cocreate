@@ -88,7 +88,6 @@ tools =
       historyTransform =
         x: 0
         y: 0
-      historyRender = {}
       historyObjects = {}
       range = document.getElementById 'historyRange'
       range.value = 0
@@ -97,6 +96,7 @@ tools =
         historyBoard.appendChild historyRoot = dom.create 'g'
         historyRoot.setAttribute 'transform',
           "translate(#{historyTransform.x} #{historyTransform.y})"
+        historyRender = new Render historyRoot
         max = range.max
         value = range.value
         count = 0
@@ -107,21 +107,13 @@ tools =
             when 'pen'
               obj = diff
               historyObjects[obj.id] = obj
-              historyRoot.appendChild historyRender[obj.id] =
-                dom.create 'g', null, dataset: id: obj.id
-              for pt, i in obj.pts
-                historyRender[obj.id].appendChild edge obj, obj.pts[i-1], pt if i > 0
-                historyRender[obj.id].appendChild dot obj, pt
+              historyRender.renderPen obj
             when 'push'
               obj = historyObjects[diff.id]
               obj.pts.push diff.pts
-              i = obj.pts.length - 1
-              pt = obj.pts[i]
-              historyRender[obj.id].appendChild edge obj, obj.pts[i-1], pt if i > 0
-              historyRender[obj.id].appendChild dot obj, pt
+              historyRender.renderPen obj, obj.pts.length - 1
             when 'del'
-              historyRoot.removeChild historyRender[diff.id]
-              delete historyRender[diff.id]
+              historyRender.delete diff
               delete historyObjects[diff.id]
           #break if max != range.max or value != range.value
       pointers.sub = Meteor.subscribe 'history', currentRoom
@@ -251,27 +243,58 @@ edge = (obj, p1, p2) ->
     # Lines mode:
     #'stroke-width': 1
 
-rendered = {}
+class Render
+  constructor: (@root) ->
+    @dom = {}
+  id: (obj) ->
+    ###
+    `obj` can be an `ObjectDiff` object, in which case `id` is the object ID
+    (and `_id` is the diff ID); or a regular `Object` object, in which case
+    `_id` is the object ID.  Also allow raw ID string for `delete`.
+    ###
+    obj.id ? obj._id ? obj
+  renderPen: (obj, start = 0) ->
+    id = @id obj
+    unless (g = @dom[id])?
+      @dom[id] = g = dom.create 'g', null, dataset: id: id
+      @root.appendChild @dom[id]
+    for i in [start...obj.pts.length]
+      pt = obj.pts[i]
+      g.appendChild edge obj, obj.pts[i-1], pt if i > 0
+      g.appendChild dot obj, pt
+    g
+  delete: (obj) ->
+    id = @id obj
+    unless @dom[id]?
+      return console.warn "Attempt to delete unknown object ID #{id}?!"
+    @root.removeChild @dom[id]
+    delete @dom[id]
+  #has: (obj) ->
+  #  (id obj) of @dom
+  shouldNotExist: (obj) ->
+    ###
+    Call before rendering a should-be-new object.  If already exists, log a
+    warning and clear the object from the map so a new one will get created.
+    Currently the old object stays in the DOM, though.
+    ###
+    id = @id obj
+    if id of @dom
+      console.warn "Duplicate object with ID #{id}?!"
+      delete @dom[id]
+
 observeRender = (room) ->
+  render = new Render boardRoot
   Objects.find room: room
   .observe
     # Currently assuming all objects are of type 'pen'
     added: (obj) ->
-      boardRoot.appendChild rendered[obj._id] = dom.create 'g', null,
-        dataset: id: obj._id
-      for pt, i in obj.pts
-        rendered[obj._id].appendChild edge obj, obj.pts[i-1], pt if i > 0
-        rendered[obj._id].appendChild dot obj, pt
+      render.shouldNotExist obj
+      render.renderPen obj
     changed: (obj, old) ->
       # Assumes that pen changes only append to `pts` field
-      for i in [old.pts.length...obj.pts.length]
-        pt = obj.pts[i]
-        rendered[obj._id].appendChild edge obj, obj.pts[i-1], pt if i > 0
-        rendered[obj._id].appendChild dot obj, pt
+      render.renderPen obj, old.pts.length
     removed: (obj) ->
-      return unless rendered[obj._id]?
-      boardRoot.removeChild rendered[obj._id]
-      delete rendered[obj._id]
+      render.delete obj
 
 currentRoom = null
 roomSub = null
