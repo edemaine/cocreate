@@ -78,7 +78,7 @@ tools =
   history:
     icon: 'history'
     hotspot: [0.5, 0.5]
-    title: 'Time travel to the past'
+    title: 'Time travel to the past (via bottom slider)'
     start: ->
       document.getElementById('colors').style.visibility = 'hidden'
       document.getElementById('history').style.visibility = 'visible'
