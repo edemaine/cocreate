@@ -21,7 +21,7 @@ body
 
 #tools, #colors, #history
   position: absolute
-  background: #cccccc
+  background: #ccc
   display: flex
 #tools
   flex-direction: column
@@ -44,11 +44,12 @@ body
   flex: none
   width: var(--palette-size)
   height: var(--palette-size)
-  border: 2px outset #cccccc
+  border: 2px outset #ccc
   cursor: pointer
 
   &.selected
-    border: 3px inset #cccccc
+    background: #aaa
+    border: 3px inset #aaa
 
 .tool
   padding: 2px
