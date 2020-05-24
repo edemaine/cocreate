@@ -57,3 +57,10 @@ body
 .highlight
   opacity: 0.5
   pointer-events: none
+
+body:not(.history)
+  #history, #historyBoard
+    visibility: hidden
+body.history
+  #colors, #board
+    visibility: hidden

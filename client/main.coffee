@@ -80,10 +80,7 @@ tools =
     hotspot: [0.5, 0.5]
     title: 'Time travel to the past (via bottom slider)'
     start: ->
-      document.getElementById('colors').style.visibility = 'hidden'
-      document.getElementById('history').style.visibility = 'visible'
-      document.getElementById('board').style.visibility = 'hidden'
-      document.getElementById('historyBoard').style.visibility = 'visible'
+      document.body.classList.add 'history'
       historyBoard = document.getElementById 'historyBoard'
       historyTransform =
         x: 0
@@ -121,10 +118,7 @@ tools =
         range.max = ObjectsDiff.find(room: currentRoom).count()
         pointers.listen()
     stop: ->
-      document.getElementById('colors').style.visibility = 'visible'
-      document.getElementById('history').style.visibility = 'hidden'
-      document.getElementById('board').style.visibility = 'visible'
-      document.getElementById('historyBoard').style.visibility = 'hidden'
+      document.body.classList.remove 'history'
       document.getElementById('historyRange').removeEventListener 'change', pointers.listen
       document.getElementById('historyBoard').innerHTML = ''
       pointers.sub.stop()
