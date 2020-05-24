@@ -8,7 +8,8 @@ Objects.allow
   insert: (userId, obj) ->
     validId(obj.room) and
     Rooms.findOne(obj.room)?
-  update: -> (userId, obj, fields) ->
+  update: (userId, obj, fields) ->
     for field in fields
       return false unless field in ['pts']
-  remove: -> false
+    true
+  remove: -> true

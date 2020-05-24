@@ -48,6 +48,30 @@ tools =
       #else
       Objects.update pointers[e.pointerId],
         $push: pts: eventToPoint e
+  eraser:
+    icon: 'eraser'
+    hotspot: [0.35, 1]
+    title: 'Erase strokes'
+    down: (e) ->
+      pointers[e.pointerId] ?= new Highlighter
+      pointers[e.pointerId].down = true
+      if pointers[e.pointerId]?.id?
+        Objects.remove pointers[e.pointerId].id
+        pointers[e.pointerId].clear()
+    up: (e) ->
+      pointers[e.pointerId]?.clear()
+      delete pointers[e.pointerId]
+    move: (e) ->
+      pointers[e.pointerId] ?= new Highlighter
+      target = pointers[e.pointerId].findGroup e
+      if target?
+        if pointers[e.pointerId].down
+          Objects.remove target.dataset.id
+          pointers[e.pointerId].clear()
+        else
+          pointers[e.pointerId].highlight target
+      else
+        pointers[e.pointerId].clear()
 currentTool = 'pan'
 
 colors = [
@@ -108,6 +132,29 @@ pointerEvents = ->
       e.preventDefault()
       tools[currentTool].move e
 
+class Highlighter
+  findGroup: (target) ->
+    target = target.target if target.target?  # given event
+    while target.tagName.toLowerCase() in ['circle', 'line']
+      target = target.parentNode
+    return unless target.tagName.toLowerCase() == 'g'
+    return unless target.dataset.id?
+    target
+  highlight: (target) ->
+    return if target == @highlighted
+    return unless target.dataset.id?
+    @id = target.dataset.id
+    @highlighted ?= dom.create 'g', class: 'highlight'
+    boardRoot.appendChild @highlighted  # ensure on top
+    doubler = (match, left, number, right) -> "#{left}#{2 * number}#{right}"
+    @highlighted.innerHTML = target.innerHTML
+    .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
+    .replace /(\br=["'])([\d.]+)(["'])/g, doubler
+  clear: ->
+    if @highlighted?
+      boardRoot.removeChild @highlighted
+      @highlighted = @id = null
+
 rendered = {}
 observeRender = (room) ->
   dot = (obj, p) ->
@@ -143,7 +190,7 @@ observeRender = (room) ->
         dot obj, pt
     removed: (obj) ->
       return unless rendered[obj._id]?
-      board.removeChild rendered[obj._id]
+      boardRoot.removeChild rendered[obj._id]
       delete rendered[obj._id]
 
 currentRoom = null
