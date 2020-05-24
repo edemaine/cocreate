@@ -30,7 +30,7 @@ tools =
       boardRoot.setAttribute 'transform',
         "translate(#{pointers.x} #{pointers.y})"
   pen:
-    icon: 'pencil-alt-solid'
+    icon: 'pencil-alt'
     hotspot: [0, 1]
     title: 'Freehand drawing'
     down: (e) ->
@@ -348,7 +348,7 @@ selectColor = (color) ->
   selectTool 'pen' unless currentTool == 'pen'
   dom.select '.color', "[data-color='#{currentColor}']"
   ## Set cursor to colored pencil
-  icons.iconCursor board, (icons.modIcon 'pencil-alt-solid',
+  icons.iconCursor board, (icons.modIcon 'pencil-alt',
     fill: currentColor
     stroke: 'black'
     'stroke-width': '15'
