@@ -28,12 +28,13 @@ export prop = (elt, props) ->
     else
       elt[key] = value
 
-export listen = (elt, events) ->
-  if elt.length?
-    listen sub, events for sub in elt
+export listen = (elt, events, now) ->
+  if Array.isArray elt
+    listen sub, events, now for sub in elt
   else
     for key, value of events when value?
       elt.addEventListener key, value
+      value() if now
 
 export select = (allQuery, subQuery) ->
   for elt in document.querySelectorAll "#{allQuery}.selected"

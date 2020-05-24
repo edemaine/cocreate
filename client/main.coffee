@@ -398,5 +398,4 @@ Meteor.startup ->
   dom.listen window,
     resize: resize
     popstate: pageChange
-  resize()
-  pageChange()
+  , true # call now
