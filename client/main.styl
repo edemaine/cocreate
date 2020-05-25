@@ -3,6 +3,7 @@
   // The following grow to accomodate scrollbars if needed:
   --palette-offset-width: var(--palette-size)
   --palette-offset-height: var(--palette-size)
+  --palette-color: #ccc
 
 body
   font-family: 'Merriweather', serif
@@ -21,7 +22,7 @@ body
 
 .palette
   position: absolute
-  background: #ccc
+  background: var(--palette-color)
   display: flex
 .vertical.palette
   flex-direction: column
@@ -69,7 +70,6 @@ body:not(.history)
   .historyShow
     visibility: hidden
 body.history
+  --palette-color: #d6bc9f  // sepia-like
   .historyHide
     visibility: hidden
-  .palette
-    background: #d6bc9f  // sepia-like
