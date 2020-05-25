@@ -46,6 +46,7 @@ tools =
     hotspot: [0, 1]
     title: 'Freehand drawing'
     down: (e) ->
+      return if pointers[e.pointerId]
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
         type: 'pen'
