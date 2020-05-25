@@ -206,13 +206,22 @@ colors = [
 ]
 currentColor = 'black'
 
-width = 5
+widths = [
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+]
+currentWidth = 5
 
-pressureWidth = (e) -> (0.5 + e.pressure) * width
-#pressureWidth = (e) -> 2 * e.pressure * width
+pressureWidth = (e) -> (0.5 + e.pressure) * currentWidth
+#pressureWidth = (e) -> 2 * e.pressure * currentWidth
 #pressureWidth = (e) ->
 #  t = e.pressure ** 3
-#  (0.5 + (1.5 - 0.5) * t) * width
+#  (0.5 + (1.5 - 0.5) * t) * currentWidth
 
 eventToPoint = (e) ->
   x: e.clientX - boardBB.left - boardTransform.x
@@ -224,7 +233,7 @@ eventToPoint = (e) ->
     if e.pointerType == 'pen'
       w = pressureWidth e
     else
-      w = width
+      w = currentWidth
 
 pointerEvents = ->
   dom.listen [board, historyBoard],
@@ -422,13 +431,16 @@ selectTool = (tool) ->
   dom.select '.tool', "[data-tool='#{currentTool}']"
   if currentTool == 'pen'
     selectColor()
+    selectWidth()
   else if currentTool == 'history'
     icons.iconCursor document.getElementById('historyRange'),
       tools['history'].icon, ...tools['history'].hotspot
     icons.iconCursor document.getElementById('historyBoard'),
       tools['pan'].icon, ...tools['pan'].hotspot
   else
-    dom.select '.color'  # deselect color
+    # Deselect color and width if not in pen mode
+    #dom.select '.color'
+    #dom.select '.width'
     icons.iconCursor board, tools[currentTool].icon,
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
@@ -437,37 +449,69 @@ selectTool = (tool) ->
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
   for color in colors
-    colorsDiv.appendChild colorDiv = dom.create 'div', null,
+    colorsDiv.appendChild dom.create 'div', null,
       className: 'color'
       style: backgroundColor: color
       dataset: color: color
     ,
       click: (e) -> selectColor e.currentTarget.dataset.color
 
-selectColor = (color) ->
+widthSize = 22
+paletteWidths = ->
+  widthsDiv = document.getElementById 'colors'
+  for width in widths
+    widthsDiv.appendChild dom.create 'div', null,
+      className: 'width'
+      dataset: width: width
+    ,
+      click: (e) -> selectWidth e.currentTarget.dataset.width
+    , [
+      dom.create 'svg',
+        viewBox: "0 #{-widthSize/2} #{widthSize} #{widthSize}"
+        width: widthSize
+        height: widthSize
+      , null, null
+      , [
+        dom.create 'line',
+          x2: widthSize
+          stroke: 'black'
+          'stroke-width': width
+      ]
+    ]
+
+selectColor = (color, keepTool) ->
   currentColor = color if color?
-  selectTool 'pen' unless currentTool == 'pen'
+  selectTool 'pen' unless currentTool == 'pen' or keepTool
   dom.select '.color', "[data-color='#{currentColor}']"
+  document.documentElement.style.setProperty '--currentColor', currentColor
   ## Set cursor to colored pencil
-  icons.iconCursor board, (icons.modIcon 'pencil-alt',
-    fill: currentColor
-    stroke: 'black'
-    'stroke-width': '15'
-    'stroke-linecap': 'round'
-    'stroke-linejoin': 'round'
-  ), ...tools[currentTool].hotspot
+  if currentTool == 'pen'
+    icons.iconCursor board, (icons.modIcon 'pencil-alt',
+      fill: currentColor
+      stroke: 'black'
+      'stroke-width': '15'
+      'stroke-linecap': 'round'
+      'stroke-linejoin': 'round'
+    ), ...tools[currentTool].hotspot
+
+selectWidth = (width, keepTool) ->
+  currentWidth = parseFloat width if width?
+  selectTool 'pen' unless currentTool == 'pen' or keepTool
+  dom.select '.width', "[data-width='#{currentWidth}']"
+
+paletteSize = ->
+  parseFloat (getComputedStyle document.documentElement
+  .getPropertyValue '--palette-size')
 
 resize = ->
-  paletteSize = parseFloat (getComputedStyle document.documentElement
-  .getPropertyValue '--palette-size')
   toolsDiv = document.getElementById 'tools'
   document.documentElement.style.setProperty '--palette-offset-width',
     "#{toolsDiv.offsetWidth - toolsDiv.clientWidth + # scrollbar width
-       paletteSize}px"
+       paletteSize()}px"
   colorsDiv = document.getElementById 'colors'
   document.documentElement.style.setProperty '--palette-offset-height',
     "#{colorsDiv.offsetHeight - colorsDiv.clientHeight + # scrollbar height
-       paletteSize}px"
+       paletteSize()}px"
   boardBB = board.getBoundingClientRect()
 
 Meteor.startup ->
@@ -475,9 +519,11 @@ Meteor.startup ->
   board.appendChild boardRoot = dom.create 'g'
   historyBoard = document.getElementById 'historyBoard'
   paletteTools()
+  paletteWidths()
   paletteColors()
   selectTool()
-  #selectColor()
+  selectColor null, true
+  selectWidth null, true
   pointerEvents()
   dom.listen window,
     resize: resize
