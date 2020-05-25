@@ -229,8 +229,12 @@ pointerEvents = ->
       tools[currentTool].move? e
 
 class Highlighter
-  findGroup: (target) ->
-    target = target.target if target.target?  # given event
+  findGroup: (e) ->
+    ## Pen and touch devices don't always seem to set `e.target` correctly;
+    ## use `document.elementFromPoint` instead.
+    #target = e.target
+    #if target.tagName.toLowerCase() == 'svg'
+    target = document.elementFromPoint e.clientX, e.clientY
     while target.tagName.toLowerCase() in ['circle', 'line']
       target = target.parentNode
     return unless target.tagName.toLowerCase() == 'g'
