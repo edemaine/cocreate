@@ -8,7 +8,7 @@ body
   font-family: 'Merriweather', serif
   touch-action: none  // Prevent mobile zooming
 
-#board, #historyBoard
+.board
   position: absolute
   overflow: hidden
   top: 0
@@ -19,26 +19,26 @@ body
   cursor: crosshair
   touch-action: none  // PointerEvents only
 
-#tools, #colors, #history
+.palette
   position: absolute
   background: #ccc
   display: flex
-#tools
+.vertical.palette
   flex-direction: column
   overflow-x: hidden
   overflow-y: auto
   left: 0
   width: var(--palette-offset-width)
   height: 100%
-#colors, #history
+.horizontal.palette
   flex-direction: row
   overflow-x: auto
   overflow-y: hidden
   bottom: 0
   width: 100%
   height: var(--palette-offset-height)
-#historyRange
-  margin: 0 10px
+  &#historyRange
+    margin: 0 10px
 
 .tool, .color
   flex: none
@@ -59,10 +59,10 @@ body
   pointer-events: none
 
 body:not(.history)
-  #history, #historyBoard
+  .historyShow
     visibility: hidden
 body.history
-  #colors, #board
+  .historyHide
     visibility: hidden
-  #tools, #history
+  .palette
     background: #d6bc9f  // sepia-like

@@ -15,9 +15,9 @@ body
     .collapse.navbar-collapse#navbar
       ul.nav.navbar-nav.navbar-right
         +loginButtons
-  #tools
-  #colors
-  #history
-    input#historyRange(type="range", min="0", max="0", title="Drag to time travel through history")
-  svg#board
-  svg#historyBoard
+  #tools.vertical.palette
+  #colors.horizontal.palette.historyHide
+  #history.horizontal.palette.historyShow
+    input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
+  svg#board.board.historyHide
+  svg#historyBoard.board.historyShow
