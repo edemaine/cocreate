@@ -467,10 +467,11 @@ Meteor.startup ->
     keydown: (e) ->
       switch e.key
         when 'z', 'Z'
-          if e.ctrlKey
+          if e.ctrlKey or e.metaKey
             if e.shiftKey
               redo()
             else
               undo()
         when 'y', 'Y'
-          redo()
+          if e.ctrlKey or e.metaKey
+            redo()
