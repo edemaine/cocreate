@@ -15,12 +15,12 @@ pointers = {}   # maps pointerId to tool-specific data
 tools =
   undo:
     icon: 'undo'
-    title: 'Undo the last operation you did'
+    title: 'Undo the last operation you did [CTRL-Z]'
     once: ->
       undo()
   redo:
     icon: 'redo'
-    title: 'Redo the last operation you undid (if no operations since)'
+    title: 'Redo the last operation you undid (if no operations since) [CTRL-Y]'
     once: ->
       redo()
   pan:
@@ -463,3 +463,14 @@ Meteor.startup ->
     resize: resize
     popstate: pageChange
   , true # call now
+  dom.listen window,
+    keydown: (e) ->
+      switch e.key
+        when 'z', 'Z'
+          if e.ctrlKey
+            if e.shiftKey
+              redo()
+            else
+              undo()
+        when 'y', 'Y'
+          redo()
