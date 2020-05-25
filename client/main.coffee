@@ -301,15 +301,26 @@ doOp = (op, reverse) ->
     else
       console.error "Unknown op type #{op.type} for undo/redo"
 undo = ->
+  if currentTool == 'history'
+    return historyAdvance -1
   return unless undoStack.length
   op = undoStack.pop()
   doOp op, true
   redoStack.push op
 redo = ->
+  if currentTool == 'history'
+    return historyAdvance +1
   return unless redoStack.length
   op = redoStack.pop()
   doOp op, false
   undoStack.push op
+historyAdvance = (delta) ->
+  range = document.getElementById 'historyRange'
+  value = parseInt range.value
+  range.value = value + delta
+  event = document.createEvent 'HTMLEvents'
+  event.initEvent 'change', false, true
+  range.dispatchEvent event
 
 dot = (obj, p) ->
   dom.create 'circle',
