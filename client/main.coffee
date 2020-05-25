@@ -10,6 +10,14 @@ boardTransform = # board translation/rotation
 historyBoard = historyRoot = historyTransform = null
 undoStack = []
 redoStack = []
+eraseDist = 2   # require movement by this many pixels before erasing swipe
+
+distanceThreshold = (p, q, t) ->
+  return false if not p or not q
+  return true if p == true or q == true
+  dx = p.clientX - q.clientX
+  dy = p.clientY - q.clientY
+  dx * dx + dy * dy >= t * t
 
 pointers = {}   # maps pointerId to tool-specific data
 tools =
@@ -75,13 +83,18 @@ tools =
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      unless h.down
-        h.down = true
-        h.deleted = []
-      if h.id?
+      return if h.down  # repeat events can happen because of erasure
+      h.down = e
+      h.deleted = []
+      if h.id?  # already have something highlighted
         h.deleted.push Objects.findOne h.id
         Meteor.call 'objectDel', h.id
         h.clear()
+      else  # see if we pressed on something
+        target = h.findGroup e
+        if target?
+          h.deleted.push Objects.findOne target.dataset.id
+          Meteor.call 'objectDel', target.dataset.id
     up: (e) ->
       h = pointers[e.pointerId]
       h?.clear()
@@ -98,7 +111,8 @@ tools =
       h = pointers[e.pointerId]
       target = h.findGroup e
       if target?
-        if h.down
+        if distanceThreshold h.down, e, eraseDist
+          h.down = true
           h.deleted.push Objects.findOne target.dataset.id
           Meteor.call 'objectDel', target.dataset.id
           h.clear()
@@ -243,6 +257,7 @@ class Highlighter
   highlight: (target) ->
     return if target == @highlighted
     return unless target.dataset.id?
+    @clear()
     @id = target.dataset.id
     @highlighted ?= dom.create 'g', class: 'highlight'
     boardRoot.appendChild @highlighted  # ensure on top
