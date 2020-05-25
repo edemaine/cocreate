@@ -8,9 +8,21 @@ boardTransform = # board translation/rotation
   x: 0
   y: 0
 historyBoard = historyRoot = historyTransform = null
+undoStack = []
+redoStack = []
 
 pointers = {}   # maps pointerId to tool-specific data
 tools =
+  undo:
+    icon: 'undo'
+    title: 'Undo the last operation you did'
+    once: ->
+      undo()
+  redo:
+    icon: 'redo'
+    title: 'Redo the last operation you undid (if no operations since)'
+    once: ->
+      redo()
   pan:
     icon: 'arrows-alt'
     hotspot: [0.5, 0.5]
@@ -41,6 +53,10 @@ tools =
         color: currentColor
       ], returnStubValue: true
     up: (e) ->
+      return unless pointers[e.pointerId]
+      undoableOp
+        type: 'new'
+        obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
@@ -57,24 +73,38 @@ tools =
     title: 'Erase strokes'
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
-      pointers[e.pointerId].down = true
-      if pointers[e.pointerId]?.id?
-        Meteor.call 'objectDel', pointers[e.pointerId].id
-        pointers[e.pointerId].clear()
+      h = pointers[e.pointerId]
+      unless h.down
+        h.down = true
+        h.deleted = []
+      if h.id?
+        h.deleted.push Objects.findOne h.id
+        Meteor.call 'objectDel', h.id
+        h.clear()
     up: (e) ->
-      pointers[e.pointerId]?.clear()
+      h = pointers[e.pointerId]
+      h?.clear()
+      if h?.deleted?.length
+        undoableOp
+          type: 'multi'
+          ops:
+            for obj in h.deleted
+              type: 'del'
+              obj: obj
       delete pointers[e.pointerId]
     move: (e) ->
       pointers[e.pointerId] ?= new Highlighter
-      target = pointers[e.pointerId].findGroup e
+      h = pointers[e.pointerId]
+      target = h.findGroup e
       if target?
-        if pointers[e.pointerId].down
+        if h.down
+          h.deleted.push Objects.findOne target.dataset.id
           Meteor.call 'objectDel', target.dataset.id
-          pointers[e.pointerId].clear()
+          h.clear()
         else
-          pointers[e.pointerId].highlight target
+          h.highlight target
       else
-        pointers[e.pointerId].clear()
+        h.clear()
   history:
     icon: 'history'
     hotspot: [0.5, 0.5]
@@ -220,6 +250,38 @@ class Highlighter
       boardRoot.removeChild @highlighted
       @highlighted = @id = null
 
+undoableOp = (op) ->
+  redoStack = []
+  undoStack.push op
+doOp = (op, reverse) ->
+  switch op.type
+    when 'multi'
+      ops = op.ops
+      ops = ops[..].reverse() if reverse
+      for sub in ops
+        doOp sub, reverse
+    when 'new', 'del'
+      if (op.type == 'new') == reverse
+        Meteor.call 'objectDel', op.obj._id
+      else
+        #obj = {}
+        #for key, value of op.obj
+        #  obj[key] = value unless key of skipKeys
+        #op.obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
+        Meteor.call 'objectNew', op.obj
+    else
+      console.error "Unknown op type #{op.type} for undo/redo"
+undo = ->
+  return unless undoStack.length
+  op = undoStack.pop()
+  doOp op, true
+  redoStack.push op
+redo = ->
+  return unless redoStack.length
+  op = redoStack.pop()
+  doOp op, false
+  undoStack.push op
+
 dot = (obj, p) ->
   dom.create 'circle',
     cx: p.x
@@ -330,6 +392,8 @@ paletteTools = ->
 
 lastTool = null
 selectTool = (tool) ->
+  if tools[tool]?.once?
+    return tools[tool].once?()
   tools[currentTool]?.stop?()
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool

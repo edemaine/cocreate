@@ -13,6 +13,9 @@ Meteor.methods
     switch obj?.type
       when 'pen'
         check obj,
+          _id: Match.Optional String
+          created: Match.Optional Date
+          updated: Match.Optional Date
           room: String
           type: 'pen'
           pts: [xywType]
@@ -22,9 +25,14 @@ Meteor.methods
     unless @isSimulation
       unless validId(obj.room) and Rooms.findOne(obj.room)?
         throw new Error "Invalid room #{obj.room} for object"
-      obj.created = obj.updated = new Date
+      if obj._id? and Objects.findOne(obj._id)?
+        throw new Error "Attempt to create duplicate object #{obj._id}"
+      now = new Date
+      obj.created ?= now
+      obj.updated ?= now
     id = Objects.insert obj
     unless @isSimulation
+      delete obj._id
       obj.id = id
       ObjectsDiff.insert obj
     id
