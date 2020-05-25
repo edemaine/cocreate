@@ -120,6 +120,19 @@ tools =
           h.highlight target
       else
         h.clear()
+  spacer: {}
+  newRoom:
+    icon: icons.stackIcons [
+      'door-open'
+      icons.modIcon 'circle',
+        fill: 'var(--palette-color)'
+        transform: "translate(300 256) scale(0.55) translate(-256 -256)"
+      icons.modIcon 'plus-circle',
+        transform: "translate(300 256) scale(0.45) translate(-256 -256)"
+    ]
+    title: 'Create a new room/board with new URL in a new browser tab/window'
+    once: ->
+      window.open '/'
   history:
     icon: 'history'
     hotspot: [0.5, 0.5]
@@ -422,13 +435,16 @@ pageChange = ->
 paletteTools = ->
   toolsDiv = document.getElementById 'tools'
   for tool, {icon, title} of tools
-    toolsDiv.appendChild dom.create 'div', null,
-      className: 'tool'
-      title: title
-      dataset: tool: tool
-      innerHTML: icons.svgIcon icon
-    ,
-      click: (e) -> selectTool e.currentTarget.dataset.tool
+    if tool.startsWith 'spacer'
+      toolsDiv.appendChild dom.create 'div', class: 'spacer'
+    else
+      toolsDiv.appendChild dom.create 'div', null,
+        className: 'tool'
+        title: title
+        dataset: tool: tool
+        innerHTML: icons.svgIcon icon
+      ,
+        click: (e) -> selectTool e.currentTarget.dataset.tool
 
 lastTool = null
 selectTool = (tool) ->
