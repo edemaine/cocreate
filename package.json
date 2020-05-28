@@ -1,6 +1,21 @@
 {
   "name": "cocreate",
-  "private": true,
+  "version": "0.0.0",
+  "description": "Cocreate Shared Whiteboard/Drawing",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edemaine/cocreate.git"
+  },
+  "author": {
+    "name": "Erik Demaine",
+    "email": "edemaine@mit.edu",
+    "url": "http://erikdemaine.org/"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/edemaine/cocreate/issues"
+  },
+  "homepage": "https://github.com/edemaine/cocreate",
   "scripts": {
     "start": "meteor run",
     "test": "meteor test --once --driver-package meteortesting:mocha",

@@ -195,6 +195,12 @@ tools =
       pointers.y = historyTransform.y + current.y - start.y
       historyRoot.setAttribute 'transform',
         "translate(#{pointers.x} #{pointers.y})"
+  github:
+    icon: 'github'
+    title: 'Github repository: source code, bug reports, feature requests'
+    once: ->
+      import('/package.json').then (json) ->
+        window.open json.homepage
 currentTool = 'pan'
 
 colors = [
