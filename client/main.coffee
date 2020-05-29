@@ -170,7 +170,7 @@ tools =
               historyRender.delete diff
               delete historyObjects[diff.id]
           #break if max != range.max or value != range.value
-      pointers.sub = Meteor.subscribe 'history', currentRoom
+      pointers.sub = subscribe 'history', currentRoom
       pointers.auto = Tracker.autorun ->
         range.max = ObjectsDiff.find(room: currentRoom).count()
         pointers.listen()
@@ -445,6 +445,24 @@ observeRender = (room) ->
     removed: (obj) ->
       render.delete obj
 
+loadingCount = 0
+loadingUpdate = (delta) ->
+  loadingCount += delta
+  loading = document.getElementById 'loading'
+  if loadingCount > 0
+    loading.classList.add 'loading'
+  else
+    loading.classList.remove 'loading'
+subscribe = (...args) ->
+  delta = 1
+  loadingUpdate delta
+  done = ->
+    loadingUpdate -delta
+    delta = 0
+  Meteor.subscribe ...args,
+    onReady: done
+    onStop: done
+
 currentRoom = null
 roomSub = null
 roomObserve = null
@@ -459,7 +477,7 @@ changeRoom = (room) ->
   currentRoom = room
   if room?
     roomObserve = observeRender room
-    roomSub = Meteor.subscribe 'room', room
+    roomSub = subscribe 'room', room
   selectTool tool
 
 pageChange = ->
@@ -582,6 +600,7 @@ resize = ->
   boardBB = board.getBoundingClientRect()
 
 Meteor.startup ->
+  document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
   board = document.getElementById 'board'
   board.appendChild boardRoot = dom.create 'g'
   historyBoard = document.getElementById 'historyBoard'

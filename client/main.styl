@@ -78,5 +78,27 @@ body.history
   .historyHide
     visibility: hidden
 
+#loading
+  position: absolute
+  display: flex
+  justify-content: center
+  align-items: center
+  width: 100%
+  height: 100%
+  visibility: hidden
+  &.loading
+    visibility: visible
+  > svg
+    width: 10%
+    height: 10%
+    animation: fa-spin 2s ease infinite
+
+// Based on keyframes from Font Awesome Free (see `lib/icons.coffee`).
+@keyframes fa-spin
+  0%
+    transform: rotate(0deg)
+  100%
+    transform: rotate(360deg)
+
 #download
   display: none
