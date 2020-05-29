@@ -139,7 +139,6 @@ tools =
     title: 'Time travel to the past (via bottom slider)'
     start: ->
       document.body.classList.add 'history'
-      historyBoard = document.getElementById 'historyBoard'
       historyTransform =
         x: 0
         y: 0
@@ -195,6 +194,35 @@ tools =
       pointers.y = historyTransform.y + current.y - start.y
       historyRoot.setAttribute 'transform',
         "translate(#{pointers.x} #{pointers.y})"
+  'download-svg':
+    icon: 'download-svg'
+    title: 'Download entire drawing as SVG'
+    once: ->
+      ## Compute bounding box, assuming spanned by <circle> elements
+      minX = minY = Infinity
+      maxX = maxY = -Infinity
+      for circle in currentBoard().querySelectorAll 'circle'
+        x = parseFloat circle.getAttribute 'cx'
+        y = parseFloat circle.getAttribute 'cy'
+        r = parseFloat circle.getAttribute 'r'
+        minX = Math.min minX, x - r
+        maxX = Math.max maxX, x + r
+        minY = Math.min minY, y - r
+        maxY = Math.max maxY, y + r
+      if minX == Infinity
+        minX = minY = maxX = maxY = 0
+      ## Create SVG header
+      svg = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <svg xmlns="#{dom.SVGNS}" viewBox="#{minX} #{minY} #{maxX - minX} #{maxY - minY}">
+        #{currentBoard().innerHTML}
+        </svg>
+      """
+      ## Download file
+      download = document.getElementById 'download'
+      download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
+      download.download = "cocreate-#{currentRoom}.svg"
+      download.click()
   github:
     icon: 'github'
     title: 'Github repository: source code, bug reports, feature requests'
@@ -202,6 +230,12 @@ tools =
       import('/package.json').then (json) ->
         window.open json.homepage
 currentTool = 'pan'
+
+currentBoard = ->
+  if currentTool == 'history'
+    historyBoard
+  else
+    board
 
 colors = [
   'black'   # Windows Journal black
