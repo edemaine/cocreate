@@ -483,7 +483,7 @@ changeRoom = (room) ->
 pageChange = ->
   if document.location.pathname == '/'
     room = Rooms.insert {}
-    history.pushState null, 'new room', "/r/#{room}"
+    history.replaceState null, 'new room', "/r/#{room}"
     pageChange()
   else if match = document.location.pathname.match /^\/r\/(\w+)$/
     changeRoom match[1]
