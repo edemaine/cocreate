@@ -482,9 +482,11 @@ changeRoom = (room) ->
 
 pageChange = ->
   if document.location.pathname == '/'
-    room = Rooms.insert {}
-    history.replaceState null, 'new room', "/r/#{room}"
-    pageChange()
+    Meteor.call 'roomNew', (error, room) ->
+      if error?
+        return console.error "Failed to create new room on server: #{error}"
+      history.replaceState null, 'new room', "/r/#{room}"
+      pageChange()
   else if match = document.location.pathname.match /^\/r\/(\w+)$/
     changeRoom match[1]
   else
