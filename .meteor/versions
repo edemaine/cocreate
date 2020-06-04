@@ -8,7 +8,6 @@ babel-runtime@1.5.0
 base64@1.0.12
 binary-heap@1.0.11
 blaze@2.3.4
-blaze-html-templates@1.1.2
 blaze-tools@1.0.10
 boilerplate-generator@1.7.0
 caching-compiler@1.2.2
@@ -31,6 +30,7 @@ ecmascript-runtime@0.7.0
 ecmascript-runtime-client@0.10.0
 ecmascript-runtime-server@0.9.0
 edemaine:accounts-ui-bootstrap-3@1.2.93
+edemaine:static-pug@0.0.0
 ejson@1.1.1
 email@1.2.3
 es5-shim@4.8.0
@@ -89,6 +89,7 @@ templating@1.3.2
 templating-compiler@1.3.3
 templating-runtime@1.3.2
 templating-tools@1.1.2
+tmeasday:check-npm-versions@0.3.2
 tracker@1.2.0
 twbs:bootstrap@3.3.6
 typescript@3.7.6
