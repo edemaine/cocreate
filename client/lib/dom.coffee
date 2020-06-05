@@ -42,3 +42,11 @@ export select = (allQuery, subQuery) ->
   if subQuery?
     document.querySelector "#{allQuery}#{subQuery}"
     .classList.add 'selected'
+
+export svgPoint = (svg, x, y, matrix = svg) ->
+  if matrix.getScreenCTM?
+    matrix = matrix.getScreenCTM().inverse()
+  pt = svg.createSVGPoint()
+  pt.x = x
+  pt.y = y
+  pt.matrixTransform matrix

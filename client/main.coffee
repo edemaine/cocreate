@@ -4,6 +4,7 @@ import * as dom from './lib/dom.coffee'
 board = null     # set to svg#board element
 boardBB = null   # client bounding box (top/left/bottom/right) of board
 boardRoot = null # root <g> element within board for transform
+boardGrid = null # first <g> element within root for grid background
 boardTransform = # board translation/rotation
   x: 0
   y: 0
@@ -49,6 +50,7 @@ tools =
       pointers.y = boardTransform.y + current.y - start.y
       boardRoot.setAttribute 'transform',
         "translate(#{pointers.x} #{pointers.y})"
+      Meteor.setTimeout (-> boardGrid.update currentGrid), 0
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
@@ -121,6 +123,11 @@ tools =
       else
         h.clear()
   spacer: {}
+  graph:
+    icon: 'border-all'
+    title: 'Toggle graph paper'
+    once: ->
+      Meteor.call 'roomGridToggle', currentRoom
   newRoom:
     icon: icons.stackIcons [
       'door-open'
@@ -445,6 +452,39 @@ observeRender = (room) ->
     removed: (obj) ->
       render.delete obj
 
+class Grid
+  constructor: (root) ->
+    @svg = root.parentNode
+    root.appendChild @grid = dom.create 'g', class: 'grid'
+    @update()
+  update: (mode) ->
+    gridSize = 37.76
+    @grid.innerHTML = ''
+    minPoint = dom.svgPoint @svg, boardBB.left, boardBB.top, @grid
+    maxPoint = dom.svgPoint @svg, boardBB.right, boardBB.bottom, @grid
+    margin = gridSize
+    switch currentGrid
+      when true
+        far = 10 * gridSize
+        range = (xy) ->
+          [Math.floor(minPoint[xy] / gridSize) .. \
+           Math.ceil maxPoint[xy] / gridSize]
+        for i in range 'x'
+          x = i * gridSize
+          @grid.appendChild dom.create 'line',
+            x1: x
+            x2: x
+            y1: minPoint.y - margin
+            y2: maxPoint.y + margin
+        for j in range 'y'
+          y = j * gridSize
+          @grid.appendChild dom.create 'line',
+            y1: y
+            y2: y
+            x1: minPoint.x - margin
+            x2: maxPoint.x + margin
+      #else
+
 loadingCount = 0
 loadingUpdate = (delta) ->
   loadingCount += delta
@@ -463,22 +503,36 @@ subscribe = (...args) ->
     onReady: done
     onStop: done
 
-currentRoom = null
+currentRoom = undefined
+currentGrid = null
 roomSub = null
 roomObserve = null
+roomAuto = null
 changeRoom = (room) ->
   return if room == currentRoom
+  roomAuto?.stop()
   roomObserve?.stop()
   roomSub?.stop()
   tool = currentTool
   selectTool null
   rendered = {}
   boardRoot.innerHTML = ''
+  boardGrid = new Grid boardRoot
   currentRoom = room
   if room?
     roomObserve = observeRender room
     roomSub = subscribe 'room', room
   selectTool tool
+  roomAuto = Tracker.autorun ->
+    roomData = Rooms.findOne currentRoom
+    graphTool = document.querySelector '.tool[data-tool="graph"]'
+    if currentGrid != roomData?.grid
+      currentGrid = roomData?.grid
+      if currentGrid
+        graphTool.classList.add 'active'
+      else
+        graphTool.classList.remove 'active'
+      boardGrid.update currentGrid
 
 pageChange = ->
   if document.location.pathname == '/'
@@ -600,6 +654,7 @@ resize = ->
     "#{colorsDiv.offsetHeight - colorsDiv.clientHeight + # scrollbar height
        paletteSize()}px"
   boardBB = board.getBoundingClientRect()
+  boardGrid?.update currentGrid
 
 Meteor.startup ->
   document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
