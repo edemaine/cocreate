@@ -57,6 +57,7 @@ tools =
     title: 'Freehand drawing'
     down: (e) ->
       return if pointers[e.pointerId]
+      return if e.button == 2 #Don't draw on right-click or pen eraser
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
         type: 'pen'
