@@ -310,6 +310,10 @@ pointerEvents = ->
     pointermove: (e) ->
       e.preventDefault()
       tools[currentTool].move? e
+    contextmenu: (e) ->
+      ## Prevent right click from bringing up context menu, as it interferes
+      ## with e.g. drawing.
+      e.preventDefault()
 
 class Highlighter
   findGroup: (e) ->
