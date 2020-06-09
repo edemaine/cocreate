@@ -1,4 +1,5 @@
 import {validId} from './id.coffee'
+import {checkRoom} from './rooms.coffee'
 
 @Objects = new Mongo.Collection 'objects'
 @ObjectsDiff = new Mongo.Collection 'objects.diff'
@@ -23,8 +24,7 @@ Meteor.methods
       else
         throw new Error "Invalid type #{obj?.type} for object"
     unless @isSimulation
-      unless validId(obj.room) and Rooms.findOne(obj.room)?
-        throw new Error "Invalid room #{obj.room} for object"
+      checkRoom obj.room
       if obj._id? and Objects.findOne(obj._id)?
         throw new Error "Attempt to create duplicate object #{obj._id}"
       now = new Date

@@ -1,4 +1,12 @@
+import {validId} from './id.coffee'
+
 @Rooms = new Mongo.Collection 'rooms'
+
+export checkRoom = (room) ->
+  if validId(room) and data = Rooms.findOne room
+    data
+  else
+    throw new Error "Invalid room ID #{room}"
 
 Meteor.methods
   roomNew: ->
@@ -10,7 +18,6 @@ Meteor.methods
 
   roomGridToggle: (room) ->
     check room, String
-    unless data = Rooms.findOne room
-      return console.error "Invalid room ID #{room}"
+    data = checkRoom room
     Rooms.update room,
       $set: grid: not data.grid
