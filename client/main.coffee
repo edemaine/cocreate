@@ -1,5 +1,6 @@
 import * as icons from './lib/icons.coffee'
 import * as dom from './lib/dom.coffee'
+import * as remotes from './lib/remotes.coffee'
 
 board = null     # set to svg#board element
 boardBB = null   # client bounding box (top/left/bottom/right) of board
@@ -12,6 +13,7 @@ historyBoard = historyRoot = historyTransform = null
 undoStack = []
 redoStack = []
 eraseDist = 2   # require movement by this many pixels before erasing swipe
+remoteIconSize = 24
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -37,7 +39,7 @@ tools =
     hotspot: [0.5, 0.5]
     title: 'Pan around the page'
     down: (e) ->
-      pointers[e.pointerId] = eventToPoint e
+      pointers[e.pointerId] = eventToRawPoint e
     up: (e) ->
       delete pointers[e.pointerId]
       if pointers.x? and pointers.y?
@@ -45,12 +47,15 @@ tools =
         boardTransform.y = pointers.y
     move: (e) ->
       return unless start = pointers[e.pointerId]
-      current = eventToPoint e
+      current = eventToRawPoint e
       pointers.x = boardTransform.x + current.x - start.x
       pointers.y = boardTransform.y + current.y - start.y
-      boardRoot.setAttribute 'transform',
-        "translate(#{pointers.x} #{pointers.y})"
-      Meteor.setTimeout (-> boardGrid.update currentGrid), 0
+      dom.attr [boardRoot, remotesRender?.root],
+        transform: "translate(#{pointers.x} #{pointers.y})"
+      ## Do updates after boardRoot's `transform` attribute gets set.
+      Meteor.setTimeout ->
+        boardGrid.update currentGrid
+      , 0
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
@@ -188,7 +193,7 @@ tools =
       pointers.sub.stop()
       pointers.auto.stop()
     down: (e) ->
-      pointers[e.pointerId] = eventToPoint e
+      pointers[e.pointerId] = eventToRawPoint e
     up: (e) ->
       delete pointers[e.pointerId]
       if pointers.x? and pointers.y?
@@ -196,7 +201,7 @@ tools =
         historyTransform.y = pointers.y
     move: (e) ->
       return unless start = pointers[e.pointerId]
-      current = eventToPoint e
+      current = eventToRawPoint e
       pointers.x = historyTransform.x + current.x - start.x
       pointers.y = historyTransform.y + current.y - start.y
       historyRoot.setAttribute 'transform',
@@ -284,8 +289,9 @@ pressureWidth = (e) -> (0.5 + e.pressure) * currentWidth
 #  (0.5 + (1.5 - 0.5) * t) * currentWidth
 
 eventToPoint = (e) ->
-  x: e.clientX - boardBB.left - boardTransform.x
-  y: e.clientY - boardBB.top - boardTransform.y
+  {x, y} = dom.svgPoint board, e.clientX, e.clientY, boardRoot
+  x: x
+  y: y
   w:
     ## iPhone (iOS 13.4, Safari 13.1) sends pressure 0 for touch events.
     ## Android Chrome (Samsung Note 8) sends pressure 1 for touch events.
@@ -294,6 +300,10 @@ eventToPoint = (e) ->
       w = pressureWidth e
     else
       w = currentWidth
+
+eventToRawPoint = (e) ->
+  x: e.clientX
+  y: e.clientY
 
 pointerEvents = ->
   dom.listen [board, historyBoard],
@@ -314,6 +324,12 @@ pointerEvents = ->
       ## Prevent right click from bringing up context menu, as it interferes
       ## with e.g. drawing.
       e.preventDefault()
+  dom.listen board,
+    pointermove: (e) ->
+      remotes.update
+        room: currentRoom
+        tool: currentTool
+        cursor: eventToPoint e
 
 class Highlighter
   findGroup: (e) ->
@@ -456,6 +472,48 @@ observeRender = (room) ->
     removed: (obj) ->
       render.delete obj
 
+class RemotesRender
+  constructor: ->
+    @elts = {}
+    @svg = document.getElementById 'remotes'
+    @svg.innerHTML = ''
+    @svg.appendChild @root = dom.create 'g'
+    @resize()
+  render: (remote, oldRemote = {}) ->
+    id = remote._id
+    return if id == remotes.id
+    unless elt = @elts[id]
+      @elts[id] = elt = dom.create 'g'
+      @root.appendChild elt
+    unless remote.tool == oldRemote.tool
+      if icon = tools[remote.tool]?.icon
+        elt.innerHTML = icons.getIcon icon
+      else
+        elt.innerHTML = ''
+        return  # don't set transform
+    hotspot = tools[remote.tool]?.hotspot ? [0,0]
+    elt.setAttribute 'transform', """
+      translate(#{remote.cursor.x + boardTransform.x} #{remote.cursor.y + boardTransform.y})
+      scale(#{remoteIconSize})
+      translate(#{-hotspot[0]} #{-hotspot[1]})
+      scale(#{1/icons.viewSize})
+    """
+  delete: (remote) ->
+    if elt = @elts[remote._id]
+      @root.removeChild elt
+      delete @elts[remote._id]
+  resize: ->
+    @svg.setAttribute 'viewBox', "0 0 #{boardBB.width} #{boardBB.height}"
+
+remotesRender = null
+observeRemotes = (room) ->
+  remotesRender = new RemotesRender
+  Remotes.find room: room
+  .observe
+    added: (remote) -> remotesRender.render remote
+    changed: (remote, oldRemote) -> remotesRender.render remote, oldRemote
+    removed: (remote) -> remotesRender.delete remote
+
 class Grid
   constructor: (root) ->
     @svg = root.parentNode
@@ -510,7 +568,8 @@ subscribe = (...args) ->
 currentRoom = undefined
 currentGrid = null
 roomSub = null
-roomObserve = null
+roomObserveObjects = null
+roomObserveRemotes = null
 roomAuto = null
 changeRoom = (room) ->
   return if room == currentRoom
@@ -524,7 +583,8 @@ changeRoom = (room) ->
   boardGrid = new Grid boardRoot
   currentRoom = room
   if room?
-    roomObserve = observeRender room
+    roomObserveObjects = observeRender room
+    roomObserveRemotes = observeRemotes room
     roomSub = subscribe 'room', room
   selectTool tool
   roomAuto = Tracker.autorun ->
@@ -659,6 +719,7 @@ resize = ->
        paletteSize()}px"
   boardBB = board.getBoundingClientRect()
   boardGrid?.update currentGrid
+  remotesRender?.resize()
 
 Meteor.startup ->
   document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'

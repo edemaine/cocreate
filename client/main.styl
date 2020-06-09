@@ -9,7 +9,7 @@ body
   font-family: 'Merriweather', serif
   touch-action: none  // Prevent mobile zooming
 
-.board
+.board, #remotes
   position: absolute
   overflow: hidden
   top: 0
@@ -19,6 +19,8 @@ body
 
   cursor: crosshair
   touch-action: none  // PointerEvents only
+#remotes
+  pointer-events: none
 
 .palette
   position: absolute

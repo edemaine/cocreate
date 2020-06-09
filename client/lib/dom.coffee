@@ -18,19 +18,25 @@ export create = (tag, attrs, props, events, children) ->
   elt
 
 export attr = (elt, attrs) ->
-  for key, value of attrs when value?
-    elt.setAttribute key, value
+  if Array.isArray elt
+    attr sub, attrs for sub in elt when sub?
+  else
+    for key, value of attrs when value?
+      elt.setAttribute key, value
 
 export prop = (elt, props) ->
-  for key, value of props when value?
-    if typeof value == 'object'
-      prop elt[key], value
-    else
-      elt[key] = value
+  if Array.isArray elt
+    prop sub, props for sub in elt when sub?
+  else
+    for key, value of props when value?
+      if typeof value == 'object'
+        prop elt[key], value
+      else
+        elt[key] = value
 
 export listen = (elt, events, now) ->
   if Array.isArray elt
-    listen sub, events, now for sub in elt
+    listen sub, events, now for sub in elt when sub?
   else
     for key, value of events when value?
       elt.addEventListener key, value
