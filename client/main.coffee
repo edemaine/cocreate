@@ -15,6 +15,7 @@ undoStack = []
 redoStack = []
 eraseDist = 2   # require movement by this many pixels before erasing swipe
 remoteIconSize = 24
+remoteIconOutside = 0.2  # fraction to render icons outside view
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -500,45 +501,49 @@ class RemotesRender
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
+    minX = (hotspot[0] - remoteIconOutside) * remoteIconSize
+    minY = (hotspot[1] - remoteIconOutside) * remoteIconSize
+    maxX = boardBB.width - (1 - hotspot[0] - remoteIconOutside) * remoteIconSize
+    maxY = boardBB.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
     do @transforms[id] = ->
       x = remote.cursor.x + boardTransform.x
       y = remote.cursor.y + boardTransform.y
-      unless goodX = (0 <= x <= boardBB.width) and
-             goodY = (0 <= y <= boardBB.height)
+      unless goodX = (minX <= x <= maxX) and
+             goodY = (minY <= y <= maxY)
         x1 = boardBB.width / 2
         y1 = boardBB.height / 2
         x2 = x
         y2 = y
         unless goodX
-          if x < 0
-            x3 = 0
-          else if x > boardBB.width
-            x3 = boardBB.width
+          if x < minX
+            x3 = minX
+          else if x > maxX
+            x3 = maxX
           ## https://mathworld.wolfram.com/Two-PointForm.html
           y3 = y1 + (y2 - y1) / (x2 - x1) * (x3 - x1)
         unless goodY
-          if y < 0
-            y4 = 0
-          else if y > boardBB.height
-            y4 = boardBB.height
+          if y < minY
+            y4 = minY
+          else if y > maxY
+            y4 = maxY
           x4 = x1 + (x2 - x1) / (y2 - y1) * (y4 - y1)
-        if goodX or 0 <= x4 <= boardBB.width
+        if goodX or minX <= x4 <= maxX
           x = x4
           y = y4
-        else if goodY or 0 <= y3 <= boardBB.height
+        else if goodY or minY <= y3 <= maxY
           x = x3
           y = y3
         else
           x = x3
           y = y3
-          if x < 0
-            x = 0
-          else if x > boardBB.width
-            x = boardBB.width
-          if y < 0
-            y = 0
-          else if y > boardBB.height
-            y = boardBB.height
+          if x < minX
+            x = minX
+          else if x > maxX
+            x = maxX
+          if y < minY
+            y = minY
+          else if y > maxY
+            y = maxY
       elt.setAttribute 'transform', """
         translate(#{x} #{y})
         scale(#{remoteIconSize})
