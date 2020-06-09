@@ -9,6 +9,12 @@ xywType =
   y: Number
   w: Number
 
+export checkObject = (id) ->
+  if validId(id) and obj = Objects.findOne id
+    obj
+  else
+    throw new Error "Invalid object ID #{id}"
+
 Meteor.methods
   objectNew: (obj) ->
     switch obj?.type
@@ -42,8 +48,7 @@ Meteor.methods
       pts: xywType
     id = diff.id
     unless @isSimulation
-      unless validId(id) and (obj = Objects.findOne(id))?
-        throw new Error "Invalid object ID #{id} for mod"
+      obj = checkObject id
       diff.room = obj.room
       diff.type = 'push'
       diff.updated = new Date
@@ -58,8 +63,7 @@ Meteor.methods
   objectDel: (id) ->
     check id, String
     unless @isSimulation
-      unless validId(id) and (obj = Objects.findOne(id))?
-        throw new Error "Invalid object ID #{id} for deletion"
+      obj = checkObject id
       ObjectsDiff.insert
         id: id
         room: obj.room
