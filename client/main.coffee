@@ -41,18 +41,17 @@ tools =
     title: 'Pan around the page'
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
+      pointers[e.pointerId].transform = Object.assign {}, boardTransform
     up: (e) ->
       delete pointers[e.pointerId]
-      if pointers.x? and pointers.y?
-        boardTransform.x = pointers.x
-        boardTransform.y = pointers.y
     move: (e) ->
       return unless start = pointers[e.pointerId]
       current = eventToRawPoint e
-      pointers.x = boardTransform.x + current.x - start.x
-      pointers.y = boardTransform.y + current.y - start.y
-      dom.attr [boardRoot, remotesRender?.root],
-        transform: "translate(#{pointers.x} #{pointers.y})"
+      boardTransform.x = start.transform.x + current.x - start.x
+      boardTransform.y = start.transform.y + current.y - start.y
+      boardRoot.setAttribute 'transform',
+        "translate(#{boardTransform.x} #{boardTransform.y})"
+      remotesRender?.transform()
       ## Do updates after boardRoot's `transform` attribute gets set.
       Meteor.setTimeout ->
         boardGrid.update currentGrid
@@ -195,18 +194,16 @@ tools =
       pointers.auto.stop()
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
+      pointers[e.pointerId].transform = Object.assign {}, boardTransform
     up: (e) ->
       delete pointers[e.pointerId]
-      if pointers.x? and pointers.y?
-        historyTransform.x = pointers.x
-        historyTransform.y = pointers.y
     move: (e) ->
       return unless start = pointers[e.pointerId]
       current = eventToRawPoint e
-      pointers.x = historyTransform.x + current.x - start.x
-      pointers.y = historyTransform.y + current.y - start.y
+      historyTransform.x = start.transform.x + current.x - start.x
+      historyTransform.y = start.transform.y + current.y - start.y
       historyRoot.setAttribute 'transform',
-        "translate(#{pointers.x} #{pointers.y})"
+        "translate(#{historyTransform.x} #{historyTransform.y})"
   'download-svg':
     icon: 'download-svg'
     title: 'Download entire drawing as SVG'
@@ -478,6 +475,7 @@ class RemotesRender
   constructor: ->
     @elts = {}
     @updated = {}
+    @transforms = {}
     @svg = document.getElementById 'remotes'
     @svg.innerHTML = ''
     @svg.appendChild @root = dom.create 'g'
@@ -502,18 +500,63 @@ class RemotesRender
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
-    elt.setAttribute 'transform', """
-      translate(#{remote.cursor.x + boardTransform.x} #{remote.cursor.y + boardTransform.y})
-      scale(#{remoteIconSize})
-      translate(#{-hotspot[0]} #{-hotspot[1]})
-      scale(#{1/icons.viewSize})
-    """
+    do @transforms[id] = ->
+      x = remote.cursor.x + boardTransform.x
+      y = remote.cursor.y + boardTransform.y
+      unless goodX = (0 <= x <= boardBB.width) and
+             goodY = (0 <= y <= boardBB.height)
+        x1 = boardBB.width / 2
+        y1 = boardBB.height / 2
+        x2 = x
+        y2 = y
+        unless goodX
+          if x < 0
+            x3 = 0
+          else if x > boardBB.width
+            x3 = boardBB.width
+          ## https://mathworld.wolfram.com/Two-PointForm.html
+          y3 = y1 + (y2 - y1) / (x2 - x1) * (x3 - x1)
+        unless goodY
+          if y < 0
+            y4 = 0
+          else if y > boardBB.height
+            y4 = boardBB.height
+          x4 = x1 + (x2 - x1) / (y2 - y1) * (y4 - y1)
+        if goodX or 0 <= x4 <= boardBB.width
+          x = x4
+          y = y4
+        else if goodY or 0 <= y3 <= boardBB.height
+          x = x3
+          y = y3
+        else
+          x = x3
+          y = y3
+          if x < 0
+            x = 0
+          else if x > boardBB.width
+            x = boardBB.width
+          if y < 0
+            y = 0
+          else if y > boardBB.height
+            y = boardBB.height
+      elt.setAttribute 'transform', """
+        translate(#{x} #{y})
+        scale(#{remoteIconSize})
+        translate(#{-hotspot[0]} #{-hotspot[1]})
+        scale(#{1/icons.viewSize})
+      """
   delete: (remote) ->
-    if elt = @elts[remote._id]
+    id = remote._id ? remote
+    if elt = @elts[id]
       @root.removeChild elt
-      delete @elts[remote._id]
+      delete @elts[id]
+      delete @transforms[id]
   resize: ->
     @svg.setAttribute 'viewBox', "0 0 #{boardBB.width} #{boardBB.height}"
+    @transform()
+  transform: ->
+    for id, transform of @transforms
+      transform()
   timer: (elt, id) ->
     now = timesync.remoteNow()
     for id, elt of @elts
