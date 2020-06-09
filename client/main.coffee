@@ -128,9 +128,9 @@ tools =
       else
         h.clear()
   spacer: {}
-  graph:
-    icon: 'border-all'
-    title: 'Toggle graph paper'
+  grid:
+    icon: 'grid'
+    title: 'Toggle grid/graph paper'
     once: ->
       Meteor.call 'roomGridToggle', currentRoom
   newRoom:
@@ -649,13 +649,13 @@ changeRoom = (room) ->
   selectTool tool
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
-    graphTool = document.querySelector '.tool[data-tool="graph"]'
+    gridTool = document.querySelector '.tool[data-tool="grid"]'
     if currentGrid != roomData?.grid
       currentGrid = roomData?.grid
       if currentGrid
-        graphTool.classList.add 'active'
+        gridTool.classList.add 'active'
       else
-        graphTool.classList.remove 'active'
+        gridTool.classList.remove 'active'
       boardGrid.update currentGrid
 
 pageChange = ->
