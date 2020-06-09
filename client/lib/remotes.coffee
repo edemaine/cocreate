@@ -4,6 +4,8 @@ Client support library for remotes defined in /lib/remotes.coffee
 
 import {Random} from 'meteor/random'
 
+export {fade} from '../../lib/remotes.coffee'
+
 export id = Random.id()
 
 ###

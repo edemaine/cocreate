@@ -1,6 +1,7 @@
 import * as icons from './lib/icons.coffee'
 import * as dom from './lib/dom.coffee'
 import * as remotes from './lib/remotes.coffee'
+import * as timesync from './lib/timesync.coffee'
 
 board = null     # set to svg#board element
 boardBB = null   # client bounding box (top/left/bottom/right) of board
@@ -476,13 +477,17 @@ observeRender = (room) ->
 class RemotesRender
   constructor: ->
     @elts = {}
+    @updated = {}
     @svg = document.getElementById 'remotes'
     @svg.innerHTML = ''
     @svg.appendChild @root = dom.create 'g'
     @resize()
   render: (remote, oldRemote = {}) ->
     id = remote._id
-    return if id == remotes.id
+    return if id == remotes.id  # don't show own cursor
+    @updated[id] = remote.updated
+    ## Omit this in case remoteNow() is inaccurate at startup:
+    #return if (timesync.remoteNow() - @updated[id]) / 1000 > remotes.fade
     unless elt = @elts[id]
       @elts[id] = elt = dom.create 'g'
       @root.appendChild elt
@@ -493,7 +498,9 @@ class RemotesRender
         elt.innerHTML = icons.getIcon icon
       else
         elt.innerHTML = ''
-        return  # don't set transform
+        return  # don't set transform or opacity
+    elt.style.opacity = 1 -
+      (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
     elt.setAttribute 'transform', """
       translate(#{remote.cursor.x + boardTransform.x} #{remote.cursor.y + boardTransform.y})
@@ -507,6 +514,10 @@ class RemotesRender
       delete @elts[remote._id]
   resize: ->
     @svg.setAttribute 'viewBox', "0 0 #{boardBB.width} #{boardBB.height}"
+  timer: (elt, id) ->
+    now = timesync.remoteNow()
+    for id, elt of @elts
+      elt.style.opacity = 1 - (now - @updated[id]) / 1000 / remotes.fade
 
 remotesRender = null
 observeRemotes = (room) ->
@@ -516,6 +527,9 @@ observeRemotes = (room) ->
     added: (remote) -> remotesRender.render remote
     changed: (remote, oldRemote) -> remotesRender.render remote, oldRemote
     removed: (remote) -> remotesRender.delete remote
+setInterval ->
+  remotesRender.timer()
+, 1000
 
 class Grid
   constructor: (root) ->

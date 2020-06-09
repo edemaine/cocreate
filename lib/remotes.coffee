@@ -5,6 +5,7 @@ They track the location of users' cursors/tools/views on board(s).
 
 import {checkId} from './id.coffee'
 import {checkRoom} from './rooms.coffee'
+export fade = 60
 
 @Remotes = new Mongo.Collection 'remotes'
 
