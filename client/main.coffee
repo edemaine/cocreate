@@ -660,7 +660,9 @@ changeRoom = (room) ->
 
 pageChange = ->
   if document.location.pathname == '/'
-    Meteor.call 'roomNew', (error, room) ->
+    Meteor.call 'roomNew',
+      grid: true
+    , (error, room) ->
       if error?
         return console.error "Failed to create new room on server: #{error}"
       history.replaceState null, 'new room', "/r/#{room}"

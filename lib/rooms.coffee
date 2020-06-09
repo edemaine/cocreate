@@ -9,8 +9,9 @@ export checkRoom = (room) ->
     throw new Error "Invalid room ID #{room}"
 
 Meteor.methods
-  roomNew: ->
-    room = {}
+  roomNew: (room = {}) ->
+    check room,
+      grid: Match.Optional Boolean
     unless @isSimulation
       now = new Date
       room.created = now
