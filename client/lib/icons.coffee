@@ -2,6 +2,9 @@
 The `icons` content below is edited SVG from Font Awesome Free which is
 licensed under CC BY 4.0.  See https://fontawesome.com/ and
 https://creativecommons.org/licenses/by/4.0/, respectively.
+
+When icons are modified significantly, their source SVG is in the
+subdirectory `.iconsrc`.
 ###
 
 icons =
