@@ -329,6 +329,7 @@ pointerEvents = ->
       remotes.update
         room: currentRoom
         tool: currentTool
+        color: currentColor
         cursor: eventToPoint e
 
 class Highlighter
@@ -485,8 +486,10 @@ class RemotesRender
     unless elt = @elts[id]
       @elts[id] = elt = dom.create 'g'
       @root.appendChild elt
-    unless remote.tool == oldRemote.tool
+    unless remote.tool == oldRemote.tool and remote.color == oldRemote.color
       if icon = tools[remote.tool]?.icon
+        if remote.tool == 'pen'
+          icon = penIcon remote.color ? colors[0]
         elt.innerHTML = icons.getIcon icon
       else
         elt.innerHTML = ''
@@ -684,6 +687,14 @@ paletteWidths = ->
       ]
     ]
 
+penIcon = (color) ->
+  icons.modIcon 'pencil-alt',
+    fill: color
+    stroke: 'black'
+    'stroke-width': '15'
+    'stroke-linecap': 'round'
+    'stroke-linejoin': 'round'
+
 selectColor = (color, keepTool) ->
   currentColor = color if color?
   selectTool 'pen' unless currentTool == 'pen' or keepTool
@@ -691,13 +702,7 @@ selectColor = (color, keepTool) ->
   document.documentElement.style.setProperty '--currentColor', currentColor
   ## Set cursor to colored pencil
   if currentTool == 'pen'
-    icons.iconCursor board, (icons.modIcon 'pencil-alt',
-      fill: currentColor
-      stroke: 'black'
-      'stroke-width': '15'
-      'stroke-linecap': 'round'
-      'stroke-linejoin': 'round'
-    ), ...tools[currentTool].hotspot
+    icons.iconCursor board, penIcon(currentColor), ...tools[currentTool].hotspot
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?

@@ -14,6 +14,7 @@ Meteor.methods
       _id: String
       room: String
       tool: String
+      color: String
       cursor:
         x: Number
         y: Number
