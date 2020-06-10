@@ -2,9 +2,10 @@ export SVGNS = 'http://www.w3.org/2000/svg'
 
 svgTags =
   svg: true
-  line: true
-  circle: true
   g: true
+  line: true
+  polyline: true
+  circle: true
 
 export create = (tag, attrs, props, events, children) ->
   if tag of svgTags

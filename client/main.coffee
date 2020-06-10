@@ -60,13 +60,13 @@ tools =
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
-    title: 'Freehand drawing'
+    title: 'Freehand drawing (with pen pressure adjusting width)'
     down: (e) ->
       return if pointers[e.pointerId]
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
         type: 'pen'
-        pts: [eventToPoint e]
+        pts: [eventToPointW e]
         color: currentColor
       ], returnStubValue: true
     up: (e) ->
@@ -83,7 +83,32 @@ tools =
       #else
       Meteor.call 'objectPush',
         id: pointers[e.pointerId]
-        pts: eventToPoint e
+        pts: eventToPointW e
+  segment:
+    icon: 'segment'
+    hotspot: [0.0625, 0.9375]
+    title: 'Draw straight line segments between endpoints (drag)'
+    down: (e) ->
+      return if pointers[e.pointerId]
+      pt = eventToPoint e
+      pointers[e.pointerId] = Meteor.apply 'objectNew', [
+        room: currentRoom
+        type: 'poly'
+        pts: [pt, pt]
+        color: currentColor
+        width: currentWidth
+      ], returnStubValue: true
+    up: (e) ->
+      return unless pointers[e.pointerId]
+      undoableOp
+        type: 'new'
+        obj: Objects.findOne pointers[e.pointerId]
+      delete pointers[e.pointerId]
+    move: (e) ->
+      return unless pointers[e.pointerId]
+      Meteor.call 'objectEdit',
+        id: pointers[e.pointerId]
+        pts: 1: eventToPoint e
   eraser:
     icon: 'eraser'
     hotspot: [0.35, 1]
@@ -289,9 +314,11 @@ pressureWidth = (e) -> (0.5 + e.pressure) * currentWidth
 
 eventToPoint = (e) ->
   {x, y} = dom.svgPoint board, e.clientX, e.clientY, boardRoot
-  x: x
-  y: y
-  w:
+  {x, y}
+
+eventToPointW = (e) ->
+  pt = eventToPoint e
+  pt.w =
     ## iPhone (iOS 13.4, Safari 13.1) sends pressure 0 for touch events.
     ## Android Chrome (Samsung Note 8) sends pressure 1 for touch events.
     ## Just ignore pressure on touch and mouse events; could they make sense?
@@ -299,6 +326,7 @@ eventToPoint = (e) ->
       w = pressureWidth e
     else
       w = currentWidth
+  pt
 
 eventToRawPoint = (e) ->
   x: e.clientX
@@ -329,7 +357,7 @@ pointerEvents = ->
         room: currentRoom
         tool: currentTool
         color: currentColor
-        cursor: eventToPoint e
+        cursor: eventToPointW e
 
 class Highlighter
   findGroup: (e) ->
@@ -432,13 +460,31 @@ class Render
   renderPen: (obj, start = 0) ->
     id = @id obj
     unless (g = @dom[id])?
-      @dom[id] = g = dom.create 'g', null, dataset: id: id
-      @root.appendChild @dom[id]
+      @root.appendChild @dom[id] = g =
+        dom.create 'g', null, dataset: id: id
     for i in [start...obj.pts.length]
       pt = obj.pts[i]
       g.appendChild edge obj, obj.pts[i-1], pt if i > 0
       g.appendChild dot obj, pt
     g
+  renderPoly: (obj) ->
+    id = @id obj
+    unless (poly = @dom[id])?
+      @root.appendChild @dom[id] = poly =
+        dom.create 'polyline', null, dataset: id: id
+    dom.attr poly,
+      points: ("#{x},#{y}" for {x, y} in obj.pts).join ' '
+      stroke: obj.color
+      'stroke-width': obj.width
+      'stroke-linecap': 'round'
+      'stroke-linejoin': 'round'
+      fill: 'none'
+  render: (obj, ...args) ->
+    switch obj.type
+      when 'pen'
+        @renderPen obj, ...args
+      when 'poly'
+        @renderPoly obj, ...args
   delete: (obj) ->
     id = @id obj
     unless @dom[id]?
@@ -465,10 +511,10 @@ observeRender = (room) ->
     # Currently assuming all objects are of type 'pen'
     added: (obj) ->
       render.shouldNotExist obj
-      render.renderPen obj
+      render.render obj
     changed: (obj, old) ->
       # Assumes that pen changes only append to `pts` field
-      render.renderPen obj, old.pts.length
+      render.render obj, old.pts.length
     removed: (obj) ->
       render.delete obj
 
