@@ -1,6 +1,6 @@
 export SVGNS = 'http://www.w3.org/2000/svg'
 
-svgTags =
+export svgTags =
   svg: true
   g: true
   line: true

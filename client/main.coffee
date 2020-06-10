@@ -411,9 +411,9 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     target = document.elementFromPoint e.clientX, e.clientY
-    while target.tagName.toLowerCase() in ['circle', 'line']
+    while (tag = target.tagName.toLowerCase()) in ['circle', 'line']
       target = target.parentNode
-    return unless target.tagName.toLowerCase() == 'g'
+    return unless tag in ['g', 'polyline', 'rect']
     return unless target.dataset.id?
     target
   highlight: (target) ->
@@ -424,7 +424,8 @@ class Highlighter
     @highlighted ?= dom.create 'g', class: 'highlight'
     boardRoot.appendChild @highlighted  # ensure on top
     doubler = (match, left, number, right) -> "#{left}#{2 * number}#{right}"
-    @highlighted.innerHTML = target.innerHTML
+    @highlighted.innerHTML = target.outerHTML
+    #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
   clear: ->
