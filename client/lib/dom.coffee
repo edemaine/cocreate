@@ -5,6 +5,7 @@ svgTags =
   g: true
   line: true
   polyline: true
+  rect: true
   circle: true
 
 export create = (tag, attrs, props, events, children) ->

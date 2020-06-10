@@ -40,6 +40,18 @@ Meteor.methods
           pts: [xyType]
           color: String
           width: Number
+      when 'rect'
+        check obj,
+          _id: Match.Optional String
+          created: Match.Optional Date
+          updated: Match.Optional Date
+          room: String
+          type: 'rect'
+          pts: Match.Where (pts) ->
+            check pts, [xyType]
+            pts.length == 2
+          color: String
+          width: Number
       else
         throw new Error "Invalid type #{obj?.type} for object"
     unless @isSimulation

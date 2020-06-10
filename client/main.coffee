@@ -112,6 +112,33 @@ tools =
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
+  rect:
+    icon: 'rect'
+    hotspot: [0.05664, 0.841796875]
+    title: 'Draw axis-aligned rectangles between endpoints (drag)'
+    start: ->
+      pointers.throttle = throttle.method 'objectEdit'
+    down: (e) ->
+      return if pointers[e.pointerId]
+      pt = eventToPoint e
+      pointers[e.pointerId] = Meteor.apply 'objectNew', [
+        room: currentRoom
+        type: 'rect'
+        pts: [pt, pt]
+        color: currentColor
+        width: currentWidth
+      ], returnStubValue: true
+    up: (e) ->
+      return unless pointers[e.pointerId]
+      undoableOp
+        type: 'new'
+        obj: Objects.findOne pointers[e.pointerId]
+      delete pointers[e.pointerId]
+    move: (e) ->
+      return unless pointers[e.pointerId]
+      pointers.throttle
+        id: pointers[e.pointerId]
+        pts: 1: eventToPoint e
   eraser:
     icon: 'eraser'
     hotspot: [0.35, 1]
@@ -199,7 +226,7 @@ tools =
           count++
           break if count > target
           switch diff.type
-            when 'pen', 'poly'
+            when 'pen', 'poly', 'rect'
               obj = diff
               historyObjects[obj.id] = obj
               historyRender.render obj
@@ -492,12 +519,32 @@ class Render
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
       fill: 'none'
+  renderRect: (obj) ->
+    id = @id obj
+    unless (poly = @dom[id])?
+      @root.appendChild @dom[id] = poly =
+        dom.create 'rect', null, dataset: id: id
+    xMin = Math.min obj.pts[0].x, obj.pts[1].x
+    xMax = Math.max obj.pts[0].x, obj.pts[1].x
+    yMin = Math.min obj.pts[0].y, obj.pts[1].y
+    yMax = Math.max obj.pts[0].y, obj.pts[1].y
+    dom.attr poly,
+      x: xMin
+      y: yMin
+      width: xMax - xMin
+      height: yMax - yMin
+      stroke: obj.color
+      'stroke-width': obj.width
+      'stroke-linejoin': 'round'
+      fill: 'none'
   render: (obj, ...args) ->
     switch obj.type
       when 'pen'
         @renderPen obj, ...args
       when 'poly'
         @renderPoly obj, ...args
+      when 'rect'
+        @renderRect obj, ...args
   delete: (obj) ->
     id = @id obj
     unless @dom[id]?
