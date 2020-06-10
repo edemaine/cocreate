@@ -306,6 +306,11 @@ tools =
       import('/package.json').then (json) ->
         window.open json.homepage
 currentTool = 'pan'
+drawingTools =
+  pen: true
+  segment: true
+  rect: true
+lastDrawingTool = 'pen'
 
 currentBoard = ->
   if currentTool == 'history'
@@ -808,8 +813,7 @@ selectTool = (tool) ->
   currentTool = tool if tool?  # tool is null if initializing
   dom.select '.tool', "[data-tool='#{currentTool}']"
   if currentTool == 'pen'
-    selectColor()
-    selectWidth()
+    selectColor() # set color-specific pen icon
   else if currentTool == 'history'
     icons.iconCursor document.getElementById('historyRange'),
       tools['history'].icon, ...tools['history'].hotspot
@@ -823,6 +827,10 @@ selectTool = (tool) ->
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?()
+  lastDrawingTool = currentTool if currentTool of drawingTools
+selectDrawingTool = ->
+  unless currentTool of drawingTools
+    selectTool lastDrawingTool
 
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
@@ -867,7 +875,7 @@ penIcon = (color) ->
 
 selectColor = (color, keepTool) ->
   currentColor = color if color?
-  selectTool 'pen' unless currentTool == 'pen' or keepTool
+  selectDrawingTool() unless keepTool
   dom.select '.color', "[data-color='#{currentColor}']"
   document.documentElement.style.setProperty '--currentColor', currentColor
   ## Set cursor to colored pencil
@@ -876,7 +884,7 @@ selectColor = (color, keepTool) ->
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
-  selectTool 'pen' unless currentTool == 'pen' or keepTool
+  selectDrawingTool() unless keepTool
   dom.select '.width', "[data-width='#{currentWidth}']"
 
 paletteSize = ->
