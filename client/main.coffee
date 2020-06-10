@@ -1,6 +1,7 @@
 import * as icons from './lib/icons.coffee'
 import * as dom from './lib/dom.coffee'
 import * as remotes from './lib/remotes.coffee'
+import * as throttle from './lib/throttle.coffee'
 import * as timesync from './lib/timesync.coffee'
 
 board = null     # set to svg#board element
@@ -88,6 +89,8 @@ tools =
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
     title: 'Draw straight line segments between endpoints (drag)'
+    start: ->
+      pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
       pt = eventToPoint e
@@ -106,7 +109,7 @@ tools =
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      Meteor.call 'objectEdit',
+      pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
   eraser:
