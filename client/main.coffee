@@ -226,7 +226,7 @@ tools =
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
         <svg xmlns="#{dom.SVGNS}" viewBox="#{minX} #{minY} #{maxX - minX} #{maxY - minY}">
-        #{currentBoard().innerHTML}
+        #{currentBoard().innerHTML.replace /^\s*<g transform[^<>]*>/, /<g>/}
         </svg>
       """
       ## Download file
