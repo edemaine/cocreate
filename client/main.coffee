@@ -193,20 +193,30 @@ tools =
           "translate(#{historyTransform.x} #{historyTransform.y})"
         historyRender = new Render historyRoot
         max = range.max
-        value = range.value
+        target = range.value
         count = 0
         for diff from ObjectsDiff.find room: currentRoom
           count++
-          break if count > value
+          break if count > target
           switch diff.type
-            when 'pen'
+            when 'pen', 'poly'
               obj = diff
               historyObjects[obj.id] = obj
-              historyRender.renderPen obj
+              historyRender.render obj
             when 'push'
               obj = historyObjects[diff.id]
               obj.pts.push diff.pts
-              historyRender.renderPen obj, obj.pts.length - 1
+              historyRender.render obj, obj.pts.length - 1
+            when 'edit'
+              obj = historyObjects[diff.id]
+              for key, value of diff
+                switch key
+                  when 'color', 'width'
+                    obj[key] = value
+                  when 'pts'
+                    for subkey, subvalue of value
+                      obj[key][subkey] = subvalue
+              historyRender.render obj
             when 'del'
               historyRender.delete diff
               delete historyObjects[diff.id]
