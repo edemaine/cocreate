@@ -400,6 +400,7 @@ pointerEvents = ->
       e.preventDefault()
   dom.listen board,
     pointermove: (e) ->
+      return unless currentRoom
       remotes.update
         room: currentRoom
         tool: currentTool
