@@ -56,7 +56,7 @@ tools =
       remotesRender?.transform()
       ## Do updates after boardRoot's `transform` attribute gets set.
       Meteor.setTimeout ->
-        boardGrid.update currentGrid
+        boardGrid.update()
       , 0
   pen:
     icon: 'pencil-alt'
@@ -276,26 +276,58 @@ tools =
     icon: 'download-svg'
     title: 'Download entire drawing as SVG'
     once: ->
-      ## Compute bounding box, assuming spanned by <circle> elements
-      minX = minY = Infinity
-      maxX = maxY = -Infinity
+      ## Compute bounding box, assuming spanned by <circle> (from pen groups),
+      ## <polyline>, and <rect> elements
+      min =
+        x: Infinity
+        y: Infinity
+      max =
+        x: -Infinity
+        y: -Infinity
       for circle in currentBoard().querySelectorAll 'circle'
         x = parseFloat circle.getAttribute 'cx'
         y = parseFloat circle.getAttribute 'cy'
         r = parseFloat circle.getAttribute 'r'
-        minX = Math.min minX, x - r
-        maxX = Math.max maxX, x + r
-        minY = Math.min minY, y - r
-        maxY = Math.max maxY, y + r
-      if minX == Infinity
-        minX = minY = maxX = maxY = 0
+        min.x = Math.min min.x, x - r
+        max.x = Math.max max.x, x + r
+        min.y = Math.min min.y, y - r
+        max.y = Math.max max.y, y + r
+      for poly in currentBoard().querySelectorAll 'polyline'
+        stroke = (parseFloat poly.getAttribute('stroke-width') ? 0) / 2
+        for point in poly.getAttribute('points').split ' '
+          match = point.match /^([\-\d.]+),([\-\d.]+)$/
+          x = parseFloat match[1]
+          y = parseFloat match[2]
+          min.x = Math.min min.x, x - stroke
+          max.x = Math.max max.x, x + stroke
+          min.y = Math.min min.y, y - stroke
+          max.y = Math.max max.y, y + stroke
+      for rect in currentBoard().querySelectorAll 'rect'
+        x = parseFloat rect.getAttribute 'x'
+        y = parseFloat rect.getAttribute 'y'
+        width = parseFloat rect.getAttribute 'width'
+        height = parseFloat rect.getAttribute 'height'
+        stroke = (parseFloat rect.getAttribute('stroke-width') ? 0) / 2
+        min.x = Math.min min.x, x - stroke
+        max.x = Math.max max.x, x + width + stroke
+        min.y = Math.min min.y, y - stroke
+        max.y = Math.max max.y, y + height + stroke
+      if min.x == Infinity
+        min.x = min.y = max.x = max.y = 0
+      ## Temporarily make grid space entire drawing
+      boardGrid.update currentGrid, {min, max}
       ## Create SVG header
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
-        <svg xmlns="#{dom.SVGNS}" viewBox="#{minX} #{minY} #{maxX - minX} #{maxY - minY}">
-        #{currentBoard().innerHTML.replace /^\s*<g transform[^<>]*>/, /<g>/}
+        <svg xmlns="#{dom.SVGNS}" viewBox="#{min.x} #{min.y} #{max.x - min.x} #{max.y - min.y}">
+        <style>
+        .grid { stroke-width: 0.96; stroke: #c4e3f4 }
+        </style>
+        #{currentBoard().innerHTML.replace /^\s*<g transform[^<>]*>/, '<g>'}
         </svg>
       """
+      ## Reset grid
+      boardGrid.update()
       ## Download file
       download = document.getElementById 'download'
       download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
@@ -708,32 +740,33 @@ class Grid
     @svg = root.parentNode
     root.appendChild @grid = dom.create 'g', class: 'grid'
     @update()
-  update: (mode) ->
+  update: (mode = currentGrid, bounds) ->
     gridSize = 37.76
     @grid.innerHTML = ''
-    minPoint = dom.svgPoint @svg, boardBB.left, boardBB.top, @grid
-    maxPoint = dom.svgPoint @svg, boardBB.right, boardBB.bottom, @grid
+    bounds ?=
+      min: dom.svgPoint @svg, boardBB.left, boardBB.top, @grid
+      max: dom.svgPoint @svg, boardBB.right, boardBB.bottom, @grid
     margin = gridSize
-    switch currentGrid
+    switch mode
       when true
         far = 10 * gridSize
         range = (xy) ->
-          [Math.floor(minPoint[xy] / gridSize) .. \
-           Math.ceil maxPoint[xy] / gridSize]
+          [Math.floor(bounds.min[xy] / gridSize) .. \
+           Math.ceil bounds.max[xy] / gridSize]
         for i in range 'x'
           x = i * gridSize
           @grid.appendChild dom.create 'line',
             x1: x
             x2: x
-            y1: minPoint.y - margin
-            y2: maxPoint.y + margin
+            y1: bounds.min.y - margin
+            y2: bounds.max.y + margin
         for j in range 'y'
           y = j * gridSize
           @grid.appendChild dom.create 'line',
             y1: y
             y2: y
-            x1: minPoint.x - margin
-            x2: maxPoint.x + margin
+            x1: bounds.min.x - margin
+            x2: bounds.max.x + margin
       #else
 
 loadingCount = 0
@@ -785,7 +818,7 @@ changeRoom = (room) ->
         gridTool.classList.add 'active'
       else
         gridTool.classList.remove 'active'
-      boardGrid.update currentGrid
+      boardGrid.update()
 
 pageChange = ->
   if document.location.pathname == '/'
@@ -914,7 +947,7 @@ resize = ->
     "#{colorsDiv.offsetHeight - colorsDiv.clientHeight + # scrollbar height
        paletteSize()}px"
   boardBB = board.getBoundingClientRect()
-  boardGrid?.update currentGrid
+  boardGrid?.update()
   remotesRender?.resize()
 
 Meteor.startup ->
