@@ -493,7 +493,8 @@ edge = (obj, p1, p2) ->
     y2: p2.y
     stroke: obj.color
     'stroke-width': (p1.w + p2.w) / 2
-    # Dots mode:
+    #'stroke-linecap': 'round' # alternative to dot
+    ## Dots mode:
     #'stroke-width': 1
 
 class Render
@@ -512,10 +513,13 @@ class Render
       frag = document.createDocumentFragment()
     else
       frag = dom.create 'g', null, dataset: id: id
+    if start == 0
+      frag.appendChild dot obj, obj.pts[0]
+      start = 1
     for i in [start...obj.pts.length]
       pt = obj.pts[i]
-      frag.appendChild edge obj, obj.pts[i-1], pt if i > 0
-      frag.appendChild dot obj, pt
+      frag.appendChild edge obj, obj.pts[i-1], pt
+      frag.appendChild dot obj, pt  # alternative to linecap: round
     if exists
       exists.appendChild frag
     else
