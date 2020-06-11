@@ -945,3 +945,7 @@ Meteor.startup ->
         when 'y', 'Y'
           if e.ctrlKey or e.metaKey
             redo()
+
+## Cocreate doesn't perform great in combination with Meteor DevTools;
+## prevent it from applying its hooks.
+window.__devtools = true
