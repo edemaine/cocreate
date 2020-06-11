@@ -899,15 +899,20 @@ paletteWidths = ->
       click: (e) -> selectWidth e.currentTarget.dataset.width
     , [
       dom.create 'svg',
-        viewBox: "0 #{-widthSize/2} #{widthSize} #{widthSize}"
+        viewBox: "0 #{-widthSize/3} #{widthSize} #{widthSize}"
         width: widthSize
         height: widthSize
       , null, null
       , [
         dom.create 'line',
           x2: widthSize
-          stroke: 'black'
           'stroke-width': width
+        dom.create 'text',
+          x: widthSize/2
+          y: widthSize*2/3
+        , null, null, [
+          document.createTextNode "#{width}"
+        ]
       ]
     ]
 
