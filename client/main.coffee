@@ -492,7 +492,7 @@ edge = (obj, p1, p2) ->
     y2: p2.y
     stroke: obj.color
     'stroke-width': (p1.w + p2.w) / 2
-    # Lines mode:
+    # Dots mode:
     #'stroke-width': 1
 
 class Render
@@ -507,14 +507,19 @@ class Render
     obj.id ? obj._id ? obj
   renderPen: (obj, start = 0) ->
     id = @id obj
-    unless (g = @dom[id])?
-      @root.appendChild @dom[id] = g =
-        dom.create 'g', null, dataset: id: id
+    if exists = @dom[id]
+      frag = document.createDocumentFragment()
+    else
+      frag = dom.create 'g', null, dataset: id: id
     for i in [start...obj.pts.length]
       pt = obj.pts[i]
-      g.appendChild edge obj, obj.pts[i-1], pt if i > 0
-      g.appendChild dot obj, pt
-    g
+      frag.appendChild edge obj, obj.pts[i-1], pt if i > 0
+      frag.appendChild dot obj, pt
+    if exists
+      exists.appendChild frag
+    else
+      @root.appendChild @dom[id] = frag
+    frag
   renderPoly: (obj) ->
     id = @id obj
     unless (poly = @dom[id])?
