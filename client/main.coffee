@@ -84,7 +84,9 @@ tools =
       #else
       Meteor.call 'objectPush',
         id: pointers[e.pointerId]
-        pts: eventToPointW e
+        pts:
+          for e2 in e.getCoalescedEvents?() ? [e]
+            eventToPointW e2
   segment:
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
@@ -232,8 +234,8 @@ tools =
               historyRender.render obj
             when 'push'
               obj = historyObjects[diff.id]
-              obj.pts.push diff.pts
-              historyRender.render obj, obj.pts.length - 1
+              obj.pts.push ...diff.pts
+              historyRender.render obj, obj.pts.length - diff.pts.length
             when 'edit'
               obj = historyObjects[diff.id]
               for key, value of diff

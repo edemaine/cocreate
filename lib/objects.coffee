@@ -70,7 +70,7 @@ Meteor.methods
   objectPush: (diff) ->
     check diff,
       id: String
-      pts: xywType
+      pts: [xywType]
     id = diff.id
     unless @isSimulation
       obj = checkObject id
@@ -79,7 +79,7 @@ Meteor.methods
       diff.updated = new Date
       ObjectsDiff.insert diff
     Objects.update id,
-      $push: pts: diff.pts
+      $push: pts: $each: diff.pts
       $set:
         unless @isSimulation
           updated: diff.updated
