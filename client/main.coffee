@@ -15,6 +15,7 @@ historyBoard = historyRoot = historyTransform = null
 undoStack = []
 redoStack = []
 eraseDist = 2   # require movement by this many pixels before erasing swipe
+dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 
@@ -58,6 +59,60 @@ tools =
       Meteor.setTimeout ->
         boardGrid.update()
       , 0
+  select:
+    icon: 'mouse-pointer'
+    hotspot: [0.21875, 0.03515625]
+    title: 'Select objects (multiple with shift) and drag to move'
+    start: ->
+      pointers.selected = {}
+      pointers.objects = {}
+    down: (e) ->
+      pointers[e.pointerId] ?= new Highlighter
+      h = pointers[e.pointerId]
+      return if h.down  # in case of repeat events
+      ## Refresh previously selected objects, in particular so tx/ty up-to-date
+      for id, obj of pointers.objects
+        pointers.objects[id] = Objects.findOne obj._id
+      h.start = eventToRawPoint e
+      h.down = e
+      unless h.id?  # see if we pressed on something
+        target = h.findGroup e
+        if target?
+          h.highlight target
+      unless h.id of pointers.objects or e.shiftKey or e.ctrlKey or e.metaKey
+        ## Deselect existing selection unless requesting multiselect
+        boardRoot.removeChild selected for id, selected of pointers.selected
+        pointers.selected = []
+        pointers.objects = {}
+      if h.id?  # have something highlighted, possibly just now
+        unless h.id of pointers.objects
+          pointers.objects[h.id] = Objects.findOne h.id
+          pointers.selected[h.id] = h.select()
+        else
+          h.clear()
+    up: (e) ->
+      h = pointers[e.pointerId]
+      h?.clear()
+      delete pointers[e.pointerId]
+    move: (e) ->
+      pointers[e.pointerId] ?= new Highlighter
+      h = pointers[e.pointerId]
+      if h.down
+        if distanceThreshold h.down, e, dragDist
+          h.down = true
+          here = eventToRawPoint e
+          for id, obj of pointers.objects
+            tx = (obj.tx ? 0) + here.x - h.start.x
+            ty = (obj.ty ? 0) + here.y - h.start.y
+            Meteor.call 'objectEdit', {id, tx, ty}
+            pointers.selected[id].firstChild.setAttribute 'transform',
+              "translate(#{tx} #{ty})"
+      else
+        target = h.findGroup e
+        if target?
+          h.highlight target
+        else
+          h.clear()
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
@@ -144,7 +199,7 @@ tools =
   eraser:
     icon: 'eraser'
     hotspot: [0.35, 1]
-    title: 'Erase strokes'
+    title: 'Erase entire objects: click for one object, drag for multiple objects'
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
@@ -235,16 +290,18 @@ tools =
             when 'push'
               obj = historyObjects[diff.id]
               obj.pts.push ...diff.pts
-              historyRender.render obj, obj.pts.length - diff.pts.length
+              historyRender.render obj,
+                start: obj.pts.length - diff.pts.length
+                translate: false
             when 'edit'
               obj = historyObjects[diff.id]
-              for key, value of diff
+              for key, value of diff when key not in ['id', 'type']
                 switch key
-                  when 'color', 'width'
-                    obj[key] = value
                   when 'pts'
                     for subkey, subvalue of value
                       obj[key][subkey] = subvalue
+                  else
+                    obj[key] = value
               historyRender.render obj
             when 'del'
               historyRender.delete diff
@@ -440,20 +497,27 @@ pointerEvents = ->
         cursor: eventToPointW e
 
 class Highlighter
+  constructor: ->
+    @highlighted = null  # <g class="highlight">
+    @id = null           # highlighted object ID
   findGroup: (e) ->
     ## Pen and touch devices don't always seem to set `e.target` correctly;
     ## use `document.elementFromPoint` instead.
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     target = document.elementFromPoint e.clientX, e.clientY
-    while (tag = target.tagName.toLowerCase()) in ['circle', 'line']
+    while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line']
       target = target.parentNode
+    return unless target?
     return unless tag in ['g', 'polyline', 'rect']
     return unless target.dataset.id?
+    #return if target == @highlighted
+    for elt in [target, target.parentNode]
+      return if target?.getAttribute('class') in ['highlight', 'selected']
     target
   highlight: (target) ->
-    return if target == @highlighted
-    return unless target.dataset.id?
+    ## `target` should be the result of `findGroup`,
+    ## so satisfies all above conditions.
     @clear()
     @id = target.dataset.id
     @highlighted ?= dom.create 'g', class: 'highlight'
@@ -463,6 +527,14 @@ class Highlighter
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
+    true
+  select: (target) ->
+    if target?
+      @highlight target
+    target = @highlighted
+    target?.setAttribute 'class', 'selected'
+    @highlighted = @id = null
+    target
   clear: ->
     if @highlighted?
       boardRoot.removeChild @highlighted
@@ -539,7 +611,7 @@ class Render
     `_id` is the object ID.  Also allow raw ID string for `delete`.
     ###
     obj.id ? obj._id ? obj
-  renderPen: (obj, start = 0) ->
+  renderPen: (obj, {start = 0}) ->
     id = @id obj
     if exists = @dom[id]
       frag = document.createDocumentFragment()
@@ -556,7 +628,7 @@ class Render
       exists.appendChild frag
     else
       @root.appendChild @dom[id] = frag
-    frag
+    @dom[id]
   renderPoly: (obj) ->
     id = @id obj
     unless (poly = @dom[id])?
@@ -569,6 +641,7 @@ class Render
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
       fill: 'none'
+    poly
   renderRect: (obj) ->
     id = @id obj
     unless (poly = @dom[id])?
@@ -587,14 +660,23 @@ class Render
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
       fill: 'none'
-  render: (obj, ...args) ->
-    switch obj.type
-      when 'pen'
-        @renderPen obj, ...args
-      when 'poly'
-        @renderPoly obj, ...args
-      when 'rect'
-        @renderRect obj, ...args
+    poly
+  render: (obj, options = {}) ->
+    elt =
+      switch obj.type
+        when 'pen'
+          @renderPen obj, options
+        when 'poly'
+          @renderPoly obj, options
+        when 'rect'
+          @renderRect obj, options
+        else
+          console.warn "No renderer for object of type #{obj.type}"
+    if options.translate != false
+      if obj.tx? or obj.ty?
+        elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
+      else
+        elt.removeAttribute 'transform'
   delete: (obj) ->
     id = @id obj
     unless @dom[id]?
@@ -624,7 +706,9 @@ observeRender = (room) ->
       render.render obj
     changed: (obj, old) ->
       # Assumes that pen changes only append to `pts` field
-      render.render obj, old.pts.length
+      render.render obj,
+        start: old.pts.length
+        translate: obj.tx != old.tx or obj.ty != old.ty
     removed: (obj) ->
       render.delete obj
 

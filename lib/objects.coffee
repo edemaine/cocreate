@@ -96,15 +96,17 @@ Meteor.methods
           return false unless /^\d+$/.test key
           check value, xyType
         true
+      tx: Match.Optional Number
+      ty: Match.Optional Number
     id = diff.id
     set = {}
-    for key, value of diff
+    for key, value of diff when key != 'id'
       switch key
-        when 'color', 'width'
-          set[key] = value
         when 'pts'
           for subkey, subvalue of value
             set["#{key}.#{subkey}"] = subvalue
+        else
+          set[key] = value
     unless @isSimulation
       obj = checkObject id
       diff.room = obj.room
