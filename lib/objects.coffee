@@ -20,33 +20,26 @@ export checkObject = (id) ->
 
 Meteor.methods
   objectNew: (obj) ->
+    pattern =
+      _id: Match.Optional String
+      type: String
+      room: String
+      created: Match.Optional Date
+      updated: Match.Optional Date
+      tx: Match.Optional Number
+      ty: Match.Optional Number
     switch obj?.type
       when 'pen'
-        check obj,
-          _id: Match.Optional String
-          created: Match.Optional Date
-          updated: Match.Optional Date
-          room: String
-          type: 'pen'
+        Object.assign pattern,
           pts: [xywType]
           color: String
       when 'poly'
-        check obj,
-          _id: Match.Optional String
-          created: Match.Optional Date
-          updated: Match.Optional Date
-          room: String
-          type: 'poly'
+        Object.assign pattern,
           pts: [xyType]
           color: String
           width: Number
       when 'rect'
-        check obj,
-          _id: Match.Optional String
-          created: Match.Optional Date
-          updated: Match.Optional Date
-          room: String
-          type: 'rect'
+        Object.assign pattern,
           pts: Match.Where (pts) ->
             check pts, [xyType]
             pts.length == 2
@@ -54,6 +47,7 @@ Meteor.methods
           width: Number
       else
         throw new Error "Invalid type #{obj?.type} for object"
+    check obj, pattern
     unless @isSimulation
       checkRoom obj.room
       if obj._id? and Objects.findOne(obj._id)?

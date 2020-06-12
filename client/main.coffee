@@ -66,24 +66,32 @@ tools =
     start: ->
       pointers.selected = {}
       pointers.objects = {}
+    stop: selectReset = (highlight = true) ->
+      if pointers.selected?  # used also in eraser.stop
+        boardRoot.removeChild selected for id, selected of pointers.selected
+        pointers.selected = []
+        pointers.objects = {}
+      if highlight
+        for key, highlighter of pointers
+          if highlighter instanceof Highlighter
+            highlighter.clear()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       return if h.down  # in case of repeat events
+      h.down = e
+      h.start = eventToRawPoint e
+      h.moved = null
       ## Refresh previously selected objects, in particular so tx/ty up-to-date
       for id, obj of pointers.objects
         pointers.objects[id] = Objects.findOne obj._id
-      h.start = eventToRawPoint e
-      h.down = e
       unless h.id?  # see if we pressed on something
         target = h.findGroup e
         if target?
           h.highlight target
       unless h.id of pointers.objects or e.shiftKey or e.ctrlKey or e.metaKey
         ## Deselect existing selection unless requesting multiselect
-        boardRoot.removeChild selected for id, selected of pointers.selected
-        pointers.selected = []
-        pointers.objects = {}
+        selectReset false
       if h.id?  # have something highlighted, possibly just now
         unless h.id of pointers.objects
           pointers.objects[h.id] = Objects.findOne h.id
@@ -92,6 +100,17 @@ tools =
           h.clear()
     up: (e) ->
       h = pointers[e.pointerId]
+      if h?.moved
+        undoableOp
+          type: 'multi'
+          ops:
+            for id, obj of pointers.objects
+              type: 'edit'
+              id: id
+              before:
+                tx: obj.tx
+                ty: obj.ty
+              after: h.moved[id]
       h?.clear()
       delete pointers[e.pointerId]
     move: (e) ->
@@ -101,12 +120,16 @@ tools =
         if distanceThreshold h.down, e, dragDist
           h.down = true
           here = eventToRawPoint e
+          ## Don't set h.moved out here in case no objects selected
           for id, obj of pointers.objects
+            h.moved ?= {}
             tx = (obj.tx ? 0) + here.x - h.start.x
             ty = (obj.ty ? 0) + here.y - h.start.y
             Meteor.call 'objectEdit', {id, tx, ty}
+            ## Move .selected shadow at the same time:
             pointers.selected[id].firstChild.setAttribute 'transform',
               "translate(#{tx} #{ty})"
+            h.moved[id] = {tx, ty}
       else
         target = h.findGroup e
         if target?
@@ -200,6 +223,7 @@ tools =
     icon: 'eraser'
     hotspot: [0.35, 1]
     title: 'Erase entire objects: click for one object, drag for multiple objects'
+    stop: -> selectReset()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
@@ -544,6 +568,7 @@ undoableOp = (op) ->
   redoStack = []
   undoStack.push op
 doOp = (op, reverse) ->
+  selectReset()
   switch op.type
     when 'multi'
       ops = op.ops
@@ -559,6 +584,14 @@ doOp = (op, reverse) ->
         #  obj[key] = value unless key of skipKeys
         #op.obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
         Meteor.call 'objectNew', op.obj
+    when 'edit'
+      Meteor.call 'objectEdit', Object.assign
+        id: op.id
+      ,
+        if reverse
+          op.before
+        else
+          op.after
     else
       console.error "Unknown op type #{op.type} for undo/redo"
 undo = ->
