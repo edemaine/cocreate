@@ -116,7 +116,7 @@ tools =
         pts: 1: eventToPoint e
   rect:
     icon: 'rect'
-    hotspot: [0.05664, 0.841796875]
+    hotspot: [0.0625, 0.883]
     title: 'Draw axis-aligned rectangles between endpoints (drag)'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
