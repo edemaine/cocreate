@@ -108,8 +108,8 @@ tools =
               type: 'edit'
               id: id
               before:
-                tx: obj.tx
-                ty: obj.ty
+                tx: obj.tx ? 0
+                ty: obj.ty ? 0
               after: h.moved[id]
       h?.clear()
       delete pointers[e.pointerId]
