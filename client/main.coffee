@@ -89,7 +89,8 @@ tools =
         target = h.findGroup e
         if target?
           h.highlight target
-      unless h.id of pointers.objects or e.shiftKey or e.ctrlKey or e.metaKey
+      toggle = e.shiftKey or e.ctrlKey or e.metaKey
+      unless h.id of pointers.objects or toggle
         ## Deselect existing selection unless requesting multiselect
         selectReset false
       if h.id?  # have something highlighted, possibly just now
@@ -97,6 +98,10 @@ tools =
           pointers.objects[h.id] = Objects.findOne h.id
           pointers.selected[h.id] = h.select()
         else
+          if toggle
+            boardRoot.removeChild pointers.selected[h.id]
+            delete pointers.selected[h.id]
+            delete pointers.objects[h.id]
           h.clear()
     up: (e) ->
       h = pointers[e.pointerId]
