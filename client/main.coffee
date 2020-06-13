@@ -275,6 +275,11 @@ tools =
     title: 'Toggle grid/graph paper'
     once: ->
       Meteor.call 'roomGridToggle', currentRoom
+  linkRoom:
+    icon: 'clipboard-link'
+    title: 'Copy to clipboard a link to this room/board (for sharing with others)'
+    once: ->
+      navigator.clipboard.writeText document.URL
   newRoom:
     icon: icons.stackIcons [
       'door-open'
