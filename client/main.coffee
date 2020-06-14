@@ -226,7 +226,7 @@ tools =
         pts: 1: eventToPoint e
   eraser:
     icon: 'eraser'
-    hotspot: [0.35, 1]
+    hotspot: [0.4, 0.9]
     title: 'Erase entire objects: click for one object, drag for multiple objects'
     stop: -> selectReset()
     down: (e) ->
