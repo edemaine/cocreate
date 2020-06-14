@@ -4,6 +4,9 @@
   --palette-offset-width: var(--palette-size)
   --palette-offset-height: var(--palette-size)
   --palette-color: #ccc
+  --palette-border: 2px
+  --tooltip-width: 200px
+  --tooltip-arrow: 5px
 
 // A few basics from Bootstrap:
 *, :before, :after
@@ -12,6 +15,15 @@ svg
   overflow: hidden
 input
   width: 100%
+kbd
+  padding: 2px 4px
+  font-family: monospace
+  font-size: 90%
+  color: #fff
+  background-color: #333
+  border-radius: 3px
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.25)
+  display: inline-block // prevent line breaks in CTRL-something
 
 body
   font-family: 'Roboto Slab', serif
@@ -32,7 +44,7 @@ body
 
 .palette
   position: absolute
-  background: var(--palette-color)
+  background: content-box var(--palette-color)
   display: flex
 .vertical.palette
   flex-direction: column
@@ -42,6 +54,10 @@ body
   left: 0
   width: var(--palette-offset-width)
   height: calc(100% - var(--palette-offset-height))
+  // Tooltip on right
+  box-sizing: content-box
+  margin-right: calc(-1 * var(--tooltip-width))
+  padding-right: var(--tooltip-width)
 .horizontal.palette
   flex-direction: row
   overflow-x: auto
@@ -54,20 +70,56 @@ body
     margin: 0 10px
 
 .tool, .color, .width
+  position: relative  // for tooltip placement
   flex: none
   width: var(--palette-size)
   height: var(--palette-size)
-  border: 2px outset #ccc
+  border: var(--palette-border) outset #ccc
   cursor: pointer
 
   &.selected, &.active
+    --palette-border: 3px
     background: rgba(0,0,0,0.2)
-    border: 3px inset rgba(0,0,0,0.2)
+    border: var(--palette-border) inset rgba(0,0,0,0.2)
     &[data-color="black"]
-      border: 3px inset rgba(255,255,255,0.2)
+      border: var(--palette-border) inset rgba(255,255,255,0.2)
   &:active
+    --palette-border: 3px
     background: rgba(0,0,0,0.4)
-    border: 3px inset rgba(0,0,0,0.4)
+    border: var(--palette-border) inset rgba(0,0,0,0.4)
+
+.tooltip
+  display: none
+.tool:hover .tooltip
+  display: block
+  position: absolute
+  z-index: 99
+  left: calc(var(--palette-size) - var(--palette-border))
+  &.top
+    top: calc(-1 * var(--palette-border))
+  &.bottom
+    bottom: calc(-1 * var(--palette-border))
+  width: var(--tooltip-width)
+  padding: 5px 8px
+  font-size: 16px
+  margin-left: var(--tooltip-arrow)
+  background: padding-box var(--palette-color)
+  // Left arrow
+  &:before
+    content: ''
+    position: absolute
+    left: calc(-2 * var(--tooltip-arrow))
+    width: var(--tooltip-arrow)
+    height: var(--tooltip-arrow)
+    border: var(--tooltip-arrow) solid transparent
+    border-right-color: var(--palette-color)
+  &.top:before
+    top: calc(-5px + 0.5 * var(--palette-size))  // 5px is padding on .tooltip
+  &.bottom:before
+    bottom: calc(-5px + 0.5 * var(--palette-size))  // 5px is padding on .tooltip
+  .hotkey
+    float: right
+    margin-top: 1px
 
 .spacer
   flex-basis: 100%

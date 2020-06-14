@@ -30,18 +30,20 @@ pointers = {}   # maps pointerId to tool-specific data
 tools =
   undo:
     icon: 'undo'
-    title: 'Undo the last operation you did [CTRL-Z]'
+    help: 'Undo the last operation you did'
+    hotkey: 'CTRL-Z'
     once: ->
       undo()
   redo:
     icon: 'redo'
-    title: 'Redo the last operation you undid (if no operations since) [CTRL-Y]'
+    help: 'Redo: Undo the last undo you did (if you did no operations since)'
+    hotkey: 'CTRL-Y'
     once: ->
       redo()
   pan:
     icon: 'arrows-alt'
     hotspot: [0.5, 0.5]
-    title: 'Pan around the page'
+    help: 'Pan around the page by dragging'
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
       pointers[e.pointerId].transform = Object.assign {}, boardTransform
@@ -62,7 +64,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    title: 'Select objects (multiple with shift) and drag to move or change color'
+    help: 'Select objects (multiple if holding <kbd>SHIFT</kbd>) and then change their color or drag to move them'
     start: ->
       pointers.selected = {}
       pointers.objects = {}
@@ -144,7 +146,7 @@ tools =
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
-    title: 'Freehand drawing (with pen pressure adjusting width)'
+    help: 'Freehand drawing (with pen pressure adjusting width)'
     down: (e) ->
       return if pointers[e.pointerId]
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
@@ -173,7 +175,7 @@ tools =
   segment:
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
-    title: 'Draw straight line segments between endpoints (drag)'
+    help: 'Draw straight line segment between endpoints (drag)'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -200,7 +202,7 @@ tools =
   rect:
     icon: 'rect'
     hotspot: [0.0625, 0.883]
-    title: 'Draw axis-aligned rectangles between endpoints (drag)'
+    help: 'Draw axis-aligned rectangle between endpoints (drag)'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -227,7 +229,7 @@ tools =
   eraser:
     icon: 'eraser'
     hotspot: [0.4, 0.9]
-    title: 'Erase entire objects: click for one object, drag for multiple objects'
+    help: 'Erase entire objects: click for one object, drag for multiple objects'
     stop: -> selectReset()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
@@ -272,12 +274,12 @@ tools =
   spacer: {}
   grid:
     icon: 'grid'
-    title: 'Toggle grid/graph paper'
+    help: 'Toggle grid/graph paper'
     once: ->
       Meteor.call 'roomGridToggle', currentRoom
   linkRoom:
     icon: 'clipboard-link'
-    title: 'Copy to clipboard a link to this room/board (for sharing with others)'
+    help: 'Copy a link to this room/board to clipboard (for sharing with others)'
     once: ->
       navigator.clipboard.writeText document.URL
   newRoom:
@@ -289,13 +291,13 @@ tools =
       icons.modIcon 'plus-circle',
         transform: "translate(300 256) scale(0.45) translate(-256 -256)"
     ]
-    title: 'Create a new room/board with new URL in a new browser tab/window'
+    help: 'Create a new room/board (with new URL) in a new browser tab/window'
     once: ->
       window.open '/'
   history:
     icon: 'history'
     hotspot: [0.5, 0.5]
-    title: 'Time travel to the past (via bottom slider)'
+    help: 'Time travel to the past (by dragging the bottom slider)'
     start: ->
       document.body.classList.add 'history'
       historyTransform =
@@ -365,7 +367,7 @@ tools =
         "translate(#{historyTransform.x} #{historyTransform.y})"
   'download-svg':
     icon: 'download-svg'
-    title: 'Download entire drawing as SVG'
+    help: 'Download/export entire drawing as an SVG file'
     once: ->
       ## Compute bounding box, assuming spanned by <circle> (from pen groups),
       ## <polyline>, and <rect> elements
@@ -426,7 +428,7 @@ tools =
       download.click()
   github:
     icon: 'github'
-    title: 'Github repository: source code, bug reports, feature requests'
+    help: 'Go to Github repository: source code, bug reports, and feature requests'
     once: ->
       import('/package.json').then (json) ->
         window.open json.homepage
@@ -969,17 +971,24 @@ pageChange = ->
 
 paletteTools = ->
   toolsDiv = document.getElementById 'tools'
-  for tool, {icon, title} of tools
+  align = 'top'
+  for tool, {icon, help, hotkey} of tools
     if tool.startsWith 'spacer'
       toolsDiv.appendChild dom.create 'div', class: 'spacer'
+      align = 'bottom'
     else
-      toolsDiv.appendChild dom.create 'div', null,
+      toolsDiv.appendChild div = dom.create 'div', null,
         className: 'tool'
-        title: title
         dataset: tool: tool
         innerHTML: icons.svgIcon icon
       ,
         click: (e) -> selectTool e.currentTarget.dataset.tool
+      if help
+        if hotkey
+          help += """<kbd class="hotkey">#{hotkey}</kbd>"""
+        div.prepend dom.create 'div', null,
+          className: "tooltip #{align}"
+          innerHTML: help
 
 lastTool = null
 selectTool = (tool) ->
