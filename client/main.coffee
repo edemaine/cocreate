@@ -62,7 +62,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    title: 'Select objects (multiple with shift) and drag to move'
+    title: 'Select objects (multiple with shift) and drag to move or change color'
     start: ->
       pointers.selected = {}
       pointers.objects = {}
