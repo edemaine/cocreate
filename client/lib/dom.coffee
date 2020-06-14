@@ -21,7 +21,7 @@ export create = (tag, attrs, props, events, children) ->
   elt
 
 export attr = (elt, attrs) ->
-  if Array.isArray elt
+  if Array.isArray(elt) or elt instanceof NodeList # output of querySelectorAll
     attr sub, attrs for sub in elt when sub?
   else
     for key, value of attrs when value?

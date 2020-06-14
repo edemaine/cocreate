@@ -69,7 +69,7 @@ tools =
     stop: selectReset = (highlight = true) ->
       if pointers.selected?  # used also in eraser.stop
         boardRoot.removeChild selected for id, selected of pointers.selected
-        pointers.selected = []
+        pointers.selected = {}
         pointers.objects = {}
       if highlight
         for key, highlighter of pointers
@@ -84,7 +84,7 @@ tools =
       h.moved = null
       ## Refresh previously selected objects, in particular so tx/ty up-to-date
       for id, obj of pointers.objects
-        pointers.objects[id] = Objects.findOne obj._id
+        pointers.objects[id] = Objects.findOne id
       unless h.id?  # see if we pressed on something
         target = h.findGroup e
         if target?
@@ -574,11 +574,11 @@ class Highlighter
       boardRoot.removeChild @highlighted
       @highlighted = @id = null
 
-undoableOp = (op) ->
+undoableOp = (op, now) ->
   redoStack = []
   undoStack.push op
+  doOp op if now
 doOp = (op, reverse) ->
-  selectReset()
   switch op.type
     when 'multi'
       ops = op.ops
@@ -611,6 +611,7 @@ undo = ->
   op = undoStack.pop()
   doOp op, true
   redoStack.push op
+  selectReset()
 redo = ->
   if currentTool == 'history'
     return historyAdvance +1
@@ -618,6 +619,7 @@ redo = ->
   op = redoStack.pop()
   doOp op, false
   undoStack.push op
+  selectReset()
 historyAdvance = (delta) ->
   range = document.getElementById 'historyRange'
   value = parseInt range.value
@@ -654,12 +656,16 @@ class Render
     `_id` is the object ID.  Also allow raw ID string for `delete`.
     ###
     obj.id ? obj._id ? obj
-  renderPen: (obj, {start = 0}) ->
+  renderPen: (obj, options) ->
+    start = options?.start ? 0
     id = @id obj
     if exists = @dom[id]
       frag = document.createDocumentFragment()
     else
       frag = dom.create 'g', null, dataset: id: id
+    if exists and options?.color
+      dom.attr exists.querySelectorAll('circle'), fill: obj.color
+      dom.attr exists.querySelectorAll('line'), stroke: obj.color
     if start == 0
       frag.appendChild dot obj, obj.pts[0]
       start = 1
@@ -743,15 +749,15 @@ observeRender = (room) ->
   render = new Render boardRoot
   Objects.find room: room
   .observe
-    # Currently assuming all objects are of type 'pen'
     added: (obj) ->
       render.shouldNotExist obj
       render.render obj
     changed: (obj, old) ->
-      # Assumes that pen changes only append to `pts` field
+      ## Assuming that pen's `pts` field changes only by appending
       render.render obj,
         start: old.pts.length
         translate: obj.tx != old.tx or obj.ty != old.ty
+        color: obj.color != old.color
     removed: (obj) ->
       render.delete obj
 
@@ -1053,9 +1059,26 @@ penIcon = (color) ->
 
 selectColor = (color, keepTool) ->
   currentColor = color if color?
-  selectDrawingTool() unless keepTool
   dom.select '.color', "[data-color='#{currentColor}']"
   document.documentElement.style.setProperty '--currentColor', currentColor
+  if pointers.selected and (key for key of pointers.selected).length
+    undoableOp
+      type: 'multi'
+      ops:
+        for id of pointers.selected
+          obj = Objects.findOne id
+          unless obj.color
+            throw new Error "Object #{id} has no color attribute"
+          type: 'edit'
+          id: id
+          before: color: obj.color
+          after: color: color
+    , true
+    for id, elt of pointers.selected
+      dom.attr elt.querySelectorAll('circle'), fill: color
+      dom.attr elt.querySelectorAll('line,polyline,rect'), stroke: color
+    keepTool = true
+  selectDrawingTool() unless keepTool
   ## Set cursor to colored pencil
   if currentTool == 'pen'
     icons.iconCursor board, penIcon(currentColor), ...tools[currentTool].hotspot
