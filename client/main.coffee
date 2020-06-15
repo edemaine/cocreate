@@ -64,7 +64,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: 'Select objects (multiple if holding <kbd>SHIFT</kbd>) and then change their color or drag to move them'
+    help: 'Select objects (multiple if holding <kbd>SHIFT</kbd>) and then change their color/width or drag to move them'
     start: ->
       pointers.selected = {}
       pointers.objects = {}
@@ -154,6 +154,7 @@ tools =
         type: 'pen'
         pts: [eventToPointW e]
         color: currentColor
+        width: currentWidth
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
@@ -478,11 +479,13 @@ widths = [
 ]
 currentWidth = 5
 
-pressureWidth = (e) -> (0.5 + e.pressure) * currentWidth
-#pressureWidth = (e) -> 2 * e.pressure * currentWidth
-#pressureWidth = (e) ->
+## Maps a PointerEvent with `pressure` attribute to a `w` multiplier to
+## multiply with the "natural" width of the pen.
+pressureW = (e) -> 0.5 + e.pressure
+#pressureW = (e) -> 2 * e.pressure
+#pressureW = (e) ->
 #  t = e.pressure ** 3
-#  (0.5 + (1.5 - 0.5) * t) * currentWidth
+#  0.5 + (1.5 - 0.5) * t
 
 eventToPoint = (e) ->
   {x, y} = dom.svgPoint board, e.clientX, e.clientY, boardRoot
@@ -495,9 +498,9 @@ eventToPointW = (e) ->
     ## Android Chrome (Samsung Note 8) sends pressure 1 for touch events.
     ## Just ignore pressure on touch and mouse events; could they make sense?
     if e.pointerType == 'pen'
-      w = pressureWidth e
+      w = pressureW e
     else
-      w = currentWidth
+      w = 1
   pt
 
 eventToRawPoint = (e) ->
@@ -634,7 +637,7 @@ dot = (obj, p) ->
   dom.create 'circle',
     cx: p.x
     cy: p.y
-    r: p.w / 2
+    r: obj.width * p.w / 2
     fill: obj.color
 edge = (obj, p1, p2) ->
   dom.create 'line',
@@ -643,7 +646,7 @@ edge = (obj, p1, p2) ->
     x2: p2.x
     y2: p2.y
     stroke: obj.color
-    'stroke-width': (p1.w + p2.w) / 2
+    'stroke-width': obj.width * (p1.w + p2.w) / 2
     #'stroke-linecap': 'round' # alternative to dot
     ## Dots mode:
     #'stroke-width': 1
@@ -659,15 +662,18 @@ class Render
     ###
     obj.id ? obj._id ? obj
   renderPen: (obj, options) ->
-    start = options?.start ? 0
+    ## Redraw from scratch if no `start` specified, or if color or width changed
+    start = 0
+    if options?.start?
+      start = options.start unless options.color or options.width
     id = @id obj
     if exists = @dom[id]
+      ## Destroy existing drawing if starting over
+      exists.innerHTML = '' if start == 0
       frag = document.createDocumentFragment()
     else
       frag = dom.create 'g', null, dataset: id: id
-    if exists and options?.color
-      dom.attr exists.querySelectorAll('circle'), fill: obj.color
-      dom.attr exists.querySelectorAll('line'), stroke: obj.color
+    ## Draw a `dot` at each point, and an `edge` between consecutive dots
     if start == 0
       frag.appendChild dot obj, obj.pts[0]
       start = 1
@@ -760,6 +766,7 @@ observeRender = (room) ->
         start: old.pts.length
         translate: obj.tx != old.tx or obj.ty != old.ty
         color: obj.color != old.color
+        width: obj.width != old.width
     removed: (obj) ->
       render.delete obj
 
@@ -1066,26 +1073,33 @@ penIcon = (color) ->
     'stroke-linecap': 'round'
     'stroke-linejoin': 'round'
 
+selectedCount = ->
+  return 0 unless pointers.selected
+  (key for key of pointers.selected).length
+
+editSelected = (attrib, value) ->
+  undoableOp
+    type: 'multi'
+    ops:
+      for id of pointers.selected
+        obj = Objects.findOne id
+        unless obj[attrib]
+          throw new Error "Object #{id} has no #{attrib} attribute"
+        type: 'edit'
+        id: id
+        before: "#{attrib}": obj[attrib]
+        after: "#{attrib}": value
+  , true
+
 selectColor = (color, keepTool) ->
   currentColor = color if color?
   dom.select '.color', "[data-color='#{currentColor}']"
   document.documentElement.style.setProperty '--currentColor', currentColor
-  if pointers.selected and (key for key of pointers.selected).length
-    undoableOp
-      type: 'multi'
-      ops:
-        for id of pointers.selected
-          obj = Objects.findOne id
-          unless obj.color
-            throw new Error "Object #{id} has no color attribute"
-          type: 'edit'
-          id: id
-          before: color: obj.color
-          after: color: color
-    , true
+  if selectedCount()
+    editSelected 'color', currentColor
     for id, elt of pointers.selected
-      dom.attr elt.querySelectorAll('circle'), fill: color
-      dom.attr elt.querySelectorAll('line,polyline,rect'), stroke: color
+      dom.attr elt.querySelectorAll('circle'), fill: currentColor
+      dom.attr elt.querySelectorAll('line,polyline,rect'), stroke: currentColor
     keepTool = true
   selectDrawingTool() unless keepTool
   ## Set cursor to colored pencil
@@ -1094,6 +1108,9 @@ selectColor = (color, keepTool) ->
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
+  if selectedCount()
+    editSelected 'width', currentWidth
+    keepTool = true
   selectDrawingTool() unless keepTool
   dom.select '.width', "[data-width='#{currentWidth}']"
 

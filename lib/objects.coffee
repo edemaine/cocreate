@@ -33,6 +33,7 @@ Meteor.methods
         Object.assign pattern,
           pts: [xywType]
           color: String
+          width: Number
       when 'poly'
         Object.assign pattern,
           pts: [xyType]
