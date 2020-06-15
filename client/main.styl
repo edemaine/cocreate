@@ -91,6 +91,7 @@ body
 .tooltip
   display: none
 .tool:hover .tooltip
+  pointer: help
   display: block
   position: absolute
   z-index: 99
@@ -120,6 +121,9 @@ body
   .hotkey
     float: right
     margin-top: 1px
+  // Hide tooltip again if mouse goes onto it, i.e., outside toolbar
+  &:hover
+    display: none
 
 .spacer
   flex-basis: 100%
