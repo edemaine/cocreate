@@ -24,7 +24,7 @@ Objects.find
   ###
   wMin = Math.min ...ws
   wMax = Math.max ...ws
-  width = Math.round (wMin + wMax) / 2
+  width = Math.max 1, Math.round (wMin + wMax) / 2
   scale = (x) ->
     for pt in x.pts
       pt.w /= width
