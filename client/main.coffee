@@ -12,6 +12,7 @@ boardTransform = # board translation/rotation
   x: 0
   y: 0
 historyBoard = historyRoot = historyTransform = null
+selection = null # Selection object representing selected objects
 undoStack = []
 redoStack = []
 eraseDist = 2   # require movement by this many pixels before erasing swipe
@@ -66,17 +67,12 @@ tools =
     hotspot: [0.21875, 0.03515625]
     help: 'Select objects (multiple if holding <kbd>SHIFT</kbd>) and then change their color/width or drag to move them'
     start: ->
-      pointers.selected = {}
       pointers.objects = {}
-    stop: selectReset = (highlight = true) ->
-      if pointers.selected?  # used also in eraser.stop
-        boardRoot.removeChild selected for id, selected of pointers.selected
-        pointers.selected = {}
-        pointers.objects = {}
-      if highlight
-        for key, highlighter of pointers
-          if highlighter instanceof Highlighter
-            highlighter.clear()
+    stop: selectHighlightReset = ->
+      selection.clear()
+      for key, highlighter of pointers
+        if highlighter instanceof Highlighter
+          highlighter.clear()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
@@ -85,24 +81,24 @@ tools =
       h.start = eventToRawPoint e
       h.moved = null
       ## Refresh previously selected objects, in particular so tx/ty up-to-date
-      for id, obj of pointers.objects
+      for id in selection.ids()
         pointers.objects[id] = Objects.findOne id
       unless h.id?  # see if we pressed on something
         target = h.findGroup e
         if target?
           h.highlight target
       toggle = e.shiftKey or e.ctrlKey or e.metaKey
-      unless h.id of pointers.objects or toggle
+      unless toggle or selection.has h.id
         ## Deselect existing selection unless requesting multiselect
-        selectReset false
+        selection.clear()
+        pointers.objects = {}
       if h.id?  # have something highlighted, possibly just now
-        unless h.id of pointers.objects
+        unless selection.has h.id
           pointers.objects[h.id] = Objects.findOne h.id
-          pointers.selected[h.id] = h.select()
+          selection.add h
         else
           if toggle
-            boardRoot.removeChild pointers.selected[h.id]
-            delete pointers.selected[h.id]
+            selection.remove h.id
             delete pointers.objects[h.id]
           h.clear()
     up: (e) ->
@@ -133,9 +129,6 @@ tools =
             tx = (obj.tx ? 0) + here.x - h.start.x
             ty = (obj.ty ? 0) + here.y - h.start.y
             Meteor.call 'objectEdit', {id, tx, ty}
-            ## Move .selected shadow at the same time:
-            pointers.selected[id].firstChild.setAttribute 'transform',
-              "translate(#{tx} #{ty})"
             h.moved[id] = {tx, ty}
       else
         target = h.findGroup e
@@ -231,7 +224,7 @@ tools =
     icon: 'eraser'
     hotspot: [0.4, 0.9]
     help: 'Erase entire objects: click for one object, drag for multiple objects'
-    stop: -> selectReset()
+    stop: -> selectHighlightReset()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
@@ -537,7 +530,8 @@ pointerEvents = ->
 
 class Highlighter
   constructor: ->
-    @highlighted = null  # <g class="highlight">
+    @target = null       # <g/polyline/rect> that @highlighted is based on
+    @highlighted = null  # <g/polyline/rect class="highlight">
     @id = null           # highlighted object ID
   findGroup: (e) ->
     ## Pen and touch devices don't always seem to set `e.target` correctly;
@@ -551,13 +545,16 @@ class Highlighter
     return unless tag in ['g', 'polyline', 'rect']
     return unless target.dataset.id?
     #return if target == @highlighted
+    ## Shouldn't get pointer events on highlighted or selected overlays thanks
+    ## to `pointer-events: none`, but check for them just in case:
     for elt in [target, target.parentNode]
-      return if target?.getAttribute('class') in ['highlight', 'selected']
+      return if elt?.getAttribute('class') in ['highlight', 'selected']
     target
   highlight: (target) ->
     ## `target` should be the result of `findGroup`,
     ## so satisfies all above conditions.
     @clear()
+    @target = target
     @id = target.dataset.id
     @highlighted ?= dom.create 'g', class: 'highlight'
     boardRoot.appendChild @highlighted  # ensure on top
@@ -570,14 +567,60 @@ class Highlighter
   select: (target) ->
     if target?
       @highlight target
-    target = @highlighted
-    target?.setAttribute 'class', 'selected'
-    @highlighted = @id = null
-    target
+    selected = @highlighted
+    selected?.setAttribute 'class', 'selected'
+    @target = @highlighted = @id = null
+    selected
   clear: ->
     if @highlighted?
       boardRoot.removeChild @highlighted
-      @highlighted = @id = null
+      @target = @highlighted = @id = null
+
+class Selection
+  constructor: ->
+    @selected = {}  # mapping from object ID to .selected DOM element
+    @target = {}    # mapping from object ID to original DOM element
+    @rehighlighter = new Highlighter  # used in redraw()
+  add: (highlighter) ->
+    id = highlighter.id
+    return unless id?
+    @target[id] = highlighter.target
+    @selected[id] = highlighter.select()
+  redraw: (id) ->
+    boardRoot.removeChild @selected[id]
+    @rehighlighter.highlight @target[id]
+    @selected[id] = @rehighlighter.select()
+  remove: (id) ->
+    boardRoot.removeChild @selected[id]
+    delete @selected[id]
+    delete @target[id]
+  clear: ->
+    @remove id for id of @selected
+  ids: ->
+    id for id of @selected
+  has: (id) ->
+    id of @selected
+  count: ->
+    @ids().length
+  nonempty: ->
+    for id of @selected
+      return true
+    false
+  edit: (attrib, value) ->
+    undoableOp
+      type: 'multi'
+      ops:
+        for id in @ids()
+          obj = Objects.findOne id
+          unless obj?[attrib]
+            throw new Error "Object #{id} has no #{attrib} attribute"
+          type: 'edit'
+          id: id
+          before: "#{attrib}": obj[attrib]
+          after: "#{attrib}": value
+    , true
+
+selection = new Selection
 
 undoableOp = (op, now) ->
   redoStack = []
@@ -616,7 +659,7 @@ undo = ->
   op = undoStack.pop()
   doOp op, true
   redoStack.push op
-  selectReset()
+  selectHighlightReset()
 redo = ->
   if currentTool == 'history'
     return historyAdvance +1
@@ -624,7 +667,7 @@ redo = ->
   op = redoStack.pop()
   doOp op, false
   undoStack.push op
-  selectReset()
+  selectHighlightReset()
 historyAdvance = (delta) ->
   range = document.getElementById 'historyRange'
   value = parseInt range.value
@@ -734,6 +777,7 @@ class Render
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
         elt.removeAttribute 'transform'
+    selection.redraw obj._id if selection.has obj._id
   delete: (obj) ->
     id = @id obj
     unless @dom[id]?
@@ -1073,33 +1117,12 @@ penIcon = (color) ->
     'stroke-linecap': 'round'
     'stroke-linejoin': 'round'
 
-selectedCount = ->
-  return 0 unless pointers.selected
-  (key for key of pointers.selected).length
-
-editSelected = (attrib, value) ->
-  undoableOp
-    type: 'multi'
-    ops:
-      for id of pointers.selected
-        obj = Objects.findOne id
-        unless obj[attrib]
-          throw new Error "Object #{id} has no #{attrib} attribute"
-        type: 'edit'
-        id: id
-        before: "#{attrib}": obj[attrib]
-        after: "#{attrib}": value
-  , true
-
 selectColor = (color, keepTool) ->
   currentColor = color if color?
   dom.select '.color', "[data-color='#{currentColor}']"
   document.documentElement.style.setProperty '--currentColor', currentColor
-  if selectedCount()
-    editSelected 'color', currentColor
-    for id, elt of pointers.selected
-      dom.attr elt.querySelectorAll('circle'), fill: currentColor
-      dom.attr elt.querySelectorAll('line,polyline,rect'), stroke: currentColor
+  if selection.nonempty()
+    selection.edit 'color', currentColor
     keepTool = true
   selectDrawingTool() unless keepTool
   ## Set cursor to colored pencil
@@ -1108,8 +1131,8 @@ selectColor = (color, keepTool) ->
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
-  if selectedCount()
-    editSelected 'width', currentWidth
+  if selection.nonempty()
+    selection.edit 'width', currentWidth
     keepTool = true
   selectDrawingTool() unless keepTool
   dom.select '.width', "[data-width='#{currentWidth}']"
