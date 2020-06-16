@@ -19,6 +19,8 @@ eraseDist = 2   # require movement by this many pixels before erasing swipe
 dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
+currentRoom = undefined
+currentGrid = null
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -521,7 +523,7 @@ pointerEvents = ->
       e.preventDefault()
   dom.listen board,
     pointermove: (e) ->
-      return unless currentRoom
+      return unless currentRoom?
       remotes.update
         room: currentRoom
         tool: currentTool
@@ -918,7 +920,7 @@ observeRemotes = (room) ->
     changed: (remote, oldRemote) -> remotesRender.render remote, oldRemote
     removed: (remote) -> remotesRender.delete remote
 setInterval ->
-  remotesRender.timer()
+  remotesRender?.timer()
 , 1000
 
 class Grid
@@ -963,6 +965,16 @@ loadingUpdate = (delta) ->
     loading.classList.add 'loading'
   else
     loading.classList.remove 'loading'
+    updateBadRoom()
+
+updateBadRoom = ->
+  badRoom = document.getElementById 'badRoom'
+  if Rooms.findOne currentRoom
+    badRoom.classList.remove 'show'
+  else
+    badRoom.classList.add 'show'
+    currentRoom = null
+
 subscribe = (...args) ->
   delta = 1
   loadingUpdate delta
@@ -973,8 +985,6 @@ subscribe = (...args) ->
     onReady: done
     onStop: done
 
-currentRoom = undefined
-currentGrid = null
 roomSub = null
 roomObserveObjects = null
 roomObserveRemotes = null
@@ -994,6 +1004,8 @@ changeRoom = (room) ->
     roomObserveObjects = observeRender room
     roomObserveRemotes = observeRemotes room
     roomSub = subscribe 'room', room
+  else
+    updateBadRoom()
   selectTool tool
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
@@ -1015,7 +1027,7 @@ pageChange = ->
         return console.error "Failed to create new room on server: #{error}"
       history.replaceState null, 'new room', "/r/#{room}"
       pageChange()
-  else if match = document.location.pathname.match /^\/r\/(\w+)$/
+  else if match = document.location.pathname.match /^\/r\/(\w*)$/
     changeRoom match[1]
   else
     changeRoom null

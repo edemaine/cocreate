@@ -22,6 +22,10 @@ body
     input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
   svg#board.board.historyHide
   svg#historyBoard.board.historyShow
-  svg#remotes.historyHide
+  svg#remotes.board.historyHide
   #loading
+  #badRoom.modal.error
+    h1 Invalid Room ID
+    p Perhaps there's a typo in the URL?
+    p Please double-check your copy/paste.
   a#download
