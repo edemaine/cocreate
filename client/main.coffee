@@ -1194,6 +1194,10 @@ Meteor.startup ->
         when 'y', 'Y'
           if e.ctrlKey or e.metaKey
             redo()
+  document.getElementById('roomLinkStyle').innerHTML =
+    Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
+  document.getElementById('newRoomLink').setAttribute 'href',
+    Meteor.absoluteUrl()
 
 ## Cocreate doesn't perform great in combination with Meteor DevTools;
 ## prevent it from applying its hooks.
