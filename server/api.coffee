@@ -14,8 +14,9 @@ WebApp.connectHandlers.use "/api", (req, res, next) ->
   url = url.parse req.url, true
   if apiMethods.hasOwnProperty url.pathname
     result = apiMethods[url.pathname](url.query, req, res, next)
-    if result != null
+    if !res.headersSent
       res.writeHead result[0], {"Content-type": "application/json"}
+    if !res.writeableEnded
       res.end JSON.stringify(result[1])
   else
     res.writeHead 404
