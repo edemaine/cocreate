@@ -5,9 +5,9 @@ apiMethods =
     try
       result = Meteor.call "roomNew",
         grid: true
-      [200, {id: "#{result}"}]
+      [200, {ok: true, id: "#{result}"}]
     catch e
-      [500, {"error": "Error creating new room: #{e}"}]
+      [500, {ok: false, "error": "Error creating new room: #{e}"}]
 
 
 WebApp.connectHandlers.use "/api", (req, res, next) ->
