@@ -608,6 +608,19 @@ class Selection
     for id of @selected
       return true
     false
+  erase: ->
+    removedObjects = []
+    for id in @ids()
+      removedObjects.push Objects.findOne id
+      Meteor.call 'objectDel', id
+    if removedObjects.length?
+      undoableOp
+        type: 'multi'
+        ops:
+          for obj in removedObjects
+            type: 'del'
+            obj: obj
+    @clear()
   edit: (attrib, value) ->
     undoableOp
       type: 'multi'
@@ -1194,6 +1207,8 @@ Meteor.startup ->
         when 'y', 'Y'
           if e.ctrlKey or e.metaKey
             redo()
+        when 'Delete'
+          selection.erase()
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
