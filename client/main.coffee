@@ -615,7 +615,7 @@ class Selection
     undoableOp
       type: 'multi'
       ops:
-        for obj in @ids()
+        for id in @ids()
           obj = Objects.findOne id
           Meteor.call 'objectDel', id
           type: 'del'
