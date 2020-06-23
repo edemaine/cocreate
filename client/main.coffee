@@ -246,6 +246,7 @@ tools =
       h = pointers[e.pointerId]
       h?.clear()
       if h?.deleted?.length
+        ## The following is similar to Selection.delete:
         undoableOp
           type: 'multi'
           ops:
@@ -608,6 +609,18 @@ class Selection
     for id of @selected
       return true
     false
+  delete: ->
+    return unless @nonempty()
+    ## The following is similar to eraser.up:
+    undoableOp
+      type: 'multi'
+      ops:
+        for id in @ids()
+          obj = Objects.findOne id
+          Meteor.call 'objectDel', id
+          type: 'del'
+          obj: obj
+    @clear()
   edit: (attrib, value) ->
     undoableOp
       type: 'multi'
@@ -1194,6 +1207,8 @@ Meteor.startup ->
         when 'y', 'Y'
           if e.ctrlKey or e.metaKey
             redo()
+        when 'Delete', 'Backspace'
+          selection.delete()
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
