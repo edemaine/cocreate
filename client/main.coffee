@@ -149,6 +149,8 @@ tools =
       if target?
         obj = Objects.findOne target.dataset.id
         selectColor obj.color
+      else
+        selectDrawingTool()
     move: (e) ->
         pointers[e.pointerId] ?= new Highlighter
         h = pointers[e.pointerId]
