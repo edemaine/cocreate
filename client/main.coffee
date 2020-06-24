@@ -138,6 +138,26 @@ tools =
           h.highlight target
         else
           h.clear()
+  eyedropper:
+    icon: 'eye-dropper'
+    hotspot: [0, 1]
+    stop: -> selectHighlightReset()
+    down: (e) ->
+      pointers[e.pointerId] ?= new Highlighter
+      h = pointers[e.pointerId]
+      target = h.findGroup e
+      if target?
+        obj = Objects.findOne target.dataset.id
+        selectColor obj.color
+    move: (e) ->
+        pointers[e.pointerId] ?= new Highlighter
+        h = pointers[e.pointerId]
+        target = h.findGroup e
+        color = currentColor
+        if target?
+            obj = Objects.findOne target.dataset.id
+            color = obj.color
+        icons.iconCursor board, coloredIcon('eye-dropper', color), 0, 1
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
@@ -850,7 +870,7 @@ class RemotesRender
     unless remote.tool == oldRemote.tool and remote.color == oldRemote.color
       if icon = tools[remote.tool]?.icon
         if remote.tool == 'pen'
-          icon = penIcon remote.color ? colors[0]
+          icon = coloredIcon 'pencil-alt', remote.color ? colors[0]
         elt.innerHTML = icons.getIcon icon
       else
         elt.innerHTML = ''
@@ -1134,8 +1154,8 @@ paletteWidths = ->
       ]
     ]
 
-penIcon = (color) ->
-  icons.modIcon 'pencil-alt',
+coloredIcon = (iconName, color) ->
+  icons.modIcon iconName,
     fill: color
     stroke: 'black'
     'stroke-width': '15'
@@ -1152,7 +1172,7 @@ selectColor = (color, keepTool) ->
   selectDrawingTool() unless keepTool
   ## Set cursor to colored pencil
   if currentTool == 'pen'
-    icons.iconCursor board, penIcon(currentColor), ...tools[currentTool].hotspot
+    icons.iconCursor board, coloredIcon('pencil-alt', currentColor), ...tools[currentTool].hotspot
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
