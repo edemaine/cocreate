@@ -873,8 +873,8 @@ class RemotesRender
       @root.appendChild elt
     unless remote.tool == oldRemote.tool and remote.color == oldRemote.color
       if icon = tools[remote.tool]?.icon
-        if remote.tool == 'pen'
-          icon = coloredIcon 'pencil-alt', remote.color ? colors[0]
+        if remote.tool of drawingTools
+          icon = coloredIcon icon, remote.color ? colors[0]
         elt.innerHTML = icons.getIcon icon
       else
         elt.innerHTML = ''
@@ -1100,8 +1100,8 @@ selectTool = (tool) ->
   lastTool = currentTool
   currentTool = tool if tool?  # tool is null if initializing
   dom.select '.tool', "[data-tool='#{currentTool}']"
-  if currentTool == 'pen'
-    selectColor() # set color-specific pen icon
+  if currentTool of drawingTools
+    selectColor() # set color-specific icon for drawing tool
   else if currentTool == 'history'
     icons.iconCursor document.getElementById('historyRange'),
       tools['history'].icon, ...tools['history'].hotspot
@@ -1203,8 +1203,8 @@ selectColor = (color, keepTool) ->
     keepTool = true
   selectDrawingTool() unless keepTool
   ## Set cursor to colored pencil
-  if currentTool == 'pen'
-    icons.iconCursor board, coloredIcon('pencil-alt', currentColor), ...tools[currentTool].hotspot
+  if currentTool of drawingTools
+    icons.iconCursor board, coloredIcon(tools[currentTool].icon, currentColor), ...tools[currentTool].hotspot
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
