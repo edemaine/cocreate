@@ -21,6 +21,8 @@ remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 currentRoom = undefined
 currentGrid = null
+customColor = null
+customColorPicker = null
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -1127,7 +1129,33 @@ paletteColors = ->
       dataset: color: color
     ,
       click: (e) -> selectColor e.currentTarget.dataset.color
-
+  # custom color thing
+  customColor = dom.create 'div', null,
+      id: 'customColor'
+      type: 'color'
+      className: 'color'
+      dataset: color: 'black'
+      style: backgroundColor: 'black'
+    ,
+      click: (e) ->
+        console.log(customColor.classList)
+        console.log(customColor.dataset.color)
+        if (customColor.classList.contains 'selected') || customColor.dataset.color == 'black'
+          customColorPicker.focus()
+          customColorPicker.click()
+        else
+          selectColor customColor.dataset.color
+  customColorPicker = dom.create 'input', null,
+      id: 'customColorPicker'
+      type: 'color'
+      style: display: 'none'
+    ,
+      change: (e) ->
+        customColor.style.backgroundColor = customColorPicker.value
+        customColor.dataset.color = customColorPicker.value
+        selectColor customColorPicker.value, true
+  colorsDiv.appendChild customColor
+  colorsDiv.appendChild customColorPicker
 widthSize = 22
 paletteWidths = ->
   widthsDiv = document.getElementById 'colors'
@@ -1166,7 +1194,13 @@ coloredIcon = (iconName, color) ->
 
 selectColor = (color, keepTool) ->
   currentColor = color if color?
-  dom.select '.color', "[data-color='#{currentColor}']"
+  if currentColor in colors
+    dom.select '.color', "[data-color='#{currentColor}']"
+  else
+    dom.select '.color', '#customColor'
+    customColor.style.backgroundColor = currentColor
+    customColor.dataset.color = currentColor
+    customColorPicker.value = currentColor
   document.documentElement.style.setProperty '--currentColor', currentColor
   if selection.nonempty()
     selection.edit 'color', currentColor
