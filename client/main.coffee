@@ -1138,8 +1138,6 @@ paletteColors = ->
       style: backgroundColor: 'black'
     ,
       click: (e) ->
-        console.log(customColor.classList)
-        console.log(customColor.dataset.color)
         if (customColor.classList.contains 'selected') || customColor.dataset.color == 'black'
           customColorPicker.focus()
           customColorPicker.click()
@@ -1151,8 +1149,6 @@ paletteColors = ->
       style: display: 'none'
     ,
       change: (e) ->
-        customColor.style.backgroundColor = customColorPicker.value
-        customColor.dataset.color = customColorPicker.value
         selectColor customColorPicker.value, true
   colorsDiv.appendChild customColor
   colorsDiv.appendChild customColorPicker
