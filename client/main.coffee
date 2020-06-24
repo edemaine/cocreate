@@ -143,6 +143,7 @@ tools =
   eyedropper:
     icon: 'eye-dropper'
     hotspot: [0, 1]
+    help: 'Select a color that is already on the page'
     stop: -> selectHighlightReset()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
