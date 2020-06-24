@@ -54,10 +54,6 @@ body
   left: 0
   width: var(--palette-offset-width)
   height: calc(100% - var(--palette-offset-height))
-  // Tooltip on right
-  box-sizing: content-box
-  margin-right: calc(-1 * var(--tooltip-width))
-  padding-right: var(--tooltip-width)
 .horizontal.palette
   flex-direction: row
   overflow-x: auto
@@ -70,7 +66,6 @@ body
     margin: 0 10px
 
 .tool, .color, .width
-  position: relative  // for tooltip placement
   flex: none
   width: var(--palette-size)
   height: var(--palette-size)
@@ -89,17 +84,11 @@ body
     border: var(--palette-border) inset rgba(0,0,0,0.4)
 
 .tooltip
-  display: none
-.tool:hover .tooltip
-  pointer: help
+  cursor: help
   display: block
   position: absolute
   z-index: 99
   left: calc(var(--palette-size) - var(--palette-border))
-  &.top
-    top: calc(-1 * var(--palette-border))
-  &.bottom
-    bottom: calc(-1 * var(--palette-border))
   width: var(--tooltip-width)
   padding: 5px 8px
   font-size: 16px
@@ -121,9 +110,6 @@ body
   .hotkey
     float: right
     margin-top: 1px
-  // Hide tooltip again if mouse goes onto it, i.e., outside toolbar
-  &:hover
-    display: none
 
 .spacer
   flex-basis: 100%

@@ -1046,6 +1046,7 @@ pageChange = ->
     changeRoom null
 
 paletteTools = ->
+  tooltip = null  # currently open tooltip
   toolsDiv = document.getElementById 'tools'
   align = 'top'
   for tool, {icon, help, hotkey} of tools
@@ -1062,9 +1063,26 @@ paletteTools = ->
       if help
         if hotkey
           help += """<kbd class="hotkey">#{hotkey}</kbd>"""
-        div.prepend dom.create 'div', null,
-          className: "tooltip #{align}"
-          innerHTML: help
+        do (div, align, help) ->
+          dom.listen div,
+            pointerenter: ->
+              tooltip.remove() if tooltip?
+              console.log div.getBoundingClientRect().top
+              document.body.appendChild tooltip = dom.create 'div', null,
+                className: "tooltip #{align}"
+                innerHTML: help
+                style: "#{align}":
+                  if align == 'top'
+                    "#{div.getBoundingClientRect().top}px"
+                  else
+                    "calc(100% - #{div.getBoundingClientRect().bottom}px)"
+              ,
+                pointerenter: ->
+                  tooltip.remove() if tooltip?
+                  tooltip = null
+            pointerleave: ->
+              tooltip.remove() if tooltip?
+              tooltip = null
 
 lastTool = null
 selectTool = (tool) ->
