@@ -1067,7 +1067,6 @@ paletteTools = ->
           dom.listen div,
             pointerenter: ->
               tooltip.remove() if tooltip?
-              console.log div.getBoundingClientRect().top
               document.body.appendChild tooltip = dom.create 'div', null,
                 className: "tooltip #{align}"
                 innerHTML: help
