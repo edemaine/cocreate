@@ -39,7 +39,7 @@ Meteor.methods
           pts: [xyType]
           color: String
           width: Number
-      when 'rect'
+      when 'rect', 'ellipse'
         Object.assign pattern,
           pts: Match.Where (pts) ->
             check pts, [xyType]

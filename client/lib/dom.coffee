@@ -7,6 +7,7 @@ export svgTags =
   polyline: true
   rect: true
   circle: true
+  ellipse: true
   text: true
 
 export create = (tag, attrs, props, events, children) ->

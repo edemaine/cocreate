@@ -222,6 +222,34 @@ tools =
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
+  ellipse:
+    icon: 'ellipse'
+    hotspot: [0.201888, 0.75728]
+    help: 'Draw axis-aligned ellipsis inside rectangle between endpoints (drag)'
+    start: ->
+      pointers.throttle = throttle.method 'objectEdit'
+    down: (e) ->
+      return if pointers[e.pointerId]
+      pt = eventToPoint e
+      pointers[e.pointerId] = Meteor.apply 'objectNew', [
+        room: currentRoom
+        type: 'ellipse'
+        pts: [pt, pt]
+        color: currentColor
+        width: currentWidth
+      ], returnStubValue: true
+      console.log 'yo', eventToPoint e
+    up: (e) ->
+      return unless pointers[e.pointerId]
+      undoableOp
+        type: 'new'
+        obj: Objects.findOne pointers[e.pointerId]
+      delete pointers[e.pointerId]
+    move: (e) ->
+      return unless pointers[e.pointerId]
+      pointers.throttle
+        id: pointers[e.pointerId]
+        pts: 1: eventToPoint e
   eraser:
     icon: 'eraser'
     hotspot: [0.4, 0.9]
@@ -316,7 +344,7 @@ tools =
           count++
           break if count > target
           switch diff.type
-            when 'pen', 'poly', 'rect'
+            when 'pen', 'poly', 'rect', 'ellipse'
               obj = diff
               historyObjects[obj.id] = obj
               historyRender.render obj
@@ -367,7 +395,7 @@ tools =
     help: 'Download/export entire drawing as an SVG file'
     once: ->
       ## Compute bounding box, assuming spanned by <circle> (from pen groups),
-      ## <polyline>, and <rect> elements
+      ## <polyline>, <rect>, and <ellipse> elements
       min =
         x: Infinity
         y: Infinity
@@ -402,6 +430,16 @@ tools =
         max.x = Math.max max.x, x + width + stroke
         min.y = Math.min min.y, y - stroke
         max.y = Math.max max.y, y + height + stroke
+      for ellipse in currentBoard().querySelectorAll 'ellipse'
+        cx = parseFloat ellipse.getAttribute 'x'
+        cy = parseFloat ellipse.getAttribute 'y'
+        rx = parseFloat ellipse.getAttribute 'rx'
+        ry = parseFloat ellipse.getAttribute 'ry'
+        stroke = (parseFloat ellipse.getAttribute('stroke-width') ? 0) / 2
+        min.x = Math.min min.x, cx - rx - stroke
+        max.x = Math.max max.x, cx + rx + stroke
+        min.y = Math.min min.y, cy - ry - stroke
+        max.y = Math.max max.y, cy + ry + stroke
       if min.x == Infinity
         min.x = min.y = max.x = max.y = 0
       ## Temporarily make grid space entire drawing
@@ -434,6 +472,7 @@ drawingTools =
   pen: true
   segment: true
   rect: true
+  ellipse: true
 lastDrawingTool = 'pen'
 
 currentBoard = ->
@@ -533,8 +572,8 @@ pointerEvents = ->
 
 class Highlighter
   constructor: ->
-    @target = null       # <g/polyline/rect> that @highlighted is based on
-    @highlighted = null  # <g/polyline/rect class="highlight">
+    @target = null       # <g/polyline/rect/ellipse> that @highlighted based on
+    @highlighted = null  # <g/polyline/rect/ellipse class="highlight">
     @id = null           # highlighted object ID
   findGroup: (e) ->
     ## Pen and touch devices don't always seem to set `e.target` correctly;
@@ -545,7 +584,7 @@ class Highlighter
     while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line']
       target = target.parentNode
     return unless target?
-    return unless tag in ['g', 'polyline', 'rect']
+    return unless tag in ['g', 'polyline', 'rect', 'ellipse']
     return unless target.dataset.id?
     #return if target == @highlighted
     ## Shouldn't get pointer events on highlighted or selected overlays thanks
@@ -759,14 +798,14 @@ class Render
     poly
   renderRect: (obj) ->
     id = @id obj
-    unless (poly = @dom[id])?
-      @root.appendChild @dom[id] = poly =
+    unless (rect = @dom[id])?
+      @root.appendChild @dom[id] = rect =
         dom.create 'rect', null, dataset: id: id
     xMin = Math.min obj.pts[0].x, obj.pts[1].x
     xMax = Math.max obj.pts[0].x, obj.pts[1].x
     yMin = Math.min obj.pts[0].y, obj.pts[1].y
     yMax = Math.max obj.pts[0].y, obj.pts[1].y
-    dom.attr poly,
+    dom.attr rect,
       x: xMin
       y: yMin
       width: xMax - xMin
@@ -775,7 +814,25 @@ class Render
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
       fill: 'none'
-    poly
+    rect
+  renderEllipse: (obj) ->
+    id = @id obj
+    unless (ellipse = @dom[id])?
+      @root.appendChild @dom[id] = ellipse =
+        dom.create 'ellipse', null, dataset: id: id
+    xMin = Math.min obj.pts[0].x, obj.pts[1].x
+    xMax = Math.max obj.pts[0].x, obj.pts[1].x
+    yMin = Math.min obj.pts[0].y, obj.pts[1].y
+    yMax = Math.max obj.pts[0].y, obj.pts[1].y
+    dom.attr ellipse,
+      cx: (xMin + xMax) / 2
+      cy: (yMin + yMax) / 2
+      rx: (xMax - xMin) / 2
+      ry: (yMax - yMin) / 2
+      stroke: obj.color
+      'stroke-width': obj.width
+      fill: 'none'
+    ellipse
   render: (obj, options = {}) ->
     elt =
       switch obj.type
@@ -785,6 +842,8 @@ class Render
           @renderPoly obj, options
         when 'rect'
           @renderRect obj, options
+        when 'ellipse'
+          @renderEllipse obj, options
         else
           console.warn "No renderer for object of type #{obj.type}"
     if options.translate != false
