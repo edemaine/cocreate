@@ -192,9 +192,19 @@ tools =
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
+      pt = eventToPoint e
+      ## Force horizontal/vertical line when holding shift
+      if e.shiftKey
+        start = Objects.findOne(pointers[e.pointerId]).pts[0]
+        dx = Math.abs pt.x - start.x
+        dy = Math.abs pt.y - start.y
+        if dx > dy
+          pt.y = start.y
+        else
+          pt.x = start.x
       pointers.throttle
         id: pointers[e.pointerId]
-        pts: 1: eventToPoint e
+        pts: 1: pt
   rect:
     icon: 'rect'
     hotspot: [0.0625, 0.883]
