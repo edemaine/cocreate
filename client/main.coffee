@@ -920,7 +920,7 @@ class RemotesRender
       if icon = tools[remote.tool]?.icon
         if remote.tool == 'pen'
           icon = penIcon remote.color ? colors[0]
-        elt.innerHTML = icons.getIcon icon
+        elt.innerHTML = icons.cursorIcon icon, ...tools[remote.tool].hotspot
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
@@ -974,7 +974,7 @@ class RemotesRender
         translate(#{x} #{y})
         scale(#{remoteIconSize})
         translate(#{-hotspot[0]} #{-hotspot[1]})
-        scale(#{1/icons.viewSize})
+        scale(#{1/icons.cursorSize})
       """
   delete: (remote) ->
     id = remote._id ? remote
@@ -1165,15 +1165,15 @@ selectTool = (tool) ->
   if currentTool == 'pen'
     selectColor() # set color-specific pen icon
   else if currentTool == 'history'
-    icons.iconCursor document.getElementById('historyRange'),
+    icons.setCursor document.getElementById('historyRange'),
       tools['history'].icon, ...tools['history'].hotspot
-    icons.iconCursor document.getElementById('historyBoard'),
+    icons.setCursor document.getElementById('historyBoard'),
       tools['pan'].icon, ...tools['pan'].hotspot
   else
     # Deselect color and width if not in pen mode
     #dom.select '.color'
     #dom.select '.width'
-    icons.iconCursor board, tools[currentTool].icon,
+    icons.setCursor board, tools[currentTool].icon,
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?()
@@ -1238,7 +1238,7 @@ selectColor = (color, keepTool) ->
   selectDrawingTool() unless keepTool
   ## Set cursor to colored pencil
   if currentTool == 'pen'
-    icons.iconCursor board, penIcon(currentColor), ...tools[currentTool].hotspot
+    icons.setCursor board, penIcon(currentColor), ...tools[currentTool].hotspot
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?

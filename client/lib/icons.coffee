@@ -90,20 +90,21 @@ export stackIcons = (iconList) ->
 
 ## Icons as mouse cursors
 
-cursorSize = 32
+export cursorSize = 32
 viewScale = viewSize / cursorSize
 
 round = (frac) ->
   Math.round frac * (cursorSize-1)
 
-export iconCursor = (dom, icon, xFrac, yFrac) ->
-  x = round xFrac
-  y = round yFrac
-  svg = svgIcon icon,
+export cursorIcon = (icon, xFrac, yFrac) ->
+  icon = getIcon icon
+  svgIcon icon,
     width: cursorSize
     height: cursorSize
   .replace ///</svg>///, """
-    <circle fill="red" cx="#{x * viewScale}" cy="#{y * viewScale}" r="#{viewScale * 2}"/>
+    <circle fill="red" cx="#{round(xFrac) * viewScale}" cy="#{round(yFrac) * viewScale}" r="#{viewScale * 2}"/>
     $&"""
-  svg = encodeURIComponent svg
-  dom.style.cursor = "url('data:image/svg+xml,#{svg}') #{x} #{y}, crosshair"
+
+export setCursor = (dom, icon, xFrac, yFrac) ->
+  svg = encodeURIComponent cursorIcon icon, xFrac, yFrac
+  dom.style.cursor = "url('data:image/svg+xml,#{svg}') #{round xFrac} #{round yFrac}, crosshair"
