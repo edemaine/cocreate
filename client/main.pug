@@ -20,8 +20,9 @@ body
   #colors.horizontal.palette.historyHide
   #history.horizontal.palette.historyShow
     input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
-  svg#board.board.historyHide
-  svg#historyBoard.board.historyShow
+  // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
+  svg#board.board.historyHide(touch-action="none")
+  svg#historyBoard.board.historyShow(touch-action="none")
   svg#remotes.board.historyHide
   #badRoom.modal.error
     h1 Invalid Room ID
