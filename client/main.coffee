@@ -157,14 +157,14 @@ tools =
         width: currentWidth
       ], returnStubValue: true
     up: (e) ->
-      return unless pointers[e.pointerId] || restrictTouch e
+      return unless pointers[e.pointerId] && !restrictTouch e
 
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
-      return unless pointers[e.pointerId] || restrictTouch e
+      return unless pointers[e.pointerId] && !restrictTouch e
       ## iPhone (iOS 13.4, Safari 13.1) sends zero pressure for touch events.
       #if e.pressure == 0
       #  stop e
