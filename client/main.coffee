@@ -147,7 +147,9 @@ tools =
     hotspot: [0, 1]
     help: 'Freehand drawing (with pen pressure adjusting width)'
     down: (e) ->
-      return if pointers[e.pointerId] || restrictTouch e
+
+      return if pointers[e.pointerId]
+      return if restrictTouch e
 
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -157,14 +159,17 @@ tools =
         width: currentWidth
       ], returnStubValue: true
     up: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
 
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
+
       ## iPhone (iOS 13.4, Safari 13.1) sends zero pressure for touch events.
       #if e.pressure == 0
       #  stop e
@@ -181,7 +186,8 @@ tools =
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
-      return if pointers[e.pointerId] || restrictTouch e
+      return if pointers[e.pointerId]
+      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -191,13 +197,15 @@ tools =
         width: currentWidth
       ], returnStubValue: true
     up: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
       pt = eventToPoint e
       ## Force horizontal/vertical line when holding shift
       if e.shiftKey
@@ -218,7 +226,8 @@ tools =
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
-      return if pointers[e.pointerId] || restrictTouch e
+      return if pointers[e.pointerId]
+      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -228,13 +237,15 @@ tools =
         width: currentWidth
       ], returnStubValue: true
     up: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
@@ -245,7 +256,8 @@ tools =
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
-      return if pointers[e.pointerId] || restrictTouch e
+      return if pointers[e.pointerId]
+      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -256,13 +268,15 @@ tools =
       ], returnStubValue: true
       console.log 'yo', eventToPoint e
     up: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
-      return unless pointers[e.pointerId] && !restrictTouch e
+      return unless pointers[e.pointerId]
+      return if restrictTouch e
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
@@ -274,7 +288,8 @@ tools =
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      return if h.down || restrictTouch e # repeat events can happen because of erasure
+      return if h.down # repeat events can happen because of erasure
+      return if restrictTouch e
       h.down = e
       h.deleted = []
       if h.id?  # already have something highlighted
@@ -318,7 +333,7 @@ tools =
     icon: 'hand'
     help: 'Touch only pan/select'
     once: ->
-      Meteor.call 'roomTouchToggle', currentRoom
+      currentTouch = !currentTouch
 
   spacer: {}
   grid:
@@ -1115,8 +1130,6 @@ changeRoom = (room) ->
       else
         gridTool.classList.remove 'active'
       boardGrid.update()
-
-    currentTouch = roomData?.touch
 
 pageChange = ->
   if document.location.pathname == '/'

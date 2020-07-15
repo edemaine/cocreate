@@ -23,9 +23,3 @@ Meteor.methods
     data = checkRoom room
     Rooms.update room,
       $set: grid: not data.grid
-
-  roomTouchToggle: (room) ->
-    check room, String
-    data = checkRoom room
-    Rooms.update room,
-      $set: touch: not data.touch
