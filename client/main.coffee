@@ -21,7 +21,7 @@ remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 currentRoom = undefined
 currentGrid = null
-currentTouch = null
+allowTouch = true
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -31,7 +31,7 @@ distanceThreshold = (p, q, t) ->
   dx * dx + dy * dy >= t * t
 
 restrictTouch = (e) ->
-  return !currentTouch && e.pointerType == 'touch'
+  not allowTouch and e.pointerType == 'touch'
 
 pointers = {}   # maps pointerId to tool-specific data
 tools =
@@ -147,10 +147,8 @@ tools =
     hotspot: [0, 1]
     help: 'Freehand drawing (with pen pressure adjusting width)'
     down: (e) ->
-
       return if pointers[e.pointerId]
       return if restrictTouch e
-
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
         type: 'pen'
@@ -161,7 +159,6 @@ tools =
     up: (e) ->
       return unless pointers[e.pointerId]
       return if restrictTouch e
-
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
@@ -169,7 +166,6 @@ tools =
     move: (e) ->
       return unless pointers[e.pointerId]
       return if restrictTouch e
-
       ## iPhone (iOS 13.4, Safari 13.1) sends zero pressure for touch events.
       #if e.pressure == 0
       #  stop e
@@ -288,7 +284,7 @@ tools =
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      return if h.down # repeat events can happen because of erasure
+      return if h.down  # repeat events can happen because of erasure
       return if restrictTouch e
       h.down = e
       h.deleted = []
@@ -329,13 +325,12 @@ tools =
           h.highlight target
       else
         h.clear()
+  spacer: {}
   touch:
-    icon: 'hand'
+    icon: 'hand-pointer'
     help: 'Touch only pan/select'
     once: ->
-      currentTouch = !currentTouch
-
-  spacer: {}
+      allowTouch = not allowTouch
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -519,7 +514,6 @@ currentBoard = ->
     historyBoard
   else
     board
-
 
 colors = [
   'black'   # Windows Journal black
@@ -1122,7 +1116,6 @@ changeRoom = (room) ->
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
     gridTool = document.querySelector '.tool[data-tool="grid"]'
-
     if currentGrid != roomData?.grid
       currentGrid = roomData?.grid
       if currentGrid

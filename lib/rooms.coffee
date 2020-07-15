@@ -12,7 +12,6 @@ Meteor.methods
   roomNew: (room = {}) ->
     check room,
       grid: Match.Optional Boolean
-      touch: Match.Optional Boolean
     unless @isSimulation
       now = new Date
       room.created = now
