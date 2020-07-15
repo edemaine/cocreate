@@ -541,6 +541,8 @@ widths = [
   6
   7
 ]
+for width in widths
+  hotkeys[width] = do (width) -> -> selectWidth width
 currentWidth = 5
 
 ## Maps a PointerEvent with `pressure` attribute to a `w` multiplier to
@@ -1163,7 +1165,7 @@ paletteTools = ->
           hotkey = [hotkey] unless Array.isArray hotkey
           for key in hotkey
             help += """<kbd class="hotkey">#{key}</kbd>"""
-            hotkeys[key] = tool
+            hotkeys[key] = do (tool) -> -> selectTool tool
         do (div, align, help) ->
           dom.listen div,
             pointerenter: ->
@@ -1329,8 +1331,7 @@ Meteor.startup ->
         when 'Delete', 'Backspace'
           selection.delete()
         else
-          tool = hotkeys[e.key.toLowerCase()]
-          selectTool tool if tool?
+          hotkeys[e.key.toLowerCase()]?()
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
