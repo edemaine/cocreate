@@ -248,7 +248,6 @@ tools =
         color: currentColor
         width: currentWidth
       ], returnStubValue: true
-      console.log 'yo', eventToPoint e
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
