@@ -328,9 +328,16 @@ tools =
   spacer: {}
   touch:
     icon: 'hand-pointer'
-    help: 'Touch only pan/select'
+    help: 'Allow drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
+    init: touchUpdate = ->
+      touchTool = document.querySelector '.tool[data-tool="touch"]'
+      if allowTouch
+        touchTool.classList.add 'active'
+      else
+        touchTool.classList.remove 'active'
     once: ->
       allowTouch = not allowTouch
+      touchUpdate()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -1142,7 +1149,7 @@ paletteTools = ->
   tooltip = null  # currently open tooltip
   toolsDiv = document.getElementById 'tools'
   align = 'top'
-  for tool, {icon, help, hotkey} of tools
+  for tool, {icon, help, hotkey, init} of tools
     if tool.startsWith 'spacer'
       toolsDiv.appendChild dom.create 'div', class: 'spacer'
       align = 'bottom'
@@ -1175,6 +1182,7 @@ paletteTools = ->
             pointerleave: ->
               tooltip.remove() if tooltip?
               tooltip = null
+      init?()
 
 lastTool = null
 selectTool = (tool) ->
