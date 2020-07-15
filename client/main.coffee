@@ -21,6 +21,7 @@ remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 currentRoom = undefined
 currentGrid = null
+allowTouch = true
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -306,6 +307,18 @@ tools =
       else
         h.clear()
   spacer: {}
+  touch:
+    icon: 'hand-pointer'
+    help: 'Allow drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
+    init: touchUpdate = ->
+      touchTool = document.querySelector '.tool[data-tool="touch"]'
+      if allowTouch
+        touchTool.classList.add 'active'
+      else
+        touchTool.classList.remove 'active'
+    once: ->
+      allowTouch = not allowTouch
+      touchUpdate()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -551,20 +564,29 @@ eventToRawPoint = (e) ->
   x: e.clientX
   y: e.clientY
 
+restrictTouch = (e) ->
+  not allowTouch and \
+  e.pointerType == 'touch' and \
+  currentTool of drawingTools
+
 pointerEvents = ->
   dom.listen [board, historyBoard],
     pointerdown: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].down? e
     pointerenter: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].down? e if e.buttons
     pointerup: stop = (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].up? e
     pointerleave: stop
     pointermove: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].move? e
     contextmenu: (e) ->
       ## Prevent right click from bringing up context menu, as it interferes
@@ -573,6 +595,7 @@ pointerEvents = ->
   dom.listen board,
     pointermove: (e) ->
       return unless currentRoom?
+      return if restrictTouch e
       remotes.update
         room: currentRoom
         tool: currentTool
@@ -1117,7 +1140,7 @@ paletteTools = ->
   tooltip = null  # currently open tooltip
   toolsDiv = document.getElementById 'tools'
   align = 'top'
-  for tool, {icon, help, hotkey} of tools
+  for tool, {icon, help, hotkey, init} of tools
     if tool.startsWith 'spacer'
       toolsDiv.appendChild dom.create 'div', class: 'spacer'
       align = 'bottom'
@@ -1150,6 +1173,7 @@ paletteTools = ->
             pointerleave: ->
               tooltip.remove() if tooltip?
               tooltip = null
+      init?()
 
 lastTool = null
 selectTool = (tool) ->
