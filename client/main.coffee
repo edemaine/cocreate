@@ -69,6 +69,7 @@ tools =
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
     help: 'Select objects (multiple if holding <kbd>SHIFT</kbd>) and then change their color/width or drag to move them'
+    hotkey: 's'
     start: ->
       pointers.objects = {}
     stop: selectHighlightReset = ->
@@ -143,6 +144,7 @@ tools =
     icon: 'pencil-alt'
     hotspot: [0, 1]
     help: 'Freehand drawing (with pen pressure adjusting width)'
+    hotkey: 'p'
     down: (e) ->
       return if pointers[e.pointerId]
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
@@ -173,6 +175,7 @@ tools =
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
     help: 'Draw straight line segment between endpoints (drag)'
+    hotkey: ['l', '\\']
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -210,6 +213,7 @@ tools =
     icon: 'rect'
     hotspot: [0.0625, 0.883]
     help: 'Draw axis-aligned rectangle between endpoints (drag)'
+    hotkey: 'r'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -237,6 +241,7 @@ tools =
     icon: 'ellipse'
     hotspot: [0.201888, 0.75728]
     help: 'Draw axis-aligned ellipsis inside rectangle between endpoints (drag)'
+    hotkey: 'o'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -264,6 +269,7 @@ tools =
     icon: 'eraser'
     hotspot: [0.4, 0.9]
     help: 'Erase entire objects: click for one object, drag for multiple objects'
+    hotkey: '-'
     stop: -> selectHighlightReset()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
@@ -496,6 +502,7 @@ drawingTools =
   rect: true
   ellipse: true
 lastDrawingTool = 'pen'
+hotkeys = {}
 
 currentBoard = ->
   if currentTool == 'history'
@@ -1153,7 +1160,10 @@ paletteTools = ->
         click: (e) -> selectTool e.currentTarget.dataset.tool
       if help
         if hotkey
-          help += """<kbd class="hotkey">#{hotkey}</kbd>"""
+          hotkey = [hotkey] unless Array.isArray hotkey
+          for key in hotkey
+            help += """<kbd class="hotkey">#{key}</kbd>"""
+            hotkeys[key] = tool
         do (div, align, help) ->
           dom.listen div,
             pointerenter: ->
@@ -1318,6 +1328,9 @@ Meteor.startup ->
             redo()
         when 'Delete', 'Backspace'
           selection.delete()
+        else
+          tool = hotkeys[e.key.toLowerCase()]
+          selectTool tool if tool?
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
