@@ -30,9 +30,6 @@ distanceThreshold = (p, q, t) ->
   dy = p.clientY - q.clientY
   dx * dx + dy * dy >= t * t
 
-restrictTouch = (e) ->
-  not allowTouch and e.pointerType == 'touch'
-
 pointers = {}   # maps pointerId to tool-specific data
 tools =
   undo:
@@ -148,7 +145,6 @@ tools =
     help: 'Freehand drawing (with pen pressure adjusting width)'
     down: (e) ->
       return if pointers[e.pointerId]
-      return if restrictTouch e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
         type: 'pen'
@@ -158,14 +154,12 @@ tools =
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       ## iPhone (iOS 13.4, Safari 13.1) sends zero pressure for touch events.
       #if e.pressure == 0
       #  stop e
@@ -183,7 +177,6 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -194,14 +187,12 @@ tools =
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       ## Force horizontal/vertical line when holding shift
       if e.shiftKey
@@ -223,7 +214,6 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -234,14 +224,12 @@ tools =
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
@@ -253,7 +241,6 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -265,14 +252,12 @@ tools =
       console.log 'yo', eventToPoint e
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
@@ -285,7 +270,6 @@ tools =
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       return if h.down  # repeat events can happen because of erasure
-      return if restrictTouch e
       h.down = e
       h.deleted = []
       if h.id?  # already have something highlighted
@@ -298,7 +282,6 @@ tools =
           h.deleted.push Objects.findOne target.dataset.id
           Meteor.call 'objectDel', target.dataset.id
     up: (e) ->
-      return if restrictTouch e
       h = pointers[e.pointerId]
       h?.clear()
       if h?.deleted?.length
@@ -311,7 +294,6 @@ tools =
               obj: obj
       delete pointers[e.pointerId]
     move: (e) ->
-      return if restrictTouch e
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       target = h.findGroup e
@@ -583,20 +565,29 @@ eventToRawPoint = (e) ->
   x: e.clientX
   y: e.clientY
 
+restrictTouch = (e) ->
+  not allowTouch and \
+  e.pointerType == 'touch' and \
+  currentTool of drawingTools
+
 pointerEvents = ->
   dom.listen [board, historyBoard],
     pointerdown: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].down? e
     pointerenter: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].down? e if e.buttons
     pointerup: stop = (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].up? e
     pointerleave: stop
     pointermove: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].move? e
     contextmenu: (e) ->
       ## Prevent right click from bringing up context menu, as it interferes
@@ -605,6 +596,7 @@ pointerEvents = ->
   dom.listen board,
     pointermove: (e) ->
       return unless currentRoom?
+      return if restrictTouch e
       remotes.update
         room: currentRoom
         tool: currentTool
