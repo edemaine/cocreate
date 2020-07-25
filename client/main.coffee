@@ -1147,19 +1147,13 @@ changeRoom = (room) ->
   return if room == currentRoom
   roomAuto?.stop()
   roomObserve?.stop()
-  roomObserveObjects?.stop()
-  roomObserveRemotes?.stop()
-  roomObserveObjects = roomObserveRemotes = null  # for later changePage()
   roomSub?.stop()
-  tool = currentTool
-  selectTool null
   currentRoom = room
-  currentPage = null
+  changePage null
   if room?
     roomSub = subscribe 'room', room
   else
     updateBadRoom()
-  selectTool tool
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
     unless currentPage?
@@ -1176,6 +1170,8 @@ changeRoom = (room) ->
       boardGrid?.update()
 changePage = (page) ->
   currentPage = page if page?
+  tool = currentTool
+  selectTool null
   roomObserveObjects?.stop()
   roomObserveRemotes?.stop()
   if currentPage?
@@ -1188,6 +1184,7 @@ changePage = (page) ->
   pageNumber = roomData?.pages?.indexOf currentPage
   pageNumber++ if pageNumber?
   document.getElementById('pageNum').value = pageNumber ? '?'
+  selectTool tool
 
 urlChange = ->
   if document.location.pathname == '/'
