@@ -502,6 +502,27 @@ tools =
     once: ->
       import('/package.json').then (json) ->
         window.open json.homepage
+  pagePrev:
+    icon: 'chevron-left-square'
+    once: pageDelta = (delta = -1) ->
+      return unless roomData?.pages?
+      index = roomData.pages.indexOf currentPage
+      return unless index?
+      index += delta
+      return unless 0 <= index < roomData.pages.length
+      changePage roomData.pages[index]
+  pageNext:
+    icon: 'chevron-right-square'
+    once: -> pageDelta +1
+  pageAdd:
+    icon: 'plus-square'
+    once: ->
+      Meteor.call 'pageNew', room: currentRoom
+      , (error, page) ->
+        if error?
+          return console.error "Failed to create new page on server: #{error}"
+        changePage page
+
 currentTool = 'pan'
 drawingTools =
   pen: true
@@ -967,9 +988,11 @@ class RemotesRender
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
-    unless remote.page == currentPage
-      elt.style.opacity = 0
-      return
+    elt.style.visibility =
+      if remote.page == currentPage
+        'visible'
+      else
+        'hidden'
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
@@ -1119,20 +1142,20 @@ roomSub = null
 roomObserveObjects = null
 roomObserveRemotes = null
 roomAuto = null
+roomData = null
 changeRoom = (room) ->
   return if room == currentRoom
   roomAuto?.stop()
   roomObserve?.stop()
-  roomObserveRemotes?.stop()
   roomObserveObjects?.stop()
-  roomObserveObjects = null  # for later changePage()
+  roomObserveRemotes?.stop()
+  roomObserveObjects = roomObserveRemotes = null  # for later changePage()
   roomSub?.stop()
   tool = currentTool
   selectTool null
   currentRoom = room
   currentPage = null
   if room?
-    roomObserveRemotes = observeRemotes()
     roomSub = subscribe 'room', room
   else
     updateBadRoom()
@@ -1141,6 +1164,8 @@ changeRoom = (room) ->
     roomData = Rooms.findOne currentRoom
     unless currentPage?
       changePage roomData?.pages?[0]
+    document.getElementById('numPages').innerHTML =
+      roomData?.pages?.length ? '?'
     gridTool = document.querySelector '.tool[data-tool="grid"]'
     if currentGrid != roomData?.grid
       currentGrid = roomData?.grid
@@ -1152,12 +1177,17 @@ changeRoom = (room) ->
 changePage = (page) ->
   currentPage = page if page?
   roomObserveObjects?.stop()
+  roomObserveRemotes?.stop()
   if currentPage?
     roomObserveObjects = observeRender()
+    roomObserveRemotes = observeRemotes()
     document.body.classList.remove 'nopage'
   else
     boardRoot.innerHTML = ''
     document.body.classList.add 'nopage' # in particular, disable pointer events
+  pageNumber = roomData?.pages?.indexOf currentPage
+  pageNumber++ if pageNumber?
+  document.getElementById('pageNum').value = pageNumber ? '?'
 
 urlChange = ->
   if document.location.pathname == '/'
@@ -1176,13 +1206,15 @@ urlChange = ->
 paletteTools = ->
   tooltip = null  # currently open tooltip
   toolsDiv = document.getElementById 'tools'
+  pagesDiv = document.getElementById 'pages'
   align = 'top'
   for tool, {icon, help, hotkey, init} of tools
+    div = if tool.startsWith 'page' then pagesDiv else toolsDiv
     if tool.startsWith 'spacer'
-      toolsDiv.appendChild dom.create 'div', class: 'spacer'
+      div.appendChild dom.create 'div', class: 'spacer'
       align = 'bottom'
     else
-      toolsDiv.appendChild div = dom.create 'div', null,
+      div.appendChild div = dom.create 'div', null,
         className: 'tool'
         dataset: tool: tool
         innerHTML: icons.svgIcon icon
@@ -1315,18 +1347,23 @@ paletteSize = ->
   parseFloat (getComputedStyle document.documentElement
   .getPropertyValue '--palette-size')
 
-resize = ->
-  toolsDiv = document.getElementById 'tools'
-  document.documentElement.style.setProperty '--palette-offset-width',
-    "#{toolsDiv.offsetWidth - toolsDiv.clientWidth + # scrollbar width
-       paletteSize()}px"
-  colorsDiv = document.getElementById 'colors'
-  document.documentElement.style.setProperty '--palette-offset-height',
-    "#{colorsDiv.offsetHeight - colorsDiv.clientHeight + # scrollbar height
-       paletteSize()}px"
+resize = (reps = 1) ->
+  for [id, attrib, dimen] in [
+    ['tools', '--palette-left-width', 'Width']
+    ['colors', '--palette-bottom-height', 'Height']
+    ['pages', '--palette-top-height', 'Height']
+  ]
+    div = document.getElementById id
+    if 0 <= attrib.indexOf 'width'
+      scrollbar = div.offsetWidth - div.clientWidth
+    else if 0 <= attrib.indexOf 'height'
+      scrollbar = div.offsetHeight - div.clientHeight
+    document.documentElement.style.setProperty attrib,
+      "#{scrollbar + paletteSize()}px"
   boardBB = board.getBoundingClientRect()
   boardGrid?.update()
   remotesRender?.resize()
+  setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
   document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'

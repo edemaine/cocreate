@@ -1,8 +1,8 @@
 :root
   --palette-size: 32px
   // The following grow to accomodate scrollbars if needed:
-  --palette-offset-width: var(--palette-size)
-  --palette-offset-height: var(--palette-size)
+  --palette-left-width: var(--palette-size)
+  --palette-bottom-height: var(--palette-size)
   --palette-color: #ccc
   --palette-border: 2px
   --tooltip-width: 200px
@@ -32,10 +32,10 @@ body
 .board, .modal
   position: absolute
   overflow: hidden
-  top: 0
-  left: var(--palette-offset-width)
-  width: calc(100% - var(--palette-offset-width))
-  height: calc(100% - var(--palette-offset-height))
+  top: var(--palette-bottom-height)
+  left: var(--palette-left-width)
+  width: calc(100% - var(--palette-left-width))
+  height: calc(100% - 2 * var(--palette-bottom-height))
 .board
   cursor: crosshair
   touch-action: none  // PointerEvents only
@@ -52,18 +52,29 @@ body
   overflow-y: auto
   top: 0
   left: 0
-  width: var(--palette-offset-width)
-  height: calc(100% - var(--palette-offset-height))
+  width: var(--palette-left-width)
+  height: calc(100% - var(--palette-bottom-height))
 .horizontal.palette
   flex-direction: row
   overflow-x: auto
   overflow-y: hidden
-  bottom: 0
   left: 0
   width: 100%
-  height: var(--palette-offset-height)
+  &.top
+    top: 0
+    left: var(--palette-left-width)
+    height: var(--palette-top-height)
+    width: calc(100% - var(--palette-left-width))
+  &.bottom
+    bottom: 0
+    height: var(--palette-bottom-height)
   &#historyRange
     margin: 0 10px
+
+#pageNumbers
+  padding: 4px 8px
+  #pageNum
+    width: 2em
 
 .tool, .color, .width
   flex: none
