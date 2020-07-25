@@ -42,7 +42,7 @@ tools =
   redo:
     icon: 'redo'
     help: 'Redo: Undo the last undo you did (if you did no operations since)'
-    hotkey: 'CTRL-Y'
+    hotkey: ['CTRL-Y', 'CTRL-SHIFT-Z']
     once: ->
       redo()
   pan:
