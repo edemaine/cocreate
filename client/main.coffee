@@ -373,7 +373,6 @@ tools =
         historyRoot.setAttribute 'transform',
           "translate(#{historyTransform.x} #{historyTransform.y})"
         historyRender = new Render historyRoot
-        max = range.max
         target = range.value
         count = 0
         for diff from ObjectsDiff.find query
@@ -403,17 +402,24 @@ tools =
             when 'del'
               historyRender.delete diff
               delete historyObjects[diff.id]
-          #break if max != range.max or value != range.value
       pointers.sub = subscribe 'history', currentRoom, currentPage
-      pointers.auto = Tracker.autorun ->
-        range.max = ObjectsDiff.find(query).count()
-        pointers.listen()
+      range.max = 0
+      pointers.observe = ObjectsDiff.find query
+      .observe
+        addedAt: (doc, index) ->
+          range.max++
+          pointers.listen() if index <= range.value
+        changedAt: (doc, index) ->
+          pointers.listen() if index <= range.value
+        removedAt: (doc, index) ->
+          range.max--
+          pointers.listen() if index <= range.value
     stop: ->
       document.body.classList.remove 'history'
       document.getElementById('historyRange').removeEventListener 'change', pointers.listen
       document.getElementById('historyBoard').innerHTML = ''
       pointers.sub.stop()
-      pointers.auto.stop()
+      pointers.observe.stop()
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
       pointers[e.pointerId].transform = Object.assign {}, boardTransform
