@@ -45,9 +45,8 @@ body
 
 .palette
   position: absolute
-  background: content-box var(--palette-color)
+  background: var(--palette-color)
   display: flex
-  z-index: 2  // above tooltip arrows
 .vertical.palette
   flex-direction: column
   overflow-x: hidden
@@ -107,12 +106,12 @@ body
   background: padding-box var(--palette-color)
   // Arrow
   &:before
-    z-index: 1
     content: ''
     position: absolute
     width: var(--tooltip-arrow)
     height: var(--tooltip-arrow)
     border: var(--tooltip-arrow) solid transparent
+    pointer-events: none
   &.vertical
     left: var(--palette-size)
     margin-left: var(--tooltip-arrow)
