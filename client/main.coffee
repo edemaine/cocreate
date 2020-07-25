@@ -1186,9 +1186,7 @@ changePage = (page) ->
   else
     boardRoot.innerHTML = ''
     document.body.classList.add 'nopage' # in particular, disable pointer events
-  pageNumber = roomData?.pages?.indexOf currentPage
-  pageNumber++ if pageNumber?
-  document.getElementById('pageNum').value = pageNumber ? '?'
+  updatePageNum()
   selectTool tool
   currentGrid = null
   pageAuto = Tracker.autorun ->
@@ -1201,10 +1199,15 @@ changePage = (page) ->
       else
         gridTool.classList.remove 'active'
       boardGrid?.update()
-
+updatePageNum = ->
+  pageNumber = currentPageIndex()
+  pageNumber++ if pageNumber?
+  document.getElementById('pageNum').value = pageNumber ? '?'
 currentPageIndex = ->
   return unless roomData?.pages?
-  roomData.pages.indexOf currentPage
+  index = roomData.pages.indexOf currentPage
+  return if index < 0
+  index
 
 urlChange = ->
   if document.location.pathname == '/'
@@ -1415,6 +1418,17 @@ Meteor.startup ->
           selection.delete()
         else
           hotkeys[e.key.toLowerCase()]?()
+  dom.listen pageNum = document.getElementById('pageNum'),
+    keydown: (e) ->
+      e.stopPropagation() # avoid width setting hotkey
+    change: (e) ->
+      return unless roomData?.pages?.length
+      page = parseInt pageNum.value
+      if isNaN page
+        updatePageNum()
+      else
+        page = Math.min roomData.pages.length, Math.max 1, page
+        changePage roomData.pages[page-1]
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
