@@ -505,8 +505,7 @@ tools =
   pagePrev:
     icon: 'chevron-left-square'
     once: pageDelta = (delta = -1) ->
-      return unless roomData?.pages?
-      index = roomData.pages.indexOf currentPage
+      index = currentPageIndex()
       return unless index?
       index += delta
       return unless 0 <= index < roomData.pages.length
@@ -517,7 +516,11 @@ tools =
   pageAdd:
     icon: 'plus-square'
     once: ->
-      Meteor.call 'pageNew', room: currentRoom
+      index = currentPageIndex()
+      return unless index?
+      Meteor.call 'pageNew',
+        room: currentRoom
+      , index+1
       , (error, page) ->
         if error?
           return console.error "Failed to create new page on server: #{error}"
@@ -1185,6 +1188,9 @@ changePage = (page) ->
   pageNumber++ if pageNumber?
   document.getElementById('pageNum').value = pageNumber ? '?'
   selectTool tool
+currentPageIndex = ->
+  return unless roomData?.pages?
+  roomData.pages.indexOf currentPage
 
 urlChange = ->
   if document.location.pathname == '/'
