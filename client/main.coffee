@@ -8,6 +8,7 @@ board = null     # set to svg#board element
 boardBB = null   # client bounding box (top/left/bottom/right) of board
 boardRoot = null # root <g> element within board for transform
 boardGrid = null # first <g> element within root for grid background
+gridDefault = true
 boardTransform = # board translation/rotation
   x: 0
   y: 0
@@ -333,7 +334,7 @@ tools =
     icon: 'grid'
     help: 'Toggle grid/graph paper'
     once: ->
-      Meteor.call 'roomGridToggle', currentRoom
+      Meteor.call 'gridToggle', currentPage
   linkRoom:
     icon: 'clipboard-link'
     help: 'Copy a link to this room/board to clipboard (for sharing with others)'
@@ -520,6 +521,11 @@ tools =
       return unless index?
       Meteor.call 'pageNew',
         room: currentRoom
+        grid:
+          if pageData?
+            Boolean pageData.grid
+          else
+            gridDefault
       , index+1
       , (error, page) ->
         if error?
@@ -1163,15 +1169,11 @@ changeRoom = (room) ->
       changePage roomData?.pages?[0]
     document.getElementById('numPages').innerHTML =
       roomData?.pages?.length ? '?'
-    gridTool = document.querySelector '.tool[data-tool="grid"]'
-    if currentGrid != roomData?.grid
-      currentGrid = roomData?.grid
-      if currentGrid
-        gridTool.classList.add 'active'
-      else
-        gridTool.classList.remove 'active'
-      boardGrid?.update()
+
+pageAuto = null
+pageData = null
 changePage = (page) ->
+  pageAuto?.stop()
   currentPage = page if page?
   tool = currentTool
   selectTool null
@@ -1188,6 +1190,18 @@ changePage = (page) ->
   pageNumber++ if pageNumber?
   document.getElementById('pageNum').value = pageNumber ? '?'
   selectTool tool
+  currentGrid = null
+  pageAuto = Tracker.autorun ->
+    pageData = Pages.findOne currentPage
+    if currentGrid != pageData?.grid
+      currentGrid = pageData?.grid
+      gridTool = document.querySelector '.tool[data-tool="grid"]'
+      if currentGrid
+        gridTool.classList.add 'active'
+      else
+        gridTool.classList.remove 'active'
+      boardGrid?.update()
+
 currentPageIndex = ->
   return unless roomData?.pages?
   roomData.pages.indexOf currentPage
@@ -1195,11 +1209,12 @@ currentPageIndex = ->
 urlChange = ->
   if document.location.pathname == '/'
     Meteor.call 'roomNew',
-      grid: true
-    , (error, {room, page}) ->
+      grid: gridDefault
+    , (error, data) ->
       if error?
+        updateBadRoom() # should display visible error message
         return console.error "Failed to create new room on server: #{error}"
-      history.replaceState null, 'new room', "/r/#{room}"
+      history.replaceState null, 'new room', "/r/#{data.room}"
       urlChange()
   else if match = document.location.pathname.match /^\/r\/(\w*)$/
     changeRoom match[1]

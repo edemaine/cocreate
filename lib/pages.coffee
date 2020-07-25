@@ -13,7 +13,8 @@ Meteor.methods
   pageNew: (page, index) ->
     check page,
       room: String
-      index: Match.Optional Number
+      grid: Match.Optional Boolean
+    check index, Match.Optional Number
     unless @isSimulation
       now = new Date
       page.created = now
@@ -25,3 +26,9 @@ Meteor.methods
         $each: [pageId]
         $position: index ? room?.pages?.length ? 0
     pageId
+
+  gridToggle: (page) ->
+    check page, String
+    data = checkPage page
+    Pages.update page,
+      $set: grid: not data.grid

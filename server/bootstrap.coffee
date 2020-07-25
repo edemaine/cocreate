@@ -64,4 +64,17 @@ Rooms.find
       multi: true
   console.log 'added page', page, 'to room', room._id
 
+## Grid property of page instead of room.
+Rooms.find
+  grid: $exists: true
+.forEach (room) ->
+  Pages.update
+    room: room._id
+  ,
+    $set: grid: room.grid
+  ,
+    multi: true
+  Rooms.update room._id,
+    $unset: grid: ''
+
 console.log 'Upgraded database as necessary.'
