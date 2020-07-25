@@ -426,7 +426,7 @@ tools =
       historyTransform.y = start.transform.y + current.y - start.y
       historyRoot.setAttribute 'transform',
         "translate(#{historyTransform.x} #{historyTransform.y})"
-  'download-svg':
+  downloadSVG:
     icon: 'download-svg'
     help: 'Download/export entire drawing as an SVG file'
     once: ->
@@ -505,6 +505,8 @@ tools =
         window.open json.homepage
   pagePrev:
     icon: 'chevron-left-square'
+    help: 'Go to previous page'
+    hotkey: 'Page Up'
     once: pageDelta = (delta = -1) ->
       index = currentPageIndex()
       return unless index?
@@ -513,9 +515,12 @@ tools =
       changePage roomData.pages[index]
   pageNext:
     icon: 'chevron-right-square'
+    help: 'Go to next page'
+    hotkey: 'Page Down'
     once: -> pageDelta +1
   pageAdd:
     icon: 'plus-square'
+    help: 'Add new blank page after the current page'
     once: ->
       index = currentPageIndex()
       return unless index?
@@ -1230,12 +1235,17 @@ paletteTools = ->
   pagesDiv = document.getElementById 'pages'
   align = 'top'
   for tool, {icon, help, hotkey, init} of tools
-    div = if tool.startsWith 'page' then pagesDiv else toolsDiv
+    container = if tool.startsWith 'page' then pagesDiv else toolsDiv
+    orientation = ''
+    if container.classList.contains 'horizontal'
+      orientation = 'horizontal'
+    else if container.classList.contains 'vertical'
+      orientation = 'vertical'
     if tool.startsWith 'spacer'
-      div.appendChild dom.create 'div', class: 'spacer'
+      container.appendChild dom.create 'div', class: 'spacer'
       align = 'bottom'
     else
-      div.appendChild div = dom.create 'div', null,
+      container.appendChild div = dom.create 'div', null,
         className: 'tool'
         dataset: tool: tool
         innerHTML: icons.svgIcon icon
@@ -1246,25 +1256,30 @@ paletteTools = ->
           hotkey = [hotkey] unless Array.isArray hotkey
           for key in hotkey
             help += """<kbd class="hotkey">#{key}</kbd>"""
+            key = key.replace /\s/g, ''
             hotkeys[key] = do (tool) -> -> selectTool tool
-        do (div, align, help) ->
+        do (div, align, orientation, help) ->
           dom.listen div,
             pointerenter: ->
-              tooltip.remove() if tooltip?
+              tooltip?.remove()
+              divBBox = div.getBoundingClientRect()
               document.body.appendChild tooltip = dom.create 'div', null,
-                className: "tooltip #{align}"
+                className: "tooltip #{align} #{orientation}"
                 innerHTML: help
-                style: "#{align}":
-                  if align == 'top'
-                    "#{div.getBoundingClientRect().top}px"
-                  else
-                    "calc(100% - #{div.getBoundingClientRect().bottom}px)"
+                style:
+                  if orientation == 'vertical'
+                    if align == 'top'
+                      top: "#{divBBox.top}px"
+                    else # bottom
+                      bottom: "calc(100% - #{divBBox.bottom}px)"
+                  else # horizontal
+                    left: "calc(#{divBBox.left + 0.5 * divBBox.width}px - 0.5 * var(--tooltip-width))"
               ,
                 pointerenter: ->
-                  tooltip.remove() if tooltip?
+                  tooltip?.remove()
                   tooltip = null
             pointerleave: ->
-              tooltip.remove() if tooltip?
+              tooltip?.remove()
               tooltip = null
       init?()
 
@@ -1369,6 +1384,7 @@ paletteSize = ->
   .getPropertyValue '--palette-size')
 
 resize = (reps = 1) ->
+  tooltip?.remove()
   for [id, attrib, dimen] in [
     ['tools', '--palette-left-width', 'Width']
     ['colors', '--palette-bottom-height', 'Height']
@@ -1417,7 +1433,10 @@ Meteor.startup ->
         when 'Delete', 'Backspace'
           selection.delete()
         else
-          hotkeys[e.key.toLowerCase()]?()
+          if e.key of hotkeys
+            hotkeys[e.key]()
+          else
+            hotkeys[e.key.toLowerCase()]?()
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey

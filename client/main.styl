@@ -28,6 +28,7 @@ kbd
 body
   font-family: 'Roboto Slab', serif
   touch-action: none  // Prevent mobile zooming
+  margin: 0
 
 .board, .modal
   position: absolute
@@ -46,6 +47,7 @@ body
   position: absolute
   background: content-box var(--palette-color)
   display: flex
+  z-index: 2  // above tooltip arrows
 .vertical.palette
   flex-direction: column
   overflow-x: hidden
@@ -99,25 +101,37 @@ body
   display: block
   position: absolute
   z-index: 99
-  left: var(--palette-size)
   width: var(--tooltip-width)
   padding: 5px 8px
   font-size: 16px
-  margin-left: var(--tooltip-arrow)
   background: padding-box var(--palette-color)
-  // Left arrow
+  // Arrow
   &:before
+    z-index: 1
     content: ''
     position: absolute
-    left: calc(-2 * var(--tooltip-arrow))
     width: var(--tooltip-arrow)
     height: var(--tooltip-arrow)
     border: var(--tooltip-arrow) solid transparent
-    border-right-color: var(--palette-color)
-  &.top:before
-    top: calc(-5px + 0.5 * var(--palette-size))  // 5px is padding on .tooltip
-  &.bottom:before
-    bottom: calc(-5px + 0.5 * var(--palette-size))  // 5px is padding on .tooltip
+  &.vertical
+    left: var(--palette-size)
+    margin-left: var(--tooltip-arrow)
+    // Left arrow
+    &:before
+      left: calc(-2 * var(--tooltip-arrow))
+      border-right-color: var(--palette-color)
+    &.top:before
+      top: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
+    &.bottom:before
+      bottom: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
+  &.horizontal
+    top: var(--palette-top-height)
+    margin-top: var(--tooltip-arrow)
+    // Up arrow
+    &:before
+      top: calc(-2 * var(--tooltip-arrow))
+      border-bottom-color: var(--palette-color)
+      left: calc(50% - var(--tooltip-arrow))
   .hotkey
     float: right
     margin-top: 1px
