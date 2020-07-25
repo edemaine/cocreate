@@ -367,17 +367,28 @@ tools =
       query =
         room: currentRoom
         page: currentPage
+      lastTarget = null
+      historyRender = null
       range.addEventListener 'change', pointers.listen = (e) ->
-        historyBoard.innerHTML = ''
-        historyBoard.appendChild historyRoot = dom.create 'g'
-        historyRoot.setAttribute 'transform',
-          "translate(#{historyTransform.x} #{historyTransform.y})"
-        historyRender = new Render historyRoot
-        target = range.value
-        count = 0
-        for diff from ObjectsDiff.find query
-          count++
-          break if count > target
+        target = parseInt range.value
+        if lastTarget? and target >= lastTarget
+          options =
+            skip: lastTarget
+            limit: target - lastTarget
+        else
+          historyBoard.innerHTML = ''
+          historyBoard.appendChild historyRoot = dom.create 'g'
+          historyRoot.setAttribute 'transform',
+            "translate(#{historyTransform.x} #{historyTransform.y})"
+          historyRender = new Render historyRoot
+          options =
+            limit: target
+        return if options.limit == 0
+        lastTarget = target
+        #count = 0
+        for diff from ObjectsDiff.find query, options
+          #count++
+          #break if count > target
           switch diff.type
             when 'pen', 'poly', 'rect', 'ellipse'
               obj = diff
