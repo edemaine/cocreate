@@ -5,6 +5,7 @@
   --palette-bottom-height: var(--palette-size)
   --palette-color: #ccc
   --palette-border: 2px
+  --tooltip-color: hsl(60, 50%, 76%)
   --tooltip-width: 200px
   --tooltip-arrow: 5px
 
@@ -103,7 +104,7 @@ body
   width: var(--tooltip-width)
   padding: 5px 8px
   font-size: 16px
-  background: padding-box var(--palette-color)
+  background: padding-box var(--tooltip-color)
   // Arrow
   &:before
     content: ''
@@ -118,7 +119,7 @@ body
     // Left arrow
     &:before
       left: calc(-2 * var(--tooltip-arrow))
-      border-right-color: var(--palette-color)
+      border-right-color: var(--tooltip-color)
     &.top:before
       top: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
     &.bottom:before
@@ -129,7 +130,7 @@ body
     // Up arrow
     &:before
       top: calc(-2 * var(--tooltip-arrow))
-      border-bottom-color: var(--palette-color)
+      border-bottom-color: var(--tooltip-color)
       left: calc(50% - var(--tooltip-arrow))
   .hotkey
     float: right
