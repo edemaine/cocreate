@@ -19,7 +19,7 @@ eraseDist = 2   # require movement by this many pixels before erasing swipe
 dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
-currentRoom = undefined
+currentRoom = currentPage = null
 currentGrid = null
 allowTouch = true
 
@@ -149,6 +149,7 @@ tools =
       return if pointers[e.pointerId]
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'pen'
         pts: [eventToPointW e]
         color: currentColor
@@ -183,6 +184,7 @@ tools =
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'poly'
         pts: [pt, pt]
         color: currentColor
@@ -221,6 +223,7 @@ tools =
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'rect'
         pts: [pt, pt]
         color: currentColor
@@ -249,6 +252,7 @@ tools =
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'ellipse'
         pts: [pt, pt]
         color: currentColor
@@ -359,6 +363,9 @@ tools =
       historyObjects = {}
       range = document.getElementById 'historyRange'
       range.value = 0
+      query =
+        room: currentRoom
+        page: currentPage
       range.addEventListener 'change', pointers.listen = (e) ->
         historyBoard.innerHTML = ''
         historyBoard.appendChild historyRoot = dom.create 'g'
@@ -368,7 +375,7 @@ tools =
         max = range.max
         target = range.value
         count = 0
-        for diff from ObjectsDiff.find room: currentRoom
+        for diff from ObjectsDiff.find query
           count++
           break if count > target
           switch diff.type
@@ -396,9 +403,9 @@ tools =
               historyRender.delete diff
               delete historyObjects[diff.id]
           #break if max != range.max or value != range.value
-      pointers.sub = subscribe 'history', currentRoom
+      pointers.sub = subscribe 'history', currentRoom, currentPage
       pointers.auto = Tracker.autorun ->
-        range.max = ObjectsDiff.find(room: currentRoom).count()
+        range.max = ObjectsDiff.find(query).count()
         pointers.listen()
     stop: ->
       document.body.classList.remove 'history'
@@ -607,6 +614,7 @@ pointerEvents = ->
       return if restrictTouch e
       remotes.update
         room: currentRoom
+        page: currentPage
         tool: currentTool
         color: currentColor
         cursor: eventToPointW e
@@ -912,9 +920,13 @@ class Render
       console.warn "Duplicate object with ID #{id}?!"
       delete @dom[id]
 
-observeRender = (room) ->
+observeRender = ->
+  boardRoot.innerHTML = ''
   render = new Render boardRoot
-  Objects.find room: room
+  boardGrid = new Grid boardRoot
+  Objects.find
+    room: currentRoom
+    page: currentPage
   .observe
     added: (obj) ->
       render.shouldNotExist obj
@@ -955,6 +967,9 @@ class RemotesRender
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
+    unless remote.page == currentPage
+      elt.style.opacity = 0
+      return
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
@@ -1025,9 +1040,10 @@ class RemotesRender
       elt.style.opacity = 1 - (now - @updated[id]) / 1000 / remotes.fade
 
 remotesRender = null
-observeRemotes = (room) ->
+observeRemotes = ->
   remotesRender = new RemotesRender
-  Remotes.find room: room
+  Remotes.find
+    room: currentRoom
   .observe
     added: (remote) -> remotesRender.render remote
     changed: (remote, oldRemote) -> remotesRender.render remote, oldRemote
@@ -1082,11 +1098,12 @@ loadingUpdate = (delta) ->
 
 updateBadRoom = ->
   badRoom = document.getElementById 'badRoom'
-  if Rooms.findOne currentRoom
+  if currentRoom? and Rooms.findOne currentRoom
     badRoom.classList.remove 'show'
   else
     badRoom.classList.add 'show'
     currentRoom = null
+    changePage null
 
 subscribe = (...args) ->
   delta = 1
@@ -1106,22 +1123,24 @@ changeRoom = (room) ->
   return if room == currentRoom
   roomAuto?.stop()
   roomObserve?.stop()
+  roomObserveRemotes?.stop()
+  roomObserveObjects?.stop()
+  roomObserveObjects = null  # for later changePage()
   roomSub?.stop()
   tool = currentTool
   selectTool null
-  rendered = {}
-  boardRoot.innerHTML = ''
-  boardGrid = new Grid boardRoot
   currentRoom = room
+  currentPage = null
   if room?
-    roomObserveObjects = observeRender room
-    roomObserveRemotes = observeRemotes room
+    roomObserveRemotes = observeRemotes()
     roomSub = subscribe 'room', room
   else
     updateBadRoom()
   selectTool tool
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
+    unless currentPage?
+      changePage roomData?.pages?[0]
     gridTool = document.querySelector '.tool[data-tool="grid"]'
     if currentGrid != roomData?.grid
       currentGrid = roomData?.grid
@@ -1129,17 +1148,26 @@ changeRoom = (room) ->
         gridTool.classList.add 'active'
       else
         gridTool.classList.remove 'active'
-      boardGrid.update()
+      boardGrid?.update()
+changePage = (page) ->
+  currentPage = page if page?
+  roomObserveObjects?.stop()
+  if currentPage?
+    roomObserveObjects = observeRender()
+    document.body.classList.remove 'nopage'
+  else
+    boardRoot.innerHTML = ''
+    document.body.classList.add 'nopage' # in particular, disable pointer events
 
-pageChange = ->
+urlChange = ->
   if document.location.pathname == '/'
     Meteor.call 'roomNew',
       grid: true
-    , (error, room) ->
+    , (error, {room, page}) ->
       if error?
         return console.error "Failed to create new room on server: #{error}"
       history.replaceState null, 'new room', "/r/#{room}"
-      pageChange()
+      urlChange()
   else if match = document.location.pathname.match /^\/r\/(\w*)$/
     changeRoom match[1]
   else
@@ -1314,7 +1342,7 @@ Meteor.startup ->
   pointerEvents()
   dom.listen window,
     resize: resize
-    popstate: pageChange
+    popstate: urlChange
   , true # call now
   dom.listen window,
     keydown: (e) ->

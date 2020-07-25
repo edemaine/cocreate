@@ -46,4 +46,22 @@ Objects.find
       width: width
       pts: obj.pts
 
+## Upgrade rooms to have (single) pages.
+Rooms.find
+  pages: $exists: false
+.forEach (room) ->
+  page = Meteor.apply 'pageNew', [
+    room: room._id
+  ], returnStubValue: true
+  Rooms.update room._id,
+    $set: pages: [page]
+  for collection in [Objects, ObjectsDiff, Remotes]
+    collection.update
+      room: room._id
+    ,
+      $set: page: page
+    ,
+      multi: true
+  console.log 'added page', page, 'to room', room._id
+
 console.log 'Upgraded database as necessary.'

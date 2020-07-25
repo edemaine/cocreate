@@ -15,7 +15,13 @@ Meteor.methods
     unless @isSimulation
       now = new Date
       room.created = now
-    Rooms.insert room
+    room.pages = []
+    roomId = Rooms.insert room
+    pageId = Meteor.apply 'pageNew', [
+      room: roomId
+    ], returnStubValue: true
+    room: roomId
+    page: pageId
 
   roomGridToggle: (room) ->
     check room, String

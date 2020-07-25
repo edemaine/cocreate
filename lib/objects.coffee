@@ -1,5 +1,6 @@
 import {validId} from './id.coffee'
 import {checkRoom} from './rooms.coffee'
+import {checkPage} from './pages.coffee'
 
 @Objects = new Mongo.Collection 'objects'
 @ObjectsDiff = new Mongo.Collection 'objects.diff'
@@ -24,6 +25,7 @@ Meteor.methods
       _id: Match.Optional String
       type: String
       room: String
+      page: String
       created: Match.Optional Date
       updated: Match.Optional Date
       tx: Match.Optional Number
@@ -51,6 +53,7 @@ Meteor.methods
     check obj, pattern
     unless @isSimulation
       checkRoom obj.room
+      checkPage obj.page
       if obj._id? and Objects.findOne(obj._id)?
         throw new Error "Attempt to create duplicate object #{obj._id}"
       now = new Date
@@ -70,6 +73,7 @@ Meteor.methods
     unless @isSimulation
       obj = checkObject id
       diff.room = obj.room
+      diff.page = obj.page
       diff.type = 'push'
       diff.updated = new Date
       ObjectsDiff.insert diff
@@ -105,6 +109,7 @@ Meteor.methods
     unless @isSimulation
       obj = checkObject id
       diff.room = obj.room
+      diff.page = obj.page
       diff.type = 'edit'
       diff.updated = set.updated = new Date
       ObjectsDiff.insert diff
@@ -117,6 +122,7 @@ Meteor.methods
       ObjectsDiff.insert
         id: id
         room: obj.room
+        page: obj.page
         type: 'del'
         updated: new Date
     Objects.remove id
