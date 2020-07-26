@@ -49,6 +49,7 @@ tools =
     icon: 'arrows-alt'
     hotspot: [0.5, 0.5]
     help: 'Pan around the page by dragging'
+    hotkey: 'hold SPACE'
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
       pointers[e.pointerId].transform = Object.assign {}, boardTransform
@@ -1443,6 +1444,7 @@ Meteor.startup ->
     resize: resize
     popstate: urlChange
   , true # call now
+  spaceDown = false
   dom.listen window,
     keydown: (e) ->
       switch e.key
@@ -1457,11 +1459,21 @@ Meteor.startup ->
             redo()
         when 'Delete', 'Backspace'
           selection.delete()
+        when ' '
+          if currentTool not in ['pan', 'history']
+            spaceDown = true
+            selectTool 'pan'
         else
           if e.key of hotkeys
             hotkeys[e.key]()
           else
             hotkeys[e.key.toLowerCase()]?()
+    keyup: (e) ->
+      switch e.key
+        when ' '
+          if spaceDown
+            selectTool lastTool
+            spaceDown = false
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey
