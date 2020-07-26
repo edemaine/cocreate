@@ -13,3 +13,4 @@ Objects.rawCollection().createIndex
 ## For 'history' subscription
 ObjectsDiff.rawCollection().createIndex
   room: 1
+  page: 1
