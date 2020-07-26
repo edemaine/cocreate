@@ -16,12 +16,19 @@ body
     .collapse.navbar-collapse#navbar
       ul.nav.navbar-nav.navbar-right
         +loginButtons
+  #pages.top.horizontal.palette
+    #pageNumbers
+      | page 
+      input#pageNum(type='text', value='?')
+      |  of 
+      span#numPages ?
   #tools.vertical.palette
-  #colors.horizontal.palette.historyHide
-  #history.horizontal.palette.historyShow
+  #colors.bottom.horizontal.palette.historyHide
+  #history.bottom.horizontal.palette.historyShow
     input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
-  svg#board.board.historyHide
-  svg#historyBoard.board.historyShow
+  // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
+  svg#board.board.historyHide(touch-action="none")
+  svg#historyBoard.board.historyShow(touch-action="none")
   svg#remotes.board.historyHide
   #badRoom.modal.error
     h1 Invalid Room ID

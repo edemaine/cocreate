@@ -8,6 +8,7 @@ board = null     # set to svg#board element
 boardBB = null   # client bounding box (top/left/bottom/right) of board
 boardRoot = null # root <g> element within board for transform
 boardGrid = null # first <g> element within root for grid background
+gridDefault = true
 boardTransform = # board translation/rotation
   x: 0
   y: 0
@@ -19,9 +20,9 @@ eraseDist = 2   # require movement by this many pixels before erasing swipe
 dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
-currentRoom = undefined
+currentRoom = currentPage = null
 currentGrid = null
-currentTouch = null
+allowTouch = true
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -44,13 +45,14 @@ tools =
   redo:
     icon: 'redo'
     help: 'Redo: Undo the last undo you did (if you did no operations since)'
-    hotkey: 'CTRL-Y'
+    hotkey: ['CTRL-Y', 'CTRL-SHIFT-Z']
     once: ->
       redo()
   pan:
     icon: 'arrows-alt'
     hotspot: [0.5, 0.5]
     help: 'Pan around the page by dragging'
+    hotkey: 'hold SPACE'
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
       pointers[e.pointerId].transform = Object.assign {}, boardTransform
@@ -72,6 +74,7 @@ tools =
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
     help: 'Select objects (multiple if holding <kbd>SHIFT</kbd>) and then change their color/width or drag to move them'
+    hotkey: 's'
     start: ->
       pointers.objects = {}
     stop: selectHighlightReset = ->
@@ -146,6 +149,7 @@ tools =
     icon: 'pencil-alt'
     hotspot: [0, 1]
     help: 'Freehand drawing (with pen pressure adjusting width)'
+    hotkey: 'p'
     down: (e) ->
 
       return if pointers[e.pointerId]
@@ -153,6 +157,7 @@ tools =
 
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'pen'
         pts: [eventToPointW e]
         color: currentColor
@@ -183,6 +188,7 @@ tools =
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
     help: 'Draw straight line segment between endpoints (drag)'
+    hotkey: ['l', '\\']
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -191,6 +197,7 @@ tools =
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'poly'
         pts: [pt, pt]
         color: currentColor
@@ -223,6 +230,7 @@ tools =
     icon: 'rect'
     hotspot: [0.0625, 0.883]
     help: 'Draw axis-aligned rectangle between endpoints (drag)'
+    hotkey: 'r'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -231,6 +239,7 @@ tools =
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'rect'
         pts: [pt, pt]
         color: currentColor
@@ -253,6 +262,7 @@ tools =
     icon: 'ellipse'
     hotspot: [0.201888, 0.75728]
     help: 'Draw axis-aligned ellipsis inside rectangle between endpoints (drag)'
+    hotkey: 'o'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
@@ -261,12 +271,12 @@ tools =
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
+        page: currentPage
         type: 'ellipse'
         pts: [pt, pt]
         color: currentColor
         width: currentWidth
       ], returnStubValue: true
-      console.log 'yo', eventToPoint e
     up: (e) ->
       return unless pointers[e.pointerId]
       return if restrictTouch e
@@ -284,6 +294,7 @@ tools =
     icon: 'eraser'
     hotspot: [0.4, 0.9]
     help: 'Erase entire objects: click for one object, drag for multiple objects'
+    hotkey: '-'
     stop: -> selectHighlightReset()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
@@ -336,11 +347,23 @@ tools =
       currentTouch = !currentTouch
 
   spacer: {}
+  touch:
+    icon: 'hand-pointer'
+    help: 'Allow drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
+    init: touchUpdate = ->
+      touchTool = document.querySelector '.tool[data-tool="touch"]'
+      if allowTouch
+        touchTool.classList.add 'active'
+      else
+        touchTool.classList.remove 'active'
+    once: ->
+      allowTouch = not allowTouch
+      touchUpdate()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
     once: ->
-      Meteor.call 'roomGridToggle', currentRoom
+      Meteor.call 'gridToggle', currentPage
   linkRoom:
     icon: 'clipboard-link'
     help: 'Copy a link to this room/board to clipboard (for sharing with others)'
@@ -370,18 +393,31 @@ tools =
       historyObjects = {}
       range = document.getElementById 'historyRange'
       range.value = 0
+      query =
+        room: currentRoom
+        page: currentPage
+      lastTarget = null
+      historyRender = null
       range.addEventListener 'change', pointers.listen = (e) ->
-        historyBoard.innerHTML = ''
-        historyBoard.appendChild historyRoot = dom.create 'g'
-        historyRoot.setAttribute 'transform',
-          "translate(#{historyTransform.x} #{historyTransform.y})"
-        historyRender = new Render historyRoot
-        max = range.max
-        target = range.value
-        count = 0
-        for diff from ObjectsDiff.find room: currentRoom
-          count++
-          break if count > target
+        target = parseInt range.value
+        if lastTarget? and target >= lastTarget
+          options =
+            skip: lastTarget
+            limit: target - lastTarget
+        else
+          historyBoard.innerHTML = ''
+          historyBoard.appendChild historyRoot = dom.create 'g'
+          historyRoot.setAttribute 'transform',
+            "translate(#{historyTransform.x} #{historyTransform.y})"
+          historyRender = new Render historyRoot
+          options =
+            limit: target
+        return if options.limit == 0
+        lastTarget = target
+        #count = 0
+        for diff from ObjectsDiff.find query, options
+          #count++
+          #break if count > target
           switch diff.type
             when 'pen', 'poly', 'rect', 'ellipse'
               obj = diff
@@ -406,17 +442,24 @@ tools =
             when 'del'
               historyRender.delete diff
               delete historyObjects[diff.id]
-          #break if max != range.max or value != range.value
-      pointers.sub = subscribe 'history', currentRoom
-      pointers.auto = Tracker.autorun ->
-        range.max = ObjectsDiff.find(room: currentRoom).count()
-        pointers.listen()
+      pointers.sub = subscribe 'history', currentRoom, currentPage
+      range.max = 0
+      pointers.observe = ObjectsDiff.find query
+      .observe
+        addedAt: (doc, index) ->
+          range.max++
+          pointers.listen() if index <= range.value
+        changedAt: (doc, index) ->
+          pointers.listen() if index <= range.value
+        removedAt: (doc, index) ->
+          range.max--
+          pointers.listen() if index <= range.value
     stop: ->
       document.body.classList.remove 'history'
       document.getElementById('historyRange').removeEventListener 'change', pointers.listen
       document.getElementById('historyBoard').innerHTML = ''
       pointers.sub.stop()
-      pointers.auto.stop()
+      pointers.observe.stop()
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
       pointers[e.pointerId].transform = Object.assign {}, boardTransform
@@ -429,7 +472,7 @@ tools =
       historyTransform.y = start.transform.y + current.y - start.y
       historyRoot.setAttribute 'transform',
         "translate(#{historyTransform.x} #{historyTransform.y})"
-  'download-svg':
+  downloadSVG:
     icon: 'download-svg'
     help: 'Download/export entire drawing as an SVG file'
     once: ->
@@ -506,6 +549,48 @@ tools =
     once: ->
       import('/package.json').then (json) ->
         window.open json.homepage
+  pagePrev:
+    icon: 'chevron-left-square'
+    help: 'Go to previous page'
+    hotkey: 'Page Up'
+    once: pageDelta = (delta = -1) ->
+      index = currentPageIndex()
+      return unless index?
+      index += delta
+      return unless 0 <= index < roomData.pages.length
+      changePage roomData.pages[index]
+  pageNext:
+    icon: 'chevron-right-square'
+    help: 'Go to next page'
+    hotkey: 'Page Down'
+    once: -> pageDelta +1
+  pageNew:
+    icon: 'plus-square'
+    help: 'Add new blank page after the current page'
+    once: ->
+      index = currentPageIndex()
+      return unless index?
+      Meteor.call 'pageNew',
+        room: currentRoom
+        grid:
+          if pageData?
+            Boolean pageData.grid
+          else
+            gridDefault
+      , index+1
+      , (error, page) ->
+        if error?
+          return console.error "Failed to create new page on server: #{error}"
+        changePage page
+  pageDup:
+    icon: 'clone'
+    help: 'Duplicate current page'
+    once: ->
+      Meteor.call 'pageDup', currentPage, (error, page) ->
+        if error?
+          return console.error "Failed to duplicate page on server: #{error}"
+        changePage page
+
 currentTool = 'pan'
 drawingTools =
   pen: true
@@ -513,6 +598,7 @@ drawingTools =
   rect: true
   ellipse: true
 lastDrawingTool = 'pen'
+hotkeys = {}
 
 currentBoard = ->
   if currentTool == 'history'
@@ -552,6 +638,8 @@ widths = [
   6
   7
 ]
+for width in widths
+  hotkeys[width] = do (width) -> -> selectWidth width
 currentWidth = 5
 
 ## Maps a PointerEvent with `pressure` attribute to a `w` multiplier to
@@ -582,20 +670,29 @@ eventToRawPoint = (e) ->
   x: e.clientX
   y: e.clientY
 
+restrictTouch = (e) ->
+  not allowTouch and \
+  e.pointerType == 'touch' and \
+  currentTool of drawingTools
+
 pointerEvents = ->
   dom.listen [board, historyBoard],
     pointerdown: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].down? e
     pointerenter: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].down? e if e.buttons
     pointerup: stop = (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].up? e
     pointerleave: stop
     pointermove: (e) ->
       e.preventDefault()
+      return if restrictTouch e
       tools[currentTool].move? e
     contextmenu: (e) ->
       ## Prevent right click from bringing up context menu, as it interferes
@@ -604,8 +701,10 @@ pointerEvents = ->
   dom.listen board,
     pointermove: (e) ->
       return unless currentRoom?
+      return if restrictTouch e
       remotes.update
         room: currentRoom
+        page: currentPage
         tool: currentTool
         color: currentColor
         cursor: eventToPointW e
@@ -911,9 +1010,13 @@ class Render
       console.warn "Duplicate object with ID #{id}?!"
       delete @dom[id]
 
-observeRender = (room) ->
+observeRender = ->
+  boardRoot.innerHTML = ''
   render = new Render boardRoot
-  Objects.find room: room
+  boardGrid = new Grid boardRoot
+  Objects.find
+    room: currentRoom
+    page: currentPage
   .observe
     added: (obj) ->
       render.shouldNotExist obj
@@ -954,6 +1057,11 @@ class RemotesRender
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
+    elt.style.visibility =
+      if remote.page == currentPage
+        'visible'
+      else
+        'hidden'
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
@@ -1024,9 +1132,10 @@ class RemotesRender
       elt.style.opacity = 1 - (now - @updated[id]) / 1000 / remotes.fade
 
 remotesRender = null
-observeRemotes = (room) ->
+observeRemotes = ->
   remotesRender = new RemotesRender
-  Remotes.find room: room
+  Remotes.find
+    room: currentRoom
   .observe
     added: (remote) -> remotesRender.render remote
     changed: (remote, oldRemote) -> remotesRender.render remote, oldRemote
@@ -1081,11 +1190,12 @@ loadingUpdate = (delta) ->
 
 updateBadRoom = ->
   badRoom = document.getElementById 'badRoom'
-  if Rooms.findOne currentRoom
+  if currentRoom? and Rooms.findOne currentRoom
     badRoom.classList.remove 'show'
   else
     badRoom.classList.add 'show'
     currentRoom = null
+    changePage null
 
 subscribe = (...args) ->
   delta = 1
@@ -1101,45 +1211,80 @@ roomSub = null
 roomObserveObjects = null
 roomObserveRemotes = null
 roomAuto = null
+roomData = null
 changeRoom = (room) ->
   return if room == currentRoom
   roomAuto?.stop()
   roomObserve?.stop()
   roomSub?.stop()
-  tool = currentTool
-  selectTool null
-  rendered = {}
-  boardRoot.innerHTML = ''
-  boardGrid = new Grid boardRoot
   currentRoom = room
+  changePage null
   if room?
-    roomObserveObjects = observeRender room
-    roomObserveRemotes = observeRemotes room
     roomSub = subscribe 'room', room
   else
     updateBadRoom()
-  selectTool tool
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
+<<<<<<< HEAD
     gridTool = document.querySelector '.tool[data-tool="grid"]'
 
     if currentGrid != roomData?.grid
       currentGrid = roomData?.grid
+=======
+    unless currentPage?
+      changePage roomData?.pages?[0]
+    document.getElementById('numPages').innerHTML =
+      roomData?.pages?.length ? '?'
+
+pageAuto = null
+pageData = null
+changePage = (page) ->
+  pageAuto?.stop()
+  currentPage = page if page?
+  tools[currentTool]?.stop?()
+  roomObserveObjects?.stop()
+  roomObserveRemotes?.stop()
+  if currentPage?
+    roomObserveObjects = observeRender()
+    roomObserveRemotes = observeRemotes()
+    document.body.classList.remove 'nopage'
+  else
+    boardRoot.innerHTML = ''
+    document.body.classList.add 'nopage' # in particular, disable pointer events
+  updatePageNum()
+  selectTool null
+  currentGrid = null
+  pageAuto = Tracker.autorun ->
+    pageData = Pages.findOne currentPage
+    if currentGrid != pageData?.grid
+      currentGrid = pageData?.grid
+      gridTool = document.querySelector '.tool[data-tool="grid"]'
+>>>>>>> upstream/master
       if currentGrid
         gridTool.classList.add 'active'
       else
         gridTool.classList.remove 'active'
-      boardGrid.update()
+      boardGrid?.update()
+updatePageNum = ->
+  pageNumber = currentPageIndex()
+  pageNumber++ if pageNumber?
+  document.getElementById('pageNum').value = pageNumber ? '?'
+currentPageIndex = ->
+  return unless roomData?.pages?
+  index = roomData.pages.indexOf currentPage
+  return if index < 0
+  index
 
-pageChange = ->
+urlChange = ->
   if document.location.pathname == '/'
     Meteor.call 'roomNew',
-      grid: true
-    , (error, room) ->
+      grid: gridDefault
+    , (error, data) ->
       if error?
+        updateBadRoom() # should display visible error message
         return console.error "Failed to create new room on server: #{error}"
-      history.replaceState null, 'new room', "/r/#{room}"
-      pageChange()
+      history.replaceState null, 'new room', "/r/#{data.room}"
+      urlChange()
   else if match = document.location.pathname.match /^\/r\/(\w*)$/
     changeRoom match[1]
   else
@@ -1148,13 +1293,20 @@ pageChange = ->
 paletteTools = ->
   tooltip = null  # currently open tooltip
   toolsDiv = document.getElementById 'tools'
+  pagesDiv = document.getElementById 'pages'
   align = 'top'
-  for tool, {icon, help, hotkey} of tools
+  for tool, {icon, help, hotkey, init} of tools
+    container = if tool.startsWith 'page' then pagesDiv else toolsDiv
+    orientation = ''
+    if container.classList.contains 'horizontal'
+      orientation = 'horizontal'
+    else if container.classList.contains 'vertical'
+      orientation = 'vertical'
     if tool.startsWith 'spacer'
-      toolsDiv.appendChild dom.create 'div', class: 'spacer'
+      container.appendChild dom.create 'div', class: 'spacer'
       align = 'bottom'
     else
-      toolsDiv.appendChild div = dom.create 'div', null,
+      container.appendChild div = dom.create 'div', null,
         className: 'tool'
         dataset: tool: tool
         innerHTML: icons.svgIcon icon
@@ -1162,26 +1314,35 @@ paletteTools = ->
         click: (e) -> selectTool e.currentTarget.dataset.tool
       if help
         if hotkey
-          help += """<kbd class="hotkey">#{hotkey}</kbd>"""
-        do (div, align, help) ->
+          hotkey = [hotkey] unless Array.isArray hotkey
+          for key in hotkey
+            help += """<kbd class="hotkey">#{key}</kbd>"""
+            key = key.replace /\s/g, ''
+            hotkeys[key] = do (tool) -> -> selectTool tool
+        do (div, align, orientation, help) ->
           dom.listen div,
             pointerenter: ->
-              tooltip.remove() if tooltip?
+              tooltip?.remove()
+              divBBox = div.getBoundingClientRect()
               document.body.appendChild tooltip = dom.create 'div', null,
-                className: "tooltip #{align}"
+                className: "tooltip #{align} #{orientation}"
                 innerHTML: help
-                style: "#{align}":
-                  if align == 'top'
-                    "#{div.getBoundingClientRect().top}px"
-                  else
-                    "calc(100% - #{div.getBoundingClientRect().bottom}px)"
+                style:
+                  if orientation == 'vertical'
+                    if align == 'top'
+                      top: "#{divBBox.top}px"
+                    else # bottom
+                      bottom: "calc(100% - #{divBBox.bottom}px)"
+                  else # horizontal
+                    left: "calc(#{divBBox.left + 0.5 * divBBox.width}px - 0.5 * var(--tooltip-width))"
               ,
                 pointerenter: ->
-                  tooltip.remove() if tooltip?
+                  tooltip?.remove()
                   tooltip = null
             pointerleave: ->
-              tooltip.remove() if tooltip?
+              tooltip?.remove()
               tooltip = null
+      init?()
 
 lastTool = null
 selectTool = (tool) ->
@@ -1190,8 +1351,9 @@ selectTool = (tool) ->
   tools[currentTool]?.stop?()
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool
-  lastTool = currentTool
-  currentTool = tool if tool?  # tool is null if initializing
+  if tool?  # tool == null means initialize already set currentTool
+    lastTool = currentTool
+    currentTool = tool
   dom.select '.tool', "[data-tool='#{currentTool}']"
   if currentTool == 'pen'
     selectColor() # set color-specific pen icon
@@ -1283,18 +1445,24 @@ paletteSize = ->
   parseFloat (getComputedStyle document.documentElement
   .getPropertyValue '--palette-size')
 
-resize = ->
-  toolsDiv = document.getElementById 'tools'
-  document.documentElement.style.setProperty '--palette-offset-width',
-    "#{toolsDiv.offsetWidth - toolsDiv.clientWidth + # scrollbar width
-       paletteSize()}px"
-  colorsDiv = document.getElementById 'colors'
-  document.documentElement.style.setProperty '--palette-offset-height',
-    "#{colorsDiv.offsetHeight - colorsDiv.clientHeight + # scrollbar height
-       paletteSize()}px"
+resize = (reps = 1) ->
+  tooltip?.remove()
+  for [id, attrib, dimen] in [
+    ['tools', '--palette-left-width', 'Width']
+    ['colors', '--palette-bottom-height', 'Height']
+    ['pages', '--palette-top-height', 'Height']
+  ]
+    div = document.getElementById id
+    if 0 <= attrib.indexOf 'width'
+      scrollbar = div.offsetWidth - div.clientWidth
+    else if 0 <= attrib.indexOf 'height'
+      scrollbar = div.offsetHeight - div.clientHeight
+    document.documentElement.style.setProperty attrib,
+      "#{scrollbar + paletteSize()}px"
   boardBB = board.getBoundingClientRect()
   boardGrid?.update()
   remotesRender?.resize()
+  setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
   document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
@@ -1310,8 +1478,9 @@ Meteor.startup ->
   pointerEvents()
   dom.listen window,
     resize: resize
-    popstate: pageChange
+    popstate: urlChange
   , true # call now
+  spaceDown = false
   dom.listen window,
     keydown: (e) ->
       switch e.key
@@ -1326,6 +1495,32 @@ Meteor.startup ->
             redo()
         when 'Delete', 'Backspace'
           selection.delete()
+        when ' '
+          if currentTool not in ['pan', 'history']
+            spaceDown = true
+            selectTool 'pan'
+        else
+          if e.key of hotkeys
+            hotkeys[e.key]()
+          else
+            hotkeys[e.key.toLowerCase()]?()
+    keyup: (e) ->
+      switch e.key
+        when ' '
+          if spaceDown
+            selectTool lastTool
+            spaceDown = false
+  dom.listen pageNum = document.getElementById('pageNum'),
+    keydown: (e) ->
+      e.stopPropagation() # avoid width setting hotkey
+    change: (e) ->
+      return unless roomData?.pages?.length
+      page = parseInt pageNum.value
+      if isNaN page
+        updatePageNum()
+      else
+        page = Math.min roomData.pages.length, Math.max 1, page
+        changePage roomData.pages[page-1]
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
