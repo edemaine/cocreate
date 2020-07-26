@@ -535,7 +535,7 @@ tools =
     help: 'Go to next page'
     hotkey: 'Page Down'
     once: -> pageDelta +1
-  pageAdd:
+  pageNew:
     icon: 'plus-square'
     help: 'Add new blank page after the current page'
     once: ->
@@ -552,6 +552,14 @@ tools =
       , (error, page) ->
         if error?
           return console.error "Failed to create new page on server: #{error}"
+        changePage page
+  pageDup:
+    icon: 'clone'
+    help: 'Duplicate current page'
+    once: ->
+      Meteor.call 'pageDup', currentPage, (error, page) ->
+        if error?
+          return console.error "Failed to duplicate page on server: #{error}"
         changePage page
 
 currentTool = 'pan'
