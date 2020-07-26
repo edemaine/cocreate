@@ -1205,8 +1205,7 @@ pageData = null
 changePage = (page) ->
   pageAuto?.stop()
   currentPage = page if page?
-  tool = currentTool
-  selectTool null
+  tools[currentTool]?.stop?()
   roomObserveObjects?.stop()
   roomObserveRemotes?.stop()
   if currentPage?
@@ -1217,7 +1216,7 @@ changePage = (page) ->
     boardRoot.innerHTML = ''
     document.body.classList.add 'nopage' # in particular, disable pointer events
   updatePageNum()
-  selectTool tool
+  selectTool null
   currentGrid = null
   pageAuto = Tracker.autorun ->
     pageData = Pages.findOne currentPage
@@ -1315,8 +1314,9 @@ selectTool = (tool) ->
   tools[currentTool]?.stop?()
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool
-  lastTool = currentTool
-  currentTool = tool if tool?  # tool is null if initializing
+  if tool?  # tool == null means initialize already set currentTool
+    lastTool = currentTool
+    currentTool = tool
   dom.select '.tool', "[data-tool='#{currentTool}']"
   if currentTool == 'pen'
     selectColor() # set color-specific pen icon
