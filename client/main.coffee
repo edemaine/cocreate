@@ -366,6 +366,7 @@ tools =
           pts: [eventToPoint e]
           text: ''
           color: currentColor
+          fontSize: currentFontSize
         ], returnStubValue: true
         selection.addId pointers.text
       input = document.getElementById 'textInput'
@@ -671,6 +672,19 @@ for width in widths
   hotkeys[width] = do (width) -> -> selectWidth width
 currentWidth = 5
 
+## These numbers are based on powers of 1.2 starting from 16
+## (the site's default font size)
+fontSizes = [
+  12
+  16
+  19
+  23
+  28
+  33
+  40
+]
+currentFontSize = 19
+
 ## Maps a PointerEvent with `pressure` attribute to a `w` multiplier to
 ## multiply with the "natural" width of the pen.
 pressureW = (e) -> 0.5 + e.pressure
@@ -840,7 +854,8 @@ class Selection
         for id in @ids()
           obj = Objects.findOne id
           unless obj?[attrib]
-            throw new Error "Object #{id} has no #{attrib} attribute"
+            console.warn "Object #{id} has no #{attrib} attribute"
+            continue
           type: 'edit'
           id: id
           before: "#{attrib}": obj[attrib]
@@ -1015,6 +1030,7 @@ class Render
       x: obj.pts[0].x
       y: obj.pts[0].y
       fill: obj.color
+      style: "font-size:#{obj.fontSize}px"
     text.textContent = obj.text
     text
   render: (obj, options = {}) ->
@@ -1421,7 +1437,7 @@ paletteColors = ->
   colorsDiv = document.getElementById 'colors'
   for color in colors
     colorsDiv.appendChild dom.create 'div', null,
-      className: 'color'
+      className: 'color attrib'
       style: backgroundColor: color
       dataset: color: color
     ,
@@ -1429,10 +1445,10 @@ paletteColors = ->
 
 widthSize = 22
 paletteWidths = ->
-  widthsDiv = document.getElementById 'colors'
+  widthsDiv = document.getElementById 'widths'
   for width in widths
     widthsDiv.appendChild dom.create 'div', null,
-      className: 'width'
+      className: 'width attrib'
       dataset: width: width
     ,
       click: (e) -> selectWidth e.currentTarget.dataset.width
@@ -1447,10 +1463,42 @@ paletteWidths = ->
           x2: widthSize
           'stroke-width': width
         dom.create 'text',
+          class: 'label'
           x: widthSize/2
           y: widthSize*2/3
         , null, null, [
           document.createTextNode "#{width}"
+        ]
+      ]
+    ]
+
+fontSizeSize = 28
+paletteFontSizes = ->
+  fontSizesDiv = document.getElementById 'fontSizes'
+  for fontSize in fontSizes
+    fontSizesDiv.appendChild dom.create 'div', null,
+      className: 'fontSize attrib'
+      dataset: fontSize: fontSize
+    ,
+      click: (e) -> selectFontSize e.currentTarget.dataset.fontSize
+    , [
+      dom.create 'svg',
+        viewBox: "#{-fontSizeSize/2} 0 #{fontSizeSize} #{fontSizeSize}"
+        width: fontSizeSize
+        height: fontSizeSize
+      , null, null
+      , [
+        dom.create 'text',
+          y: fontSizeSize*0.5
+          style: "font-size:#{fontSize}px"
+        , null, null, [
+          document.createTextNode 'A'
+        ]
+        dom.create 'text',
+          class: 'label'
+          y: fontSizeSize*0.875
+        , null, null, [
+          document.createTextNode "#{fontSize}"
         ]
       ]
     ]
@@ -1483,6 +1531,12 @@ selectWidth = (width, keepTool) ->
   selectDrawingTool() unless keepTool
   dom.select '.width', "[data-width='#{currentWidth}']"
 
+selectFontSize = (fontSize) ->
+  currentFontSize = parseFloat fontSize if fontSize?
+  if selection.nonempty()
+    selection.edit 'fontSize', currentFontSize
+  dom.select '.fontSize', "[data-font-size='#{currentFontSize}']"
+
 paletteSize = ->
   parseFloat (getComputedStyle document.documentElement
   .getPropertyValue '--palette-size')
@@ -1491,7 +1545,7 @@ resize = (reps = 1) ->
   tooltip?.remove()
   for [id, attrib, dimen] in [
     ['tools', '--palette-left-width', 'Width']
-    ['colors', '--palette-bottom-height', 'Height']
+    ['attribs', '--palette-bottom-height', 'Height']
     ['pages', '--palette-top-height', 'Height']
   ]
     div = document.getElementById id
@@ -1513,10 +1567,12 @@ Meteor.startup ->
   historyBoard = document.getElementById 'historyBoard'
   paletteTools()
   paletteWidths()
+  paletteFontSizes()
   paletteColors()
   selectTool()
   selectColor null, true
   selectWidth null, true
+  selectFontSize null
   pointerEvents()
   dom.listen window,
     resize: resize

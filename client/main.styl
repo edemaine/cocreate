@@ -77,13 +77,15 @@ body
     height: var(--palette-size)
   &#historyRange
     margin: 0 10px
+.subpalette
+  display: flex
 
 #pageNumbers
   padding: 4px 8px
   #pageNum
     width: 2em
 
-.tool, .color, .width
+.tool, .attrib
   flex: none
   width: var(--palette-size)
   height: var(--palette-size)
@@ -146,7 +148,7 @@ body
   flex-basis: 100%
   min-height: calc(var(--palette-size)/2)
 
-.width
+.width, .fontSize
   display: flex
   justify-content: center
   align-items: center
@@ -175,11 +177,11 @@ body.tool-history
   .historyHide
     visibility: hidden
 body:not(.tool-text)
-  #text
-    visibility: hidden
+  .textShow
+    display: none
 body.tool-text
-  #text
-    visibility: visible
+  .textHide
+    display: none
 body.nopage
   .board
     visibility: hidden !important
