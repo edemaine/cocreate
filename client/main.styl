@@ -34,10 +34,10 @@ body
 .board, .modal
   position: absolute
   overflow: hidden
-  top: var(--palette-bottom-height)
+  top: var(--palette-top-height)
   left: var(--palette-left-width)
   width: calc(100% - var(--palette-left-width))
-  height: calc(100% - 2 * var(--palette-bottom-height))
+  height: calc(100% - var(--palette-top-height) - var(--palette-bottom-height))
 .board
   cursor: crosshair
   touch-action: none  // PointerEvents only
