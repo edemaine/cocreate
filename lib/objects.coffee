@@ -48,6 +48,13 @@ Meteor.methods
             pts.length == 2
           color: String
           width: Number
+      when 'text'
+        Object.assign pattern,
+          pts: Match.Where (pts) ->
+            check pts, [xyType]
+            pts.length == 1
+          color: String
+          text: String
       else
         throw new Error "Invalid type #{obj?.type} for object"
     check obj, pattern
@@ -95,6 +102,7 @@ Meteor.methods
           return false unless /^\d+$/.test key
           check value, xyType
         true
+      text: Match.Optional String
       tx: Match.Optional Number
       ty: Match.Optional Number
     id = diff.id

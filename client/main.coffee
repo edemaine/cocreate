@@ -318,6 +318,45 @@ tools =
           h.highlight target
       else
         h.clear()
+  text:
+    icon: 'text'
+    hotspot: [.77, .89]
+    hotkey: 't'
+    init: ->
+      input = document.getElementById 'textInput'
+      dom.listen input,
+        keydown: (e) ->
+          e.stopPropagation() # avoid hotkeys
+        input: (e) ->
+          text = input.value
+          if text != Objects.findOne(pointers.text).text
+            Meteor.call 'objectEdit',
+              id: pointers.text
+              text: text
+    stop: textStop = ->
+      return unless pointers.text?
+      object = Objects.findOne pointers.text
+      if object.text
+        undoableOp
+          type: 'new'
+          obj: object
+      else
+        Meteor.call 'objectDel', pointers.text
+    down: (e) ->
+      textStop()
+      ## In future, may support dragging a rectangular container for text,
+      ## but maybe only after SVG 2's <text> flow support...
+      pointers.text = Meteor.apply 'objectNew', [
+        room: currentRoom
+        page: currentPage
+        type: 'text'
+        pts: [eventToPoint e]
+        text: ''
+        color: currentColor
+      ], returnStubValue: true
+      input = document.getElementById 'textInput'
+      input.value = ''
+      input.focus()
   spacer: {}
   touch:
     icon: 'hand-pointer'
@@ -358,7 +397,6 @@ tools =
     hotspot: [0.5, 0.5]
     help: 'Time travel to the past (by dragging the bottom slider)'
     start: ->
-      document.body.classList.add 'history'
       historyTransform =
         x: 0
         y: 0
@@ -391,7 +429,7 @@ tools =
           #count++
           #break if count > target
           switch diff.type
-            when 'pen', 'poly', 'rect', 'ellipse'
+            when 'pen', 'poly', 'rect', 'ellipse', 'text'
               obj = diff
               historyObjects[obj.id] = obj
               historyRender.render obj
@@ -427,7 +465,6 @@ tools =
           range.max--
           pointers.listen() if index <= range.value
     stop: ->
-      document.body.classList.remove 'history'
       document.getElementById('historyRange').removeEventListener 'change', pointers.listen
       document.getElementById('historyBoard').innerHTML = ''
       pointers.sub.stop()
@@ -682,8 +719,8 @@ pointerEvents = ->
 
 class Highlighter
   constructor: ->
-    @target = null       # <g/polyline/rect/ellipse> that @highlighted based on
-    @highlighted = null  # <g/polyline/rect/ellipse class="highlight">
+    @target = null       # <g/polyline/rect/ellipse/text>
+    @highlighted = null  # <g/polyline/rect/ellipse/text class="highlight">
     @id = null           # highlighted object ID
   findGroup: (e) ->
     ## Pen and touch devices don't always seem to set `e.target` correctly;
@@ -694,7 +731,7 @@ class Highlighter
     while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line']
       target = target.parentNode
     return unless target?
-    return unless tag in ['g', 'polyline', 'rect', 'ellipse']
+    return unless tag in ['g', 'polyline', 'rect', 'ellipse', 'text']
     return unless target.dataset.id?
     #return if target == @highlighted
     ## Shouldn't get pointer events on highlighted or selected overlays thanks
@@ -711,10 +748,13 @@ class Highlighter
     @highlighted ?= dom.create 'g', class: 'highlight'
     boardRoot.appendChild @highlighted  # ensure on top
     doubler = (match, left, number, right) -> "#{left}#{2 * number}#{right}"
-    @highlighted.innerHTML = target.outerHTML
+    html = target.outerHTML
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
+    if target.tagName.toLowerCase() == 'text'
+      html = html.replace /\bfill=(["'][^"']+["'])/g, "stroke=$1"
+    @highlighted.innerHTML = html
     true
   select: (target) ->
     if target?
@@ -943,6 +983,17 @@ class Render
       'stroke-width': obj.width
       fill: 'none'
     ellipse
+  renderText: (obj) ->
+    id = @id obj
+    unless (text = @dom[id])?
+      @root.appendChild @dom[id] = text =
+        dom.create 'text', null, dataset: id: id
+    dom.attr text,
+      x: obj.pts[0].x
+      y: obj.pts[0].y
+      fill: obj.color
+    text.textContent = obj.text
+    text
   render: (obj, options = {}) ->
     elt =
       switch obj.type
@@ -954,9 +1005,11 @@ class Render
           @renderRect obj, options
         when 'ellipse'
           @renderEllipse obj, options
+        when 'text'
+          @renderText obj, options
         else
           console.warn "No renderer for object of type #{obj.type}"
-    if options.translate != false
+    if options.translate != false and elt?
       if obj.tx? or obj.ty?
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
@@ -1313,6 +1366,7 @@ selectTool = (tool) ->
   if tools[tool]?.once?
     return tools[tool].once?()
   tools[currentTool]?.stop?()
+  document.body.classList.remove "tool-#{currentTool}" if currentTool
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool
   if tool?  # tool == null means initialize already set currentTool
@@ -1334,6 +1388,7 @@ selectTool = (tool) ->
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?()
+  document.body.classList.add "tool-#{currentTool}" if currentTool
   lastDrawingTool = currentTool if currentTool of drawingTools
 selectDrawingTool = ->
   unless currentTool of drawingTools

@@ -48,6 +48,7 @@ body
   position: absolute
   background: var(--palette-color)
   display: flex
+  z-index: 1
 .vertical.palette
   flex-direction: column
   overflow-x: hidden
@@ -55,21 +56,25 @@ body
   top: 0
   left: 0
   width: var(--palette-left-width)
-  height: calc(100% - var(--palette-bottom-height))
+  height: 100%
+  //-height: calc(100% - var(--palette-bottom-height))
 .horizontal.palette
   flex-direction: row
   overflow-x: auto
   overflow-y: hidden
-  left: 0
-  width: 100%
+  left: var(--palette-left-width)
+  width: calc(100% - var(--palette-left-width))
   &.top
     top: 0
-    left: var(--palette-left-width)
     height: var(--palette-top-height)
-    width: calc(100% - var(--palette-left-width))
   &.bottom
     bottom: 0
     height: var(--palette-bottom-height)
+    //-left: 0
+    //-width: 100%
+  &.nextBottom
+    bottom: var(--palette-bottom-height)
+    height: var(--palette-size)
   &#historyRange
     margin: 0 10px
 
@@ -162,13 +167,19 @@ svg .selected
   opacity: 0.666
   pointer-events: none
 
-body:not(.history)
+body:not(.tool-history)
   .historyShow
     visibility: hidden
-body.history
+body.tool-history
   --palette-color: #d6bc9f  // sepia-like
   .historyHide
     visibility: hidden
+body:not(.tool-text)
+  #text
+    visibility: hidden
+body.tool-text
+  #text
+    visibility: visible
 body.nopage
   .board
     visibility: hidden !important
