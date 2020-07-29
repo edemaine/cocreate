@@ -333,7 +333,10 @@ tools =
             Meteor.call 'objectEdit',
               id: pointers.text
               text: text
+    start: ->
+      pointers.highlight = new Highlighter
     stop: textStop = ->
+      pointers.highlight?.clear()
       return unless pointers.text?
       object = Objects.findOne pointers.text
       if object.text
@@ -346,17 +349,31 @@ tools =
       textStop()
       ## In future, may support dragging a rectangular container for text,
       ## but maybe only after SVG 2's <text> flow support...
-      pointers.text = Meteor.apply 'objectNew', [
-        room: currentRoom
-        page: currentPage
-        type: 'text'
-        pts: [eventToPoint e]
-        text: ''
-        color: currentColor
-      ], returnStubValue: true
+      h = pointers.highlight
+      unless h.id?
+        if (target = h.findGroup e)?
+          h.highlight target
+      if h.id?
+        pointers.text = h.id
+      else
+        pointers.text = Meteor.apply 'objectNew', [
+          room: currentRoom
+          page: currentPage
+          type: 'text'
+          pts: [eventToPoint e]
+          text: ''
+          color: currentColor
+        ], returnStubValue: true
       input = document.getElementById 'textInput'
-      input.value = ''
+      input.value = Objects.findOne(pointers.text)?.text ? ''
       input.focus()
+    move: (e) ->
+      h = pointers.highlight
+      target = h.findGroup e
+      if target? and target.tagName.toLowerCase() == 'text'
+        h.highlight target
+      else
+        h.clear()
   spacer: {}
   touch:
     icon: 'hand-pointer'
