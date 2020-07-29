@@ -8,6 +8,7 @@
   --tooltip-color: hsl(60, 50%, 76%)
   --tooltip-width: 200px
   --tooltip-arrow: 5px
+  --dragzone-color: hsla(60, 50%, 76%, 25%)
 
 // A few basics from Bootstrap:
 *, :before, :after
@@ -31,7 +32,7 @@ body
   touch-action: none  // Prevent mobile zooming
   margin: 0
 
-.board, .modal
+.board, .modal, .overlay
   position: absolute
   overflow: hidden
   top: var(--palette-bottom-height)
@@ -41,8 +42,14 @@ body
 .board
   cursor: crosshair
   touch-action: none  // PointerEvents only
-#remotes
+.overlay
   pointer-events: none
+#dragzone
+  transition: opacity 500ms
+  background-color: var(--dragzone-color)
+  opacity: 0
+  &.drag
+    opacity: 1
 
 .palette
   position: absolute

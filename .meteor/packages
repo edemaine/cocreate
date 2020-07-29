@@ -22,3 +22,4 @@ coagmano:stylus
 reload
 check
 edemaine:static-pug
+edemaine:file-collection@1.3.9

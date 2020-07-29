@@ -680,6 +680,32 @@ pointerEvents = ->
         color: currentColor
         cursor: eventToPointW e
 
+dragEvents = ->
+  dragDepth = 0
+  drags = {}
+  all = (e) ->
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  dom.listen board,
+    dragenter: (e) ->
+      all e
+      return if dragDepth++
+      ## Entering for the first time
+      document.getElementById('dragzone').classList.add 'drag'
+    dragover: (e) ->
+      all e
+      return unless dragDepth
+      #console.log 'over', e.target
+    dragleave: (e) ->
+      all e
+      return if --dragDepth
+      ## Leaving for the last time
+      document.getElementById('dragzone').classList.remove 'drag'
+    drop: (e) ->
+      all e
+      dragDepth = 0
+      document.getElementById('dragzone').classList.remove 'drag'
+
 class Highlighter
   constructor: ->
     @target = null       # <g/polyline/rect/ellipse> that @highlighted based on
@@ -1440,6 +1466,7 @@ Meteor.startup ->
   selectColor null, true
   selectWidth null, true
   pointerEvents()
+  dragEvents()
   dom.listen window,
     resize: resize
     popstate: urlChange
