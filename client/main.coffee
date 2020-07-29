@@ -336,6 +336,7 @@ tools =
     start: ->
       pointers.highlight = new Highlighter
     stop: textStop = ->
+      selection.clear()
       pointers.highlight?.clear()
       return unless pointers.text?
       object = Objects.findOne pointers.text
@@ -343,9 +344,10 @@ tools =
         undoableOp
           type: 'new'
           obj: object
-      else
+      else  # delete empty text objects
         Meteor.call 'objectDel', pointers.text
     down: (e) ->
+      ## Stop editing any previous text object.
       textStop()
       ## In future, may support dragging a rectangular container for text,
       ## but maybe only after SVG 2's <text> flow support...
@@ -355,6 +357,7 @@ tools =
           h.highlight target
       if h.id?
         pointers.text = h.id
+        selection.add h
       else
         pointers.text = Meteor.apply 'objectNew', [
           room: currentRoom
@@ -364,6 +367,7 @@ tools =
           text: ''
           color: currentColor
         ], returnStubValue: true
+        selection.addId pointers.text
       input = document.getElementById 'textInput'
       input.value = Objects.findOne(pointers.text)?.text ? ''
       input.focus()
@@ -788,21 +792,23 @@ class Highlighter
 class Selection
   constructor: ->
     @selected = {}  # mapping from object ID to .selected DOM element
-    @target = {}    # mapping from object ID to original DOM element
     @rehighlighter = new Highlighter  # used in redraw()
   add: (highlighter) ->
     id = highlighter.id
     return unless id?
-    @target[id] = highlighter.target
     @selected[id] = highlighter.select()
-  redraw: (id) ->
-    boardRoot.removeChild @selected[id]
-    @rehighlighter.highlight @target[id]
+  addId: (id) ->
+    ## Add an object to the selection before it's been rendered
+    ## (triggering redraw when it gets rendered).
+    @selected[id] = true
+  redraw: (id, target) ->
+    unless @selected[id] == true  # added via `addId`
+      boardRoot.removeChild @selected[id]
+    @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
   remove: (id) ->
     boardRoot.removeChild @selected[id]
     delete @selected[id]
-    delete @target[id]
   clear: ->
     @remove id for id of @selected
   ids: ->
@@ -1031,7 +1037,7 @@ class Render
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
         elt.removeAttribute 'transform'
-    selection.redraw obj._id if selection.has obj._id
+    selection.redraw obj._id, elt if selection.has obj._id
   delete: (obj) ->
     id = @id obj
     unless @dom[id]?
