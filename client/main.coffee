@@ -1055,6 +1055,25 @@ class Render
         .replace /</g, '&lt;'
         .replace />/g, '&gt;'
         .replace /[ ]/g, '&nbsp;'
+      ## Basic Markdown support based on CommonMark and loosely on Slimdown:
+      ## https://gist.github.com/jbroadway/2836900
+      markdown = (text) ->
+        text
+        .replace /(?<!\\)(`+)([^]*?)\1/g, (m, left, inner) ->
+          "<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
+        .replace ///
+          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+          (?<!\\)(\*+|_+)(?!\s)([^]+?)(?<!\s)\1
+          (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+        ///g, (m, left, inner) ->
+          "<tspan class='#{if left.length > 1 then 'strong' else 'emph'}'>#{inner}</tspan>"
+        .replace ///
+          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+          (?<!\\)(~~)(?!\s)([^]+?)(?<!\s)\1
+          (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+        ///g, (m, left, inner) ->
+          "<tspan class='strike'>#{inner}</tspan>"
+        .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
       if id == pointers.text and input.value == content
         cursor = input.selectionStart
         content = escape(content[...cursor]) +
@@ -1079,6 +1098,7 @@ class Render
         , 0
       else
         content = escape content
+      content = markdown content
       text.innerHTML = content
     text
   render: (obj, options = {}) ->

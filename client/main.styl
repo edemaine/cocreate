@@ -169,10 +169,18 @@ svg
   .selected
     opacity: 0.666
     pointer-events: none
-  .cursor
+  tspan.cursor
     opacity: 0.5
     stroke: black
     stroke-linecap: round
+  tspan.code
+    font-family: 'Roboto Mono', monospace
+  tspan.emph
+    font-style: oblique
+  tspan.strong
+    font-weight: bold
+  tspan.strike
+    text-decoration: line-through
 
 body:not(.tool-history)
   .historyShow
