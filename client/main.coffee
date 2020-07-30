@@ -324,10 +324,20 @@ tools =
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
+      updateCursor = ->
+        setTimeout ->
+          return unless pointers.text?
+          render.render Objects.findOne(pointers.text), text: true
+        , 0
       dom.listen input,
         keydown: (e) ->
           e.stopPropagation() # avoid hotkeys
+          updateCursor()
+        focus: updateCursor
+        click: updateCursor
+        paste: updateCursor
         input: (e) ->
+          return unless pointers.text?
           text = input.value
           if text != Objects.findOne(pointers.text).text
             Meteor.call 'objectEdit',
@@ -338,14 +348,19 @@ tools =
     stop: textStop = ->
       selection.clear()
       pointers.highlight?.clear()
-      return unless pointers.text?
-      object = Objects.findOne pointers.text
+      pointers.cursor?.remove()
+      pointers.cursor = null
+      return unless (id = pointers.text)?
+      object = Objects.findOne id
       if object.text
         undoableOp
           type: 'new'
           obj: object
       else  # delete empty text objects
-        Meteor.call 'objectDel', pointers.text
+        Meteor.call 'objectDel', id
+      pointers.text = null
+      if (obj = Objects.findOne(id))?
+        render.renderText obj, text: true
     down: (e) ->
       ## Stop editing any previous text object.
       textStop()
@@ -1021,7 +1036,7 @@ class Render
       'stroke-width': obj.width
       fill: 'none'
     ellipse
-  renderText: (obj) ->
+  renderText: (obj, options) ->
     id = @id obj
     unless (text = @dom[id])?
       @root.appendChild @dom[id] = text =
@@ -1031,7 +1046,40 @@ class Render
       y: obj.pts[0].y
       fill: obj.color
       style: "font-size:#{obj.fontSize}px"
-    text.textContent = obj.text
+    if options?.text != false
+      content = obj.text
+      input = document.getElementById 'textInput'
+      escape = (text) ->
+        text
+        .replace /&/g, '&amp;'
+        .replace /</g, '&lt;'
+        .replace />/g, '&gt;'
+        .replace /[ ]/g, '&nbsp;'
+      if id == pointers.text and input.value == content
+        cursor = input.selectionStart
+        content = escape(content[...cursor]) +
+                  '<tspan class="cursor">&VeryThinSpace;</tspan>' +
+                  escape(content[cursor..])
+        unless pointers.cursor?
+          @root.appendChild pointers.cursor = dom.create 'line',
+            class: 'cursor'
+        dom.attr pointers.cursor,
+          ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
+          'stroke-width': 2 * 0.05555 * obj.fontSize
+          ## 1.2 is to exaggerate
+          y1: -0.5 * 1.2 * obj.fontSize
+          y2:  0.5 * 1.2 * obj.fontSize
+        setTimeout ->
+          return unless pointers.cursor?
+          bbox = text.querySelector('.cursor').getBBox()
+          x = bbox.x + 0.5 * bbox.width
+          y = bbox.y + 0.5 * bbox.height
+          dom.attr pointers.cursor,
+            transform: "translate(#{x + (obj.tx ? 0)} #{y + (obj.ty ? 0)})"
+        , 0
+      else
+        content = escape content
+      text.innerHTML = content
     text
   render: (obj, options = {}) ->
     elt =
@@ -1073,6 +1121,7 @@ class Render
       console.warn "Duplicate object with ID #{id}?!"
       delete @dom[id]
 
+render = null
 observeRender = ->
   boardRoot.innerHTML = ''
   render = new Render boardRoot
@@ -1091,6 +1140,7 @@ observeRender = ->
         translate: obj.tx != old.tx or obj.ty != old.ty
         color: obj.color != old.color
         width: obj.width != old.width
+        text: obj.text != old.text
     removed: (obj) ->
       render.delete obj
 
