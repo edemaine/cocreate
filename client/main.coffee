@@ -320,7 +320,7 @@ tools =
         h.clear()
   text:
     icon: 'text'
-    hotspot: [.77, .5]
+    hotspot: [.77, .89]
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
