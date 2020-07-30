@@ -530,56 +530,49 @@ tools =
       max =
         x: -Infinity
         y: -Infinity
-      for circle in currentBoard().querySelectorAll 'circle'
-        x = parseFloat circle.getAttribute 'cx'
-        y = parseFloat circle.getAttribute 'cy'
-        r = parseFloat circle.getAttribute 'r'
-        min.x = Math.min min.x, x - r
-        max.x = Math.max max.x, x + r
-        min.y = Math.min min.y, y - r
-        max.y = Math.max max.y, y + r
-      for poly in currentBoard().querySelectorAll 'polyline'
-        stroke = (parseFloat poly.getAttribute('stroke-width') ? 0) / 2
-        for point in poly.getAttribute('points').split ' '
-          match = point.match /^([\-\d.]+),([\-\d.]+)$/
-          x = parseFloat match[1]
-          y = parseFloat match[2]
-          min.x = Math.min min.x, x - stroke
-          max.x = Math.max max.x, x + stroke
-          min.y = Math.min min.y, y - stroke
-          max.y = Math.max max.y, y + stroke
-      for rect in currentBoard().querySelectorAll 'rect'
-        x = parseFloat rect.getAttribute 'x'
-        y = parseFloat rect.getAttribute 'y'
-        width = parseFloat rect.getAttribute 'width'
-        height = parseFloat rect.getAttribute 'height'
-        stroke = (parseFloat rect.getAttribute('stroke-width') ? 0) / 2
-        min.x = Math.min min.x, x - stroke
-        max.x = Math.max max.x, x + width + stroke
-        min.y = Math.min min.y, y - stroke
-        max.y = Math.max max.y, y + height + stroke
-      for ellipse in currentBoard().querySelectorAll 'ellipse'
-        cx = parseFloat ellipse.getAttribute 'x'
-        cy = parseFloat ellipse.getAttribute 'y'
-        rx = parseFloat ellipse.getAttribute 'rx'
-        ry = parseFloat ellipse.getAttribute 'ry'
-        stroke = (parseFloat ellipse.getAttribute('stroke-width') ? 0) / 2
-        min.x = Math.min min.x, cx - rx - stroke
-        max.x = Math.max max.x, cx + rx + stroke
-        min.y = Math.min min.y, cy - ry - stroke
-        max.y = Math.max max.y, cy + ry + stroke
+      for elt in currentBoard().querySelectorAll 'circle, polyline, rect, ellipse, text'
+        ## Compute bounding box and incorporate transformation
+        ## (assuming no rotation, so enough to look at two corners).
+        bbox = elt.getBBox()
+        transform = elt.getCTM()
+        stroke = (parseFloat elt.getAttribute('stroke-width') ? 0) / 2
+        minCorner = dom.svgPoint currentBoard(),
+          bbox.x - stroke, bbox.y - stroke, transform
+        maxCorner = dom.svgPoint currentBoard(),
+          bbox.x + stroke + bbox.width, bbox.y + stroke + bbox.height, transform
+        min.x = Math.min min.x, minCorner.x
+        max.x = Math.max max.x, maxCorner.x
+        min.y = Math.min min.y, minCorner.y
+        max.y = Math.max max.y, maxCorner.y
       if min.x == Infinity
         min.x = min.y = max.x = max.y = 0
       ## Temporarily make grid space entire drawing
       boardGrid.update currentGrid, {min, max}
       ## Create SVG header
+      svg = currentBoard().innerHTML
+      .replace /^\s*<g transform[^<>]*>/, '<g>'
+      .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
+      fonts = ''
+      if /<text/.test svg
+        for styleSheet in document.styleSheets
+          if /fonts/.test styleSheet.href
+            for rule in styleSheet.rules
+              fonts += (rule.cssText.replace /unicode-range:.*?;/g, '') + '\n'
+        fonts += '''
+          text { font-family: 'Roboto Slab', serif }
+          tspan.code { font-family: 'Roboto Mono', monospace }
+          tspan.emph { font-style: oblique }
+          tspan.strong { font-weight: bold }
+          tspan.strike { text-decoration: line-through }
+
+        '''
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
         <svg xmlns="#{dom.SVGNS}" viewBox="#{min.x} #{min.y} #{max.x - min.x} #{max.y - min.y}">
         <style>
         .grid { stroke-width: 0.96; stroke: #c4e3f4 }
-        </style>
-        #{currentBoard().innerHTML.replace /^\s*<g transform[^<>]*>/, '<g>'}
+        #{fonts}</style>
+        #{svg}
         </svg>
       """
       ## Reset grid
