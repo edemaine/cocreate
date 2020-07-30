@@ -321,6 +321,7 @@ tools =
   text:
     icon: 'text'
     hotspot: [.77, .89]
+    help: 'Type text (click location, then type at bottom), including Markdown *italic*, **bold**, `code`, ~~strike~~'
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
