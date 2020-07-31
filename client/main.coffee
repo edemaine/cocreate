@@ -1048,13 +1048,69 @@ class Render
         .replace /&/g, '&amp;'
         .replace /</g, '&lt;'
         .replace />/g, '&gt;'
-        .replace /[ ]/g, '&nbsp;'
+        .replace /[ ]/g, '\u00a0'
+      unescape = (text) ->
+        text
+        .replace /&gt;/g, '>'
+        .replace /&lt;/g, '<'
+        .replace /&amp;/g, '&'
+      escapeQuote = (text) ->
+        text
+        .replace /&/g, '&amp;'
+        .replace /"/g, '&quot;'
+      unescapeQuote = (text) ->
+        text
+        .replace /&quot;/g, '"'
+        .replace /&amp;/g, '&'
+      ## Extract $math$ and $$display math$$ expressions.
+      ## Based loosely on Coauthor's `replaceMathBlocks`.
+      latex = (text) ->
+        mathRE = /\$\$?|\\.|[{}]/g
+        maths = []
+        math = null
+        while match = mathRE.exec text
+          if math?
+            switch match[0]
+              when '{'
+                math.brace++
+              when '}'
+                math.brace--
+                math.brace = 0 if math.brace < 0  # ignore extra }s
+              when '$', '$$'
+                if math.brace <= 0
+                  math.contentEnd = match.index
+                  math.end = match.index + match[0].length
+                  maths.push math
+                  math = null
+          else if match[0].startsWith '$'
+            math =
+              display: match[0].length > 1
+              start: match.index
+              contentStart: match.index + match[0].length
+              brace: 0
+        if maths.length
+          out = [text[...maths[0].start]]
+          for math, i in maths
+            math.content = text[math.start...math.end]
+            .replace /<tspan class="cursor">[^<>]*<\/tspan>/, (match) ->
+              out.push match
+              ''
+            math.content = unescape math.content
+            out.push """<tspan data-tex="#{escapeQuote math.content}">&VeryThinSpace;</tspan>"""
+            if i < maths.length-1
+              out.push text[math.end...maths[i+1].start]
+            else
+              out.push text[math.end..]
+          new Worker '/tex2svg.js'
+          out.join ''
+        else
+          text
       ## Basic Markdown support based on CommonMark and loosely on Slimdown:
       ## https://gist.github.com/jbroadway/2836900
       markdown = (text) ->
-        text
-        .replace /(?<!\\)(`+)([^]*?)\1/g, (m, left, inner) ->
+        text = text.replace /(?<!\\)(`+)([^]*?)\1/g, (m, left, inner) ->
           "<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
+        text = latex text
         .replace ///
           (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
           (?<!\\)(\*+|_+)(?!\s)([^]+?)(?<!\s)\1
@@ -1094,6 +1150,9 @@ class Render
         content = escape content
       content = markdown content
       text.innerHTML = content
+      tspanRE = /<tspan data-tex="([^"]*)"/g
+      while match = tspanRE.exec content
+        console.log unescapeQuote match[1]
     text
   render: (obj, options = {}) ->
     elt =

@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/edemaine/cocreate",
   "scripts": {
+    "prepare": "webpack --config .tex2svg/webpack.config.coffee",
     "start": "meteor run",
     "test": "meteor test --once --driver-package meteortesting:mocha",
     "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
@@ -27,5 +28,16 @@
     "meteor-node-stubs": "^1.0.0",
     "pepjs": "^0.5.2",
     "pug": "^3.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.11.0",
+    "@babel/preset-env": "^7.11.0",
+    "babel-loader": "^7.1.5",
+    "coffee-loader": "^1.0.0",
+    "coffeescript": "^2.5.1",
+    "mathjax-full": "^3.0.5",
+    "uglifyjs-webpack-plugin": "^2.2.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
   }
 }
