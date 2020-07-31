@@ -1068,7 +1068,7 @@ class Render
         ///g, (m, left, inner) ->
           "<tspan class='strike'>#{inner}</tspan>"
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
-      if id == pointers.text and input.value == content
+      if id == pointers.text
         cursor = input.selectionStart
         content = escape(content[...cursor]) +
                   '<tspan class="cursor">&VeryThinSpace;</tspan>' +
@@ -1076,24 +1076,28 @@ class Render
         unless pointers.cursor?
           @root.appendChild pointers.cursor = dom.create 'line',
             class: 'cursor'
-        dom.attr pointers.cursor,
-          ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
-          'stroke-width': 2 * 0.05555 * obj.fontSize
-          ## 1.2 is to exaggerate
-          y1: -0.5 * 1.2 * obj.fontSize
-          y2:  0.5 * 1.2 * obj.fontSize
-        setTimeout ->
-          return unless pointers.cursor?
-          bbox = text.querySelector('.cursor').getBBox()
-          x = bbox.x + 0.5 * bbox.width
-          y = bbox.y + 0.5 * bbox.height
-          dom.attr pointers.cursor,
-            transform: "translate(#{x + (obj.tx ? 0)} #{y + (obj.ty ? 0)})"
-        , 0
+          ## Attributes set below
       else
         content = escape content
       content = markdown content
       text.innerHTML = content
+    ## Even if text didn't change, if size or translation did,
+    ## we need to update SVG cursor geometry.
+    if id == pointers.text
+      dom.attr pointers.cursor,
+        ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
+        'stroke-width': 2 * 0.05555 * obj.fontSize
+        ## 1.2 is to exaggerate
+        y1: -0.5 * 1.2 * obj.fontSize
+        y2:  0.5 * 1.2 * obj.fontSize
+      setTimeout ->
+        return unless pointers.cursor?
+        bbox = text.querySelector('.cursor').getBBox()
+        x = bbox.x + 0.5 * bbox.width
+        y = bbox.y + 0.5 * bbox.height
+        dom.attr pointers.cursor,
+          transform: "translate(#{x + (obj.tx ? 0)} #{y + (obj.ty ? 0)})"
+      , 0
     text
   render: (obj, options = {}) ->
     elt =
