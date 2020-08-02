@@ -346,6 +346,9 @@ tools =
               text: text
     start: ->
       pointers.highlight = new Highlighter
+      input = document.getElementById 'textInput'
+      input.value = ''
+      input.disabled = true
     stop: textStop = ->
       selection.clear()
       pointers.highlight?.clear()
@@ -387,6 +390,7 @@ tools =
         selection.addId pointers.text
       input = document.getElementById 'textInput'
       input.value = Objects.findOne(pointers.text)?.text ? ''
+      input.disabled = false
       input.focus()
     move: (e) ->
       h = pointers.highlight
