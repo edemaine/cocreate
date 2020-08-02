@@ -340,10 +340,19 @@ tools =
         input: (e) ->
           return unless pointers.text?
           text = input.value
-          if text != Objects.findOne(pointers.text).text
+          if text != (oldText = Objects.findOne(pointers.text).text)
             Meteor.call 'objectEdit',
               id: pointers.text
               text: text
+            unless pointers.undoable?
+              undoableOp pointers.undoable =
+                type: 'multi'
+                ops: []
+            pointers.undoable.ops.push
+              type: 'edit'
+              id: pointers.text
+              before: text: oldText
+              after: text: text
     start: ->
       pointers.highlight = new Highlighter
       input = document.getElementById 'textInput'
@@ -356,12 +365,10 @@ tools =
       pointers.cursor = null
       return unless (id = pointers.text)?
       object = Objects.findOne id
-      if object.text
-        undoableOp
-          type: 'new'
-          obj: object
-      else  # delete empty text objects
+      unless object.text
         Meteor.call 'objectDel', id
+        undoStack.remove pointers.undoable
+      pointers.undoable = null
       pointers.text = null
       if (obj = Objects.findOne(id))?
         render.renderText obj, text: true
@@ -377,19 +384,26 @@ tools =
       if h.id?
         pointers.text = h.id
         selection.add h
+        text = Objects.findOne(pointers.text)?.text ? ''
       else
         pointers.text = Meteor.apply 'objectNew', [
           room: currentRoom
           page: currentPage
           type: 'text'
           pts: [eventToPoint e]
-          text: ''
+          text: text = ''
           color: currentColor
           fontSize: currentFontSize
         ], returnStubValue: true
         selection.addId pointers.text
+        undoableOp pointers.undoable =
+          type: 'multi'
+          ops: [
+            type: 'new'
+            obj: object = Objects.findOne pointers.text
+          ]
       input = document.getElementById 'textInput'
-      input.value = Objects.findOne(pointers.text)?.text ? ''
+      input.value = text
       input.disabled = false
       input.focus()
     move: (e) ->
