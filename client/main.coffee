@@ -1062,7 +1062,6 @@ class Render
       style: "font-size:#{obj.fontSize}px"
     if options?.text != false
       content = obj.text
-      input = document.getElementById 'textInput'
       escape = (text) ->
         text
         .replace /&/g, '&amp;'
@@ -1089,7 +1088,18 @@ class Render
           "<tspan class='strike'>#{inner}</tspan>"
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
       if id == pointers.text
+        input = document.getElementById 'textInput'
         cursor = input.selectionStart
+        if input.value != content  # newer text from server (parallel editing)
+          ## If suffix starting at current cursor matches new text, then move
+          ## cursor to start at new version of suffix.  Otherwise leave as is.
+          suffix = input.value[cursor..]
+          if suffix == content[-suffix.length..]
+            cursor = content.length - suffix.length
+          input.value = content
+          setTimeout ->
+            input.selectionStart = input.selectionEnd = cursor
+          , 0
         content = escape(content[...cursor]) +
                   '<tspan class="cursor">&VeryThinSpace;</tspan>' +
                   escape(content[cursor..])
