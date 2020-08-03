@@ -355,26 +355,28 @@ tools =
               after: text: text
     start: ->
       pointers.highlight = new Highlighter
+      textStop()
+    stop: textStop = (keepHighlight) ->
       input = document.getElementById 'textInput'
       input.value = ''
       input.disabled = true
-    stop: textStop = ->
       selection.clear()
-      pointers.highlight?.clear()
+      pointers.highlight?.clear() unless keepHighlight
       pointers.cursor?.remove()
       pointers.cursor = null
       return unless (id = pointers.text)?
-      object = Objects.findOne id
-      unless object.text
-        Meteor.call 'objectDel', id
-        undoStack.remove pointers.undoable
+      if (object = Objects.findOne id)?
+        if object.text
+          render.renderText object, text: true  # remove cursor
+        else
+          index = undoStack.indexOf pointers.undoable
+          undoStack.splice index, 1 if index >= 0
+          Meteor.call 'objectDel', id
       pointers.undoable = null
       pointers.text = null
-      if (obj = Objects.findOne(id))?
-        render.renderText obj, text: true
     down: (e) ->
       ## Stop editing any previous text object.
-      textStop()
+      textStop true
       ## In future, may support dragging a rectangular container for text,
       ## but maybe only after SVG 2's <text> flow support...
       h = pointers.highlight
@@ -1144,6 +1146,7 @@ class Render
       return console.warn "Attempt to delete unknown object ID #{id}?!"
     @root.removeChild @dom[id]
     delete @dom[id]
+    textStop() if id == pointers.text
   #has: (obj) ->
   #  (id obj) of @dom
   shouldNotExist: (obj) ->
