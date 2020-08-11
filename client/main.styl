@@ -18,7 +18,7 @@ input
   width: 100%
 kbd
   padding: 2px 4px
-  font-family: monospace
+  font-family: 'Roboto Mono', monospace
   font-size: 90%
   color: #fff
   background-color: #333
@@ -30,14 +30,18 @@ body
   font-family: 'Roboto Slab', serif
   touch-action: none  // Prevent mobile zooming
   margin: 0
+input
+  font-family: 'Roboto Slab', serif
+  font-size: 16px
+  padding-top: 0px
 
 .board, .modal
   position: absolute
   overflow: hidden
-  top: var(--palette-bottom-height)
+  top: var(--palette-top-height)
   left: var(--palette-left-width)
   width: calc(100% - var(--palette-left-width))
-  height: calc(100% - 2 * var(--palette-bottom-height))
+  height: calc(100% - var(--palette-top-height) - var(--palette-bottom-height))
 .board
   cursor: crosshair
   touch-action: none  // PointerEvents only
@@ -48,6 +52,7 @@ body
   position: absolute
   background: var(--palette-color)
   display: flex
+  z-index: 1
 .vertical.palette
   flex-direction: column
   overflow-x: hidden
@@ -55,30 +60,36 @@ body
   top: 0
   left: 0
   width: var(--palette-left-width)
-  height: calc(100% - var(--palette-bottom-height))
+  height: 100%
+  //-height: calc(100% - var(--palette-bottom-height))
 .horizontal.palette
   flex-direction: row
   overflow-x: auto
   overflow-y: hidden
-  left: 0
-  width: 100%
+  left: var(--palette-left-width)
+  width: calc(100% - var(--palette-left-width))
   &.top
     top: 0
-    left: var(--palette-left-width)
     height: var(--palette-top-height)
-    width: calc(100% - var(--palette-left-width))
   &.bottom
     bottom: 0
     height: var(--palette-bottom-height)
+    //-left: 0
+    //-width: 100%
+  &.nextBottom
+    bottom: var(--palette-bottom-height)
+    height: var(--palette-size)
   &#historyRange
     margin: 0 10px
+.subpalette
+  display: flex
 
 #pageNumbers
-  padding: 4px 8px
+  padding: 0px 8px
   #pageNum
     width: 2em
 
-.tool, .color, .width
+.tool, .attrib
   flex: none
   width: var(--palette-size)
   height: var(--palette-size)
@@ -141,7 +152,7 @@ body
   flex-basis: 100%
   min-height: calc(var(--palette-size)/2)
 
-.width
+.width, .fontSize
   display: flex
   justify-content: center
   align-items: center
@@ -155,20 +166,39 @@ body
 .tool
   padding: 2px
 
-svg .highlight
-  opacity: 0.333
-  pointer-events: none
-svg .selected
-  opacity: 0.666
-  pointer-events: none
+svg
+  .highlight
+    opacity: 0.333
+    pointer-events: none
+  .selected
+    opacity: 0.666
+    pointer-events: none
+  line.cursor
+    opacity: 0.5
+    stroke: black
+    stroke-linecap: round
+  tspan.code
+    font-family: 'Roboto Mono', monospace
+  tspan.emph
+    font-style: oblique
+  tspan.strong
+    font-weight: bold
+  tspan.strike
+    text-decoration: line-through
 
-body:not(.history)
+body:not(.tool-history)
   .historyShow
     visibility: hidden
-body.history
+body.tool-history
   --palette-color: #d6bc9f  // sepia-like
   .historyHide
     visibility: hidden
+body:not(.tool-text)
+  .textShow
+    display: none
+body.tool-text
+  .textHide
+    display: none
 body.nopage
   .board
     visibility: hidden !important

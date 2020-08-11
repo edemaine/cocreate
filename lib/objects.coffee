@@ -48,6 +48,14 @@ Meteor.methods
             pts.length == 2
           color: String
           width: Number
+      when 'text'
+        Object.assign pattern,
+          pts: Match.Where (pts) ->
+            check pts, [xyType]
+            pts.length == 1
+          color: String
+          text: String
+          fontSize: Number
       else
         throw new Error "Invalid type #{obj?.type} for object"
     check obj, pattern
@@ -86,10 +94,11 @@ Meteor.methods
         else
           {}
   objectEdit: (diff) ->
-    check diff,
+    id = diff?.id
+    obj = checkObject id
+    pattern =
       id: String
       color: Match.Optional String
-      width: Match.Optional Number
       pts: Match.Optional Match.Where (pts) ->
         return false unless typeof pts == 'object'
         for key, value of pts
@@ -98,7 +107,14 @@ Meteor.methods
         true
       tx: Match.Optional Number
       ty: Match.Optional Number
-    id = diff.id
+    if obj.type in ['pen', 'poly', 'rect', 'ellipse']
+      Object.assign pattern,
+        width: Match.Optional Number
+    if obj.type == 'text'
+      Object.assign pattern,
+        text: Match.Optional String
+        fontSize: Match.Optional Number
+    check diff, pattern
     set = {}
     for key, value of diff when key != 'id'
       switch key
@@ -108,7 +124,6 @@ Meteor.methods
         else
           set[key] = value
     unless @isSimulation
-      obj = checkObject id
       diff.room = obj.room
       diff.page = obj.page
       diff.type = 'edit'

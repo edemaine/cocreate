@@ -391,6 +391,103 @@ tools =
           h.highlight target
       else
         h.clear()
+  text:
+    icon: 'text'
+    hotspot: [.77, .89]
+    help: 'Type text (click location or existing text, then type at bottom), including Markdown *italic*, **bold**, `code`, ~~strike~~'
+    hotkey: 't'
+    init: ->
+      input = document.getElementById 'textInput'
+      updateCursor = ->
+        setTimeout ->
+          return unless pointers.text?
+          render.render Objects.findOne(pointers.text), text: true
+        , 0
+      dom.listen input,
+        keydown: (e) ->
+          e.stopPropagation() # avoid hotkeys
+          updateCursor()
+        focus: updateCursor
+        click: updateCursor
+        paste: updateCursor
+        input: (e) ->
+          return unless pointers.text?
+          text = input.value
+          if text != (oldText = Objects.findOne(pointers.text).text)
+            Meteor.call 'objectEdit',
+              id: pointers.text
+              text: text
+            unless pointers.undoable?
+              undoableOp pointers.undoable =
+                type: 'multi'
+                ops: []
+            pointers.undoable.ops.push
+              type: 'edit'
+              id: pointers.text
+              before: text: oldText
+              after: text: text
+    start: ->
+      pointers.highlight = new Highlighter
+      textStop()
+    stop: textStop = (keepHighlight) ->
+      input = document.getElementById 'textInput'
+      input.value = ''
+      input.disabled = true
+      selection.clear()
+      pointers.highlight?.clear() unless keepHighlight
+      pointers.cursor?.remove()
+      pointers.cursor = null
+      return unless (id = pointers.text)?
+      if (object = Objects.findOne id)?
+        if object.text
+          render.renderText object, text: true  # remove cursor
+        else
+          index = undoStack.indexOf pointers.undoable
+          undoStack.splice index, 1 if index >= 0
+          Meteor.call 'objectDel', id
+      pointers.undoable = null
+      pointers.text = null
+    down: (e) ->
+      ## Stop editing any previous text object.
+      textStop true
+      ## In future, may support dragging a rectangular container for text,
+      ## but maybe only after SVG 2's <text> flow support...
+      h = pointers.highlight
+      unless h.id?
+        if (target = h.findGroup e)?
+          h.highlight target
+      if h.id?
+        pointers.text = h.id
+        selection.add h
+        text = Objects.findOne(pointers.text)?.text ? ''
+      else
+        pointers.text = Meteor.apply 'objectNew', [
+          room: currentRoom
+          page: currentPage
+          type: 'text'
+          pts: [eventToPoint e]
+          text: text = ''
+          color: currentColor
+          fontSize: currentFontSize
+        ], returnStubValue: true
+        selection.addId pointers.text
+        undoableOp pointers.undoable =
+          type: 'multi'
+          ops: [
+            type: 'new'
+            obj: object = Objects.findOne pointers.text
+          ]
+      input = document.getElementById 'textInput'
+      input.value = text
+      input.disabled = false
+      input.focus()
+    move: (e) ->
+      h = pointers.highlight
+      target = h.findGroup e
+      if target? and target.tagName.toLowerCase() == 'text'
+        h.highlight target
+      else
+        h.clear()
   spacer: {}
   touch:
     icon: 'hand-pointer'
@@ -431,7 +528,6 @@ tools =
     hotspot: [0.5, 0.5]
     help: 'Time travel to the past (by dragging the bottom slider)'
     start: ->
-      document.body.classList.add 'history'
       historyTransform =
         x: 0
         y: 0
@@ -464,7 +560,7 @@ tools =
           #count++
           #break if count > target
           switch diff.type
-            when 'pen', 'poly', 'rect', 'ellipse'
+            when 'pen', 'poly', 'rect', 'ellipse', 'text'
               obj = diff
               historyObjects[obj.id] = obj
               historyRender.render obj
@@ -500,7 +596,6 @@ tools =
           range.max--
           pointers.listen() if index <= range.value
     stop: ->
-      document.body.classList.remove 'history'
       document.getElementById('historyRange').removeEventListener 'change', pointers.listen
       document.getElementById('historyBoard').innerHTML = ''
       pointers.sub.stop()
@@ -529,56 +624,49 @@ tools =
       max =
         x: -Infinity
         y: -Infinity
-      for circle in currentBoard().querySelectorAll 'circle'
-        x = parseFloat circle.getAttribute 'cx'
-        y = parseFloat circle.getAttribute 'cy'
-        r = parseFloat circle.getAttribute 'r'
-        min.x = Math.min min.x, x - r
-        max.x = Math.max max.x, x + r
-        min.y = Math.min min.y, y - r
-        max.y = Math.max max.y, y + r
-      for poly in currentBoard().querySelectorAll 'polyline'
-        stroke = (parseFloat poly.getAttribute('stroke-width') ? 0) / 2
-        for point in poly.getAttribute('points').split ' '
-          match = point.match /^([\-\d.]+),([\-\d.]+)$/
-          x = parseFloat match[1]
-          y = parseFloat match[2]
-          min.x = Math.min min.x, x - stroke
-          max.x = Math.max max.x, x + stroke
-          min.y = Math.min min.y, y - stroke
-          max.y = Math.max max.y, y + stroke
-      for rect in currentBoard().querySelectorAll 'rect'
-        x = parseFloat rect.getAttribute 'x'
-        y = parseFloat rect.getAttribute 'y'
-        width = parseFloat rect.getAttribute 'width'
-        height = parseFloat rect.getAttribute 'height'
-        stroke = (parseFloat rect.getAttribute('stroke-width') ? 0) / 2
-        min.x = Math.min min.x, x - stroke
-        max.x = Math.max max.x, x + width + stroke
-        min.y = Math.min min.y, y - stroke
-        max.y = Math.max max.y, y + height + stroke
-      for ellipse in currentBoard().querySelectorAll 'ellipse'
-        cx = parseFloat ellipse.getAttribute 'x'
-        cy = parseFloat ellipse.getAttribute 'y'
-        rx = parseFloat ellipse.getAttribute 'rx'
-        ry = parseFloat ellipse.getAttribute 'ry'
-        stroke = (parseFloat ellipse.getAttribute('stroke-width') ? 0) / 2
-        min.x = Math.min min.x, cx - rx - stroke
-        max.x = Math.max max.x, cx + rx + stroke
-        min.y = Math.min min.y, cy - ry - stroke
-        max.y = Math.max max.y, cy + ry + stroke
+      for elt in currentBoard().querySelectorAll 'circle, polyline, rect, ellipse, text'
+        ## Compute bounding box and incorporate transformation
+        ## (assuming no rotation, so enough to look at two corners).
+        bbox = elt.getBBox()
+        transform = elt.getCTM()
+        stroke = (parseFloat elt.getAttribute('stroke-width') ? 0) / 2
+        minCorner = dom.svgPoint currentBoard(),
+          bbox.x - stroke, bbox.y - stroke, transform
+        maxCorner = dom.svgPoint currentBoard(),
+          bbox.x + stroke + bbox.width, bbox.y + stroke + bbox.height, transform
+        min.x = Math.min min.x, minCorner.x
+        max.x = Math.max max.x, maxCorner.x
+        min.y = Math.min min.y, minCorner.y
+        max.y = Math.max max.y, maxCorner.y
       if min.x == Infinity
         min.x = min.y = max.x = max.y = 0
       ## Temporarily make grid space entire drawing
       boardGrid.update currentGrid, {min, max}
       ## Create SVG header
+      svg = currentBoard().innerHTML
+      .replace /^\s*<g transform[^<>]*>/, '<g>'
+      .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
+      fonts = ''
+      if /<text/.test svg
+        for styleSheet in document.styleSheets
+          if /fonts/.test styleSheet.href
+            for rule in styleSheet.rules
+              fonts += (rule.cssText.replace /unicode-range:.*?;/g, '') + '\n'
+        fonts += '''
+          text { font-family: 'Roboto Slab', serif }
+          tspan.code { font-family: 'Roboto Mono', monospace }
+          tspan.emph { font-style: oblique }
+          tspan.strong { font-weight: bold }
+          tspan.strike { text-decoration: line-through }
+
+        '''
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
         <svg xmlns="#{dom.SVGNS}" viewBox="#{min.x} #{min.y} #{max.x - min.x} #{max.y - min.y}">
         <style>
         .grid { stroke-width: 0.96; stroke: #c4e3f4 }
-        </style>
-        #{currentBoard().innerHTML.replace /^\s*<g transform[^<>]*>/, '<g>'}
+        #{fonts}</style>
+        #{svg}
         </svg>
       """
       ## Reset grid
@@ -686,6 +774,19 @@ for width in widths
   hotkeys[width] = do (width) -> -> selectWidth width
 currentWidth = 5
 
+## These numbers are based on powers of 1.2 starting from 16
+## (the site's default font size)
+fontSizes = [
+  12
+  16
+  19
+  23
+  28
+  33
+  40
+]
+currentFontSize = 19
+
 ## Maps a PointerEvent with `pressure` attribute to a `w` multiplier to
 ## multiply with the "natural" width of the pen.
 pressureW = (e) -> 0.5 + e.pressure
@@ -755,8 +856,8 @@ pointerEvents = ->
 
 class Highlighter
   constructor: ->
-    @target = null       # <g/polyline/rect/ellipse> that @highlighted based on
-    @highlighted = null  # <g/polyline/rect/ellipse class="highlight">
+    @target = null       # <g/polyline/rect/ellipse/text>
+    @highlighted = null  # <g/polyline/rect/ellipse/text class="highlight">
     @id = null           # highlighted object ID
   findGroup: (e) ->
     ## Pen and touch devices don't always seem to set `e.target` correctly;
@@ -767,7 +868,7 @@ class Highlighter
     while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line']
       target = target.parentNode
     return unless target?
-    return unless tag in ['g', 'polyline', 'rect', 'ellipse']
+    return unless tag in ['g', 'polyline', 'rect', 'ellipse', 'text']
     return unless target.dataset.id?
     #return if target == @highlighted
     ## Shouldn't get pointer events on highlighted or selected overlays thanks
@@ -784,10 +885,13 @@ class Highlighter
     @highlighted ?= dom.create 'g', class: 'highlight'
     boardRoot.appendChild @highlighted  # ensure on top
     doubler = (match, left, number, right) -> "#{left}#{2 * number}#{right}"
-    @highlighted.innerHTML = target.outerHTML
+    html = target.outerHTML
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
+    if target.tagName.toLowerCase() == 'text'
+      html = html.replace /\bfill=(["'][^"']+["'])/g, "stroke=$1"
+    @highlighted.innerHTML = html
     true
   select: (target) ->
     if target?
@@ -804,21 +908,23 @@ class Highlighter
 class Selection
   constructor: ->
     @selected = {}  # mapping from object ID to .selected DOM element
-    @target = {}    # mapping from object ID to original DOM element
     @rehighlighter = new Highlighter  # used in redraw()
   add: (highlighter) ->
     id = highlighter.id
     return unless id?
-    @target[id] = highlighter.target
     @selected[id] = highlighter.select()
-  redraw: (id) ->
-    boardRoot.removeChild @selected[id]
-    @rehighlighter.highlight @target[id]
+  addId: (id) ->
+    ## Add an object to the selection before it's been rendered
+    ## (triggering redraw when it gets rendered).
+    @selected[id] = true
+  redraw: (id, target) ->
+    unless @selected[id] == true  # added via `addId`
+      boardRoot.removeChild @selected[id]
+    @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
   remove: (id) ->
     boardRoot.removeChild @selected[id]
     delete @selected[id]
-    delete @target[id]
   clear: ->
     @remove id for id of @selected
   ids: ->
@@ -850,7 +956,8 @@ class Selection
         for id in @ids()
           obj = Objects.findOne id
           unless obj?[attrib]
-            throw new Error "Object #{id} has no #{attrib} attribute"
+            console.warn "Object #{id} has no #{attrib} attribute"
+            continue
           type: 'edit'
           id: id
           before: "#{attrib}": obj[attrib]
@@ -1016,6 +1123,85 @@ class Render
       'stroke-width': obj.width
       fill: 'none'
     ellipse
+  renderText: (obj, options) ->
+    id = @id obj
+    unless (text = @dom[id])?
+      @root.appendChild @dom[id] = text =
+        dom.create 'text', null, dataset: id: id
+    dom.attr text,
+      x: obj.pts[0].x
+      y: obj.pts[0].y
+      fill: obj.color
+      style: "font-size:#{obj.fontSize}px"
+    if options?.text != false
+      content = obj.text
+      escape = (text) ->
+        text
+        .replace /&/g, '&amp;'
+        .replace /</g, '&lt;'
+        .replace />/g, '&gt;'
+        .replace /[ ]/g, '&nbsp;'
+      ## Basic Markdown support based on CommonMark and loosely on Slimdown:
+      ## https://gist.github.com/jbroadway/2836900
+      markdown = (text) ->
+        text
+        .replace /(?<!\\)(`+)([^]*?)\1/g, (m, left, inner) ->
+          "<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
+        .replace ///
+          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+          (?<!\\)(\*+|_+)(?!\s)([^]+?)(?<!\s)\1
+          (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+        ///g, (m, left, inner) ->
+          "<tspan class='#{if left.length > 1 then 'strong' else 'emph'}'>#{inner}</tspan>"
+        .replace ///
+          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+          (?<!\\)(~~)(?!\s)([^]+?)(?<!\s)\1
+          (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
+        ///g, (m, left, inner) ->
+          "<tspan class='strike'>#{inner}</tspan>"
+        .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
+      if id == pointers.text
+        input = document.getElementById 'textInput'
+        cursor = input.selectionStart
+        if input.value != content  # newer text from server (parallel editing)
+          ## If suffix starting at current cursor matches new text, then move
+          ## cursor to start at new version of suffix.  Otherwise leave as is.
+          suffix = input.value[cursor..]
+          if suffix == content[-suffix.length..]
+            cursor = content.length - suffix.length
+          input.value = content
+          setTimeout ->
+            input.selectionStart = input.selectionEnd = cursor
+          , 0
+        content = escape(content[...cursor]) +
+                  '<tspan class="cursor">&VeryThinSpace;</tspan>' +
+                  escape(content[cursor..])
+        unless pointers.cursor?
+          @root.appendChild pointers.cursor = dom.create 'line',
+            class: 'cursor'
+          ## Attributes set below
+      else
+        content = escape content
+      content = markdown content
+      text.innerHTML = content
+    ## Even if text didn't change, if size or translation did,
+    ## we need to update SVG cursor geometry.
+    if id == pointers.text
+      dom.attr pointers.cursor,
+        ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
+        'stroke-width': 2 * 0.05555 * obj.fontSize
+        ## 1.2 is to exaggerate
+        y1: -0.5 * 1.2 * obj.fontSize
+        y2:  0.5 * 1.2 * obj.fontSize
+      setTimeout ->
+        return unless pointers.cursor?
+        bbox = text.querySelector('.cursor').getBBox()
+        x = bbox.x + 0.5 * bbox.width
+        y = bbox.y + 0.5 * bbox.height
+        dom.attr pointers.cursor,
+          transform: "translate(#{x + (obj.tx ? 0)} #{y + (obj.ty ? 0)})"
+      , 0
+    text
   render: (obj, options = {}) ->
     elt =
       switch obj.type
@@ -1027,20 +1213,23 @@ class Render
           @renderRect obj, options
         when 'ellipse'
           @renderEllipse obj, options
+        when 'text'
+          @renderText obj, options
         else
           console.warn "No renderer for object of type #{obj.type}"
-    if options.translate != false
+    if options.translate != false and elt?
       if obj.tx? or obj.ty?
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
         elt.removeAttribute 'transform'
-    selection.redraw obj._id if selection.has obj._id
+    selection.redraw obj._id, elt if selection.has obj._id
   delete: (obj) ->
     id = @id obj
     unless @dom[id]?
       return console.warn "Attempt to delete unknown object ID #{id}?!"
     @root.removeChild @dom[id]
     delete @dom[id]
+    textStop() if id == pointers.text
   #has: (obj) ->
   #  (id obj) of @dom
   shouldNotExist: (obj) ->
@@ -1054,6 +1243,7 @@ class Render
       console.warn "Duplicate object with ID #{id}?!"
       delete @dom[id]
 
+render = null
 observeRender = ->
   boardRoot.innerHTML = ''
   render = new Render boardRoot
@@ -1072,6 +1262,7 @@ observeRender = ->
         translate: obj.tx != old.tx or obj.ty != old.ty
         color: obj.color != old.color
         width: obj.width != old.width
+        text: obj.text != old.text
     removed: (obj) ->
       render.delete obj
 
@@ -1386,6 +1577,7 @@ selectTool = (tool) ->
   if tools[tool]?.once?
     return tools[tool].once?()
   tools[currentTool]?.stop?()
+  document.body.classList.remove "tool-#{currentTool}" if currentTool
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool
   if tool?  # tool == null means initialize already set currentTool
@@ -1407,6 +1599,7 @@ selectTool = (tool) ->
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?()
+  document.body.classList.add "tool-#{currentTool}" if currentTool
   lastDrawingTool = currentTool if currentTool of drawingTools
 selectDrawingTool = ->
   unless currentTool of drawingTools
@@ -1416,7 +1609,7 @@ paletteColors = ->
   colorsDiv = document.getElementById 'colors'
   for color in colors
     colorsDiv.appendChild dom.create 'div', null,
-      className: 'color'
+      className: 'color attrib'
       style: backgroundColor: color
       dataset: color: color
     ,
@@ -1424,10 +1617,10 @@ paletteColors = ->
 
 widthSize = 22
 paletteWidths = ->
-  widthsDiv = document.getElementById 'colors'
+  widthsDiv = document.getElementById 'widths'
   for width in widths
     widthsDiv.appendChild dom.create 'div', null,
-      className: 'width'
+      className: 'width attrib'
       dataset: width: width
     ,
       click: (e) -> selectWidth e.currentTarget.dataset.width
@@ -1442,10 +1635,42 @@ paletteWidths = ->
           x2: widthSize
           'stroke-width': width
         dom.create 'text',
+          class: 'label'
           x: widthSize/2
           y: widthSize*2/3
         , null, null, [
           document.createTextNode "#{width}"
+        ]
+      ]
+    ]
+
+fontSizeSize = 28
+paletteFontSizes = ->
+  fontSizesDiv = document.getElementById 'fontSizes'
+  for fontSize in fontSizes
+    fontSizesDiv.appendChild dom.create 'div', null,
+      className: 'fontSize attrib'
+      dataset: fontSize: fontSize
+    ,
+      click: (e) -> selectFontSize e.currentTarget.dataset.fontSize
+    , [
+      dom.create 'svg',
+        viewBox: "#{-fontSizeSize/2} 0 #{fontSizeSize} #{fontSizeSize}"
+        width: fontSizeSize
+        height: fontSizeSize
+      , null, null
+      , [
+        dom.create 'text',
+          y: fontSizeSize*0.5
+          style: "font-size:#{fontSize}px"
+        , null, null, [
+          document.createTextNode 'A'
+        ]
+        dom.create 'text',
+          class: 'label'
+          y: fontSizeSize*0.875
+        , null, null, [
+          document.createTextNode "#{fontSize}"
         ]
       ]
     ]
@@ -1478,6 +1703,12 @@ selectWidth = (width, keepTool) ->
   selectDrawingTool() unless keepTool
   dom.select '.width', "[data-width='#{currentWidth}']"
 
+selectFontSize = (fontSize) ->
+  currentFontSize = parseFloat fontSize if fontSize?
+  if selection.nonempty()
+    selection.edit 'fontSize', currentFontSize
+  dom.select '.fontSize', "[data-font-size='#{currentFontSize}']"
+
 paletteSize = ->
   parseFloat (getComputedStyle document.documentElement
   .getPropertyValue '--palette-size')
@@ -1486,7 +1717,7 @@ resize = (reps = 1) ->
   tooltip?.remove()
   for [id, attrib, dimen] in [
     ['tools', '--palette-left-width', 'Width']
-    ['colors', '--palette-bottom-height', 'Height']
+    ['attribs', '--palette-bottom-height', 'Height']
     ['pages', '--palette-top-height', 'Height']
   ]
     div = document.getElementById id
@@ -1508,10 +1739,12 @@ Meteor.startup ->
   historyBoard = document.getElementById 'historyBoard'
   paletteTools()
   paletteWidths()
+  paletteFontSizes()
   paletteColors()
   selectTool()
   selectColor null, true
   selectWidth null, true
+  selectFontSize null
   pointerEvents()
   dom.listen window,
     resize: resize

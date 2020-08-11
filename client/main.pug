@@ -1,7 +1,6 @@
 head
   title Cocreate Shared Whiteboard
-  //-link(href="https://fonts.googleapis.com/css?family=Merriweather:400,400i,700&subset=latin-ext", rel="stylesheet", crossorigin="anonymous")
-  link(href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500&display=swap", rel="stylesheet", crossorigin="anonymous")
+  link(href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&family=Roboto+Slab:wght@500;900&display=swap", rel="stylesheet", crossorigin="anonymous")
   meta(name="viewport", content="width=device-width, initial-scale=1")
 
 body
@@ -23,9 +22,14 @@ body
       |  of 
       span#numPages ?
   #tools.vertical.palette
-  #colors.bottom.horizontal.palette.historyHide
+  #attribs.bottom.horizontal.palette.historyHide
+    #widths.subpalette.textHide
+    #fontSizes.subpalette.textShow
+    #colors.subpalette
   #history.bottom.horizontal.palette.historyShow
     input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
+  #text.nextBottom.horizontal.palette.textShow
+    input#textInput(type="text")
   // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
   svg#board.board.historyHide(touch-action="none")
   svg#historyBoard.board.historyShow(touch-action="none")
