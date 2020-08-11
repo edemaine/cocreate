@@ -54,6 +54,7 @@ Meteor.methods
     unless @isSimulation
       checkRoom obj.room
       checkPage obj.page
+
       if obj._id? and Objects.findOne(obj._id)?
         throw new Error "Attempt to create duplicate object #{obj._id}"
       now = new Date

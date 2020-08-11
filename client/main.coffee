@@ -23,6 +23,10 @@ remoteIconOutside = 0.2  # fraction to render icons outside view
 currentRoom = currentPage = null
 currentGrid = null
 allowTouch = true
+x1 = 0
+y1 = 0
+x2 = 0
+y2 = 0
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -31,8 +35,15 @@ distanceThreshold = (p, q, t) ->
   dy = p.clientY - q.clientY
   dx * dx + dy * dy >= t * t
 
-restrictTouch = (e) ->
-  return !currentTouch && e.pointerType == 'touch'
+reRender_Rect = (selection_box,x1,y1,x2,y2) ->
+    x3 = Math.min x1, x2
+    x4 = Math.max x1, x2
+    y3 = Math.min y1, y2
+    y4 = Math.max y1, y2
+    selection_box.style.left = x3 + 'px'
+    selection_box.style.top = y3 + 'px'
+    selection_box.style.width = x4 - x3 + 'px'
+    selection_box.style.height = y4 - y3 + 'px'
 
 pointers = {}   # maps pointerId to tool-specific data
 tools =
@@ -82,7 +93,7 @@ tools =
       for key, highlighter of pointers
         if highlighter instanceof Highlighter
           highlighter.clear()
-    down: (e) ->
+    down: selectDown = (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       return if h.down  # in case of repeat events
@@ -110,7 +121,7 @@ tools =
             selection.remove h.id
             delete pointers.objects[h.id]
           h.clear()
-    up: (e) ->
+    up: selectUp = (e) ->
       h = pointers[e.pointerId]
       if h?.moved
         undoableOp
@@ -125,7 +136,7 @@ tools =
               after: h.moved[id]
       h?.clear()
       delete pointers[e.pointerId]
-    move: (e) ->
+    move: selectMove = (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       if h.down
@@ -145,16 +156,72 @@ tools =
           h.highlight target
         else
           h.clear()
+
+  rectangular_select:
+    icon: 'rectangular-select'
+    help: 'Select all objects within rectangular boundary'
+    hotspot: [0,1]
+    start: ->
+      pointers.objects = {}
+      pointers.throttle = throttle.method 'objectEdit'
+    stop: ->
+      selectHighlightReset
+    down: (e) ->
+
+      # DOES NOT WORK
+      return if pointers[e.pointerId]
+      pt = eventToPoint e # getting coordinates of click
+      obj = {
+        type: 'rect'
+        pts: [pt, pt]
+        color: 'black'
+        width: 3
+      } # making object with non-standard pen width
+
+      pointers[e.pointerId] = Meteor.call 'objectNew', obj # adding object to room? (but should only appear on one user's screen)
+      obj.id = pointers[e.pointerId]
+
+      xMin = Math.min obj.pts[0].x, obj.pts[1].x
+      xMax = Math.max obj.pts[0].x, obj.pts[1].x
+      yMin = Math.min obj.pts[0].y, obj.pts[1].y
+      yMax = Math.max obj.pts[0].y, obj.pts[1].y
+
+      boardRoot.appendChild pointers[e.pointerId] = rect =  # making rect object?
+          dom.create 'rect', null, dataset: id: pointers[e.pointerId]
+
+      dom.attr rect, #changing attributes of rect
+        x: xMin
+        y: yMin
+        width: xMax - xMin
+        height: yMax - yMin
+        stroke: obj.color
+        'stroke-width': obj.width
+        'stroke-linejoin': 'round'
+        fill: 'none'
+
+    up: (e) ->
+
+      h = pointers[e.pointerId]
+      Meteor.call 'objectDel', h.id #deleting it with h.id
+
+    move: (e) ->
+
+      return unless pointers[e.pointerId]
+      h = pointers[e.pointerId]
+      pt = eventToPoint e # new mouse pointer
+      pointers.throttle
+        id: pointers[e.pointerId]
+        pts: 1: pt # updating the second point of rect?
+
+      # Meteor.call 'objectEdit', argument for diff?
+
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
     help: 'Freehand drawing (with pen pressure adjusting width)'
     hotkey: 'p'
     down: (e) ->
-
       return if pointers[e.pointerId]
-      return if restrictTouch e
-
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
         page: currentPage
@@ -165,16 +232,12 @@ tools =
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
-
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
-
       ## iPhone (iOS 13.4, Safari 13.1) sends zero pressure for touch events.
       #if e.pressure == 0
       #  stop e
@@ -193,7 +256,6 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -205,14 +267,12 @@ tools =
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       ## Force horizontal/vertical line when holding shift
       if e.shiftKey
@@ -235,7 +295,6 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -247,14 +306,12 @@ tools =
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
@@ -267,7 +324,6 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      return if restrictTouch e
       pt = eventToPoint e
       pointers[e.pointerId] = Meteor.apply 'objectNew', [
         room: currentRoom
@@ -279,14 +335,12 @@ tools =
       ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId]
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      return if restrictTouch e
       pointers.throttle
         id: pointers[e.pointerId]
         pts: 1: eventToPoint e
@@ -299,8 +353,7 @@ tools =
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      return if h.down # repeat events can happen because of erasure
-      return if restrictTouch e
+      return if h.down  # repeat events can happen because of erasure
       h.down = e
       h.deleted = []
       if h.id?  # already have something highlighted
@@ -313,7 +366,6 @@ tools =
           h.deleted.push Objects.findOne target.dataset.id
           Meteor.call 'objectDel', target.dataset.id
     up: (e) ->
-      return if restrictTouch e
       h = pointers[e.pointerId]
       h?.clear()
       if h?.deleted?.length
@@ -326,7 +378,6 @@ tools =
               obj: obj
       delete pointers[e.pointerId]
     move: (e) ->
-      return if restrictTouch e
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       target = h.findGroup e
@@ -340,12 +391,6 @@ tools =
           h.highlight target
       else
         h.clear()
-  touch:
-    icon: 'hand'
-    help: 'Touch only pan/select'
-    once: ->
-      currentTouch = !currentTouch
-
   spacer: {}
   touch:
     icon: 'hand-pointer'
@@ -605,7 +650,6 @@ currentBoard = ->
     historyBoard
   else
     board
-
 
 colors = [
   'black'   # Windows Journal black
@@ -1225,12 +1269,6 @@ changeRoom = (room) ->
     updateBadRoom()
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
-<<<<<<< HEAD
-    gridTool = document.querySelector '.tool[data-tool="grid"]'
-
-    if currentGrid != roomData?.grid
-      currentGrid = roomData?.grid
-=======
     unless currentPage?
       changePage roomData?.pages?[0]
     document.getElementById('numPages').innerHTML =
@@ -1259,7 +1297,6 @@ changePage = (page) ->
     if currentGrid != pageData?.grid
       currentGrid = pageData?.grid
       gridTool = document.querySelector '.tool[data-tool="grid"]'
->>>>>>> upstream/master
       if currentGrid
         gridTool.classList.add 'active'
       else
