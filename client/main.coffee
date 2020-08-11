@@ -1269,6 +1269,7 @@ changeRoom = (room) ->
     updateBadRoom()
   roomAuto = Tracker.autorun ->
     roomData = Rooms.findOne currentRoom
+<<<<<<< HEAD
     unless currentPage?
       changePage roomData?.pages?[0]
     document.getElementById('numPages').innerHTML =
@@ -1297,6 +1298,11 @@ changePage = (page) ->
     if currentGrid != pageData?.grid
       currentGrid = pageData?.grid
       gridTool = document.querySelector '.tool[data-tool="grid"]'
+=======
+    gridTool = document.querySelector '.tool[data-tool="grid"]'
+    if currentGrid != roomData?.grid
+      currentGrid = roomData?.grid
+>>>>>>> 5262cadf6317482bc31fd9d9e1d1740723884d05
       if currentGrid
         gridTool.classList.add 'active'
       else
@@ -1333,12 +1339,15 @@ paletteTools = ->
   pagesDiv = document.getElementById 'pages'
   align = 'top'
   for tool, {icon, help, hotkey, init} of tools
+<<<<<<< HEAD
     container = if tool.startsWith 'page' then pagesDiv else toolsDiv
     orientation = ''
     if container.classList.contains 'horizontal'
       orientation = 'horizontal'
     else if container.classList.contains 'vertical'
       orientation = 'vertical'
+=======
+>>>>>>> 5262cadf6317482bc31fd9d9e1d1740723884d05
     if tool.startsWith 'spacer'
       container.appendChild dom.create 'div', class: 'spacer'
       align = 'bottom'
