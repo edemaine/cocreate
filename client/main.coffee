@@ -23,10 +23,6 @@ remoteIconOutside = 0.2  # fraction to render icons outside view
 currentRoom = currentPage = null
 currentGrid = null
 allowTouch = true
-x1 = 0
-y1 = 0
-x2 = 0
-y2 = 0
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -34,16 +30,6 @@ distanceThreshold = (p, q, t) ->
   dx = p.clientX - q.clientX
   dy = p.clientY - q.clientY
   dx * dx + dy * dy >= t * t
-
-reRender_Rect = (selection_box,x1,y1,x2,y2) ->
-    x3 = Math.min x1, x2
-    x4 = Math.max x1, x2
-    y3 = Math.min y1, y2
-    y4 = Math.max y1, y2
-    selection_box.style.left = x3 + 'px'
-    selection_box.style.top = y3 + 'px'
-    selection_box.style.width = x4 - x3 + 'px'
-    selection_box.style.height = y4 - y3 + 'px'
 
 pointers = {}   # maps pointerId to tool-specific data
 tools =
@@ -93,7 +79,7 @@ tools =
       for key, highlighter of pointers
         if highlighter instanceof Highlighter
           highlighter.clear()
-    down: selectDown = (e) ->
+    down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       return if h.down  # in case of repeat events
@@ -121,7 +107,7 @@ tools =
             selection.remove h.id
             delete pointers.objects[h.id]
           h.clear()
-    up: selectUp = (e) ->
+    up: (e) ->
       h = pointers[e.pointerId]
       if h?.moved
         undoableOp
@@ -136,7 +122,7 @@ tools =
               after: h.moved[id]
       h?.clear()
       delete pointers[e.pointerId]
-    move: selectMove = (e) ->
+    move: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       if h.down
@@ -198,22 +184,6 @@ tools =
         'stroke-width': obj.width
         'stroke-linejoin': 'round'
         fill: 'none'
-
-    up: (e) ->
-
-      h = pointers[e.pointerId]
-      Meteor.call 'objectDel', h.id #deleting it with h.id
-
-    move: (e) ->
-
-      return unless pointers[e.pointerId]
-      h = pointers[e.pointerId]
-      pt = eventToPoint e # new mouse pointer
-      pointers.throttle
-        id: pointers[e.pointerId]
-        pts: 1: pt # updating the second point of rect?
-
-      # Meteor.call 'objectEdit', argument for diff?
 
   pen:
     icon: 'pencil-alt'
@@ -658,7 +628,6 @@ tools =
           tspan.emph { font-style: oblique }
           tspan.strong { font-weight: bold }
           tspan.strike { text-decoration: line-through }
-
         '''
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
