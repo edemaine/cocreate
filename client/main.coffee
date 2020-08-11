@@ -185,6 +185,22 @@ tools =
         'stroke-linejoin': 'round'
         fill: 'none'
 
+    up: (e) ->
+
+      h = pointers[e.pointerId]
+      Meteor.call 'objectDel', h.id #deleting it with h.id
+
+    move: (e) ->
+
+        return unless pointers[e.pointerId]
+        h = pointers[e.pointerId]
+        pt = eventToPoint e # new mouse pointer
+        pointers.throttle
+          id: pointers[e.pointerId]
+          pts: 1: pt # updating the second point of rect?
+
+        # Meteor.call 'objectEdit', argument for diff?
+
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
