@@ -772,10 +772,10 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     target = document.elementFromPoint e.clientX, e.clientY
-    while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line']
+    while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line', 'text']
       target = target.parentNode
     return unless target?
-    return unless tag in ['g', 'polyline', 'rect', 'ellipse', 'text']
+    return unless tag in ['g', 'polyline', 'rect', 'ellipse']
     return unless target.dataset.id?
     #return if target == @highlighted
     ## Shouldn't get pointer events on highlighted or selected overlays thanks
@@ -948,6 +948,8 @@ edge = (obj, p1, p2) ->
 class Render
   constructor: (@root) ->
     @dom = {}
+    @tex = {}
+    @texQueue = []
   id: (obj) ->
     ###
     `obj` can be an `ObjectDiff` object, in which case `id` is the object ID
@@ -1032,41 +1034,27 @@ class Render
     ellipse
   renderText: (obj, options) ->
     id = @id obj
-    unless (text = @dom[id])?
-      @root.appendChild @dom[id] = text =
-        dom.create 'text', null, dataset: id: id
+    unless (g = @dom[id])?
+      @root.appendChild @dom[id] = g =
+        dom.create 'g', null, dataset: id: id
+      g.appendChild text = dom.create 'text'
+    else
+      text = g.firstChild
+      while (svgG = g.lastChild) != text
+        svgG.remove()
+    dom.attr g,
+      transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
-      x: obj.pts[0].x
-      y: obj.pts[0].y
       fill: obj.color
       style: "font-size:#{obj.fontSize}px"
     if options?.text != false
       content = obj.text
       input = document.getElementById 'textInput'
-      escape = (text) ->
-        text
-        .replace /&/g, '&amp;'
-        .replace /</g, '&lt;'
-        .replace />/g, '&gt;'
-        .replace /[ ]/g, '\u00a0'
-      unescape = (text) ->
-        text
-        .replace /&gt;/g, '>'
-        .replace /&lt;/g, '<'
-        .replace /&amp;/g, '&'
-      escapeQuote = (text) ->
-        text
-        .replace /&/g, '&amp;'
-        .replace /"/g, '&quot;'
-      unescapeQuote = (text) ->
-        text
-        .replace /&quot;/g, '"'
-        .replace /&amp;/g, '&'
       ## Extract $math$ and $$display math$$ expressions.
       ## Based loosely on Coauthor's `replaceMathBlocks`.
-      latex = (text) ->
+      maths = []
+      latex = (text) =>
         mathRE = /\$\$?|\\.|[{}]/g
-        maths = []
         math = null
         while match = mathRE.exec text
           if math?
@@ -1078,7 +1066,7 @@ class Render
                 math.brace = 0 if math.brace < 0  # ignore extra }s
               when '$', '$$'
                 if math.brace <= 0
-                  math.contentEnd = match.index
+                  math.formulaEnd = match.index
                   math.end = match.index + match[0].length
                   maths.push math
                   math = null
@@ -1086,22 +1074,35 @@ class Render
             math =
               display: match[0].length > 1
               start: match.index
-              contentStart: match.index + match[0].length
+              formulaStart: match.index + match[0].length
               brace: 0
         if maths.length
           out = [text[...maths[0].start]]
           for math, i in maths
-            math.content = text[math.start...math.end]
+            math.formula = text[math.formulaStart...math.formulaEnd]
             .replace /<tspan class="cursor">[^<>]*<\/tspan>/, (match) ->
               out.push match
               ''
-            math.content = unescape math.content
-            out.push """<tspan data-tex="#{escapeQuote math.content}">&VeryThinSpace;</tspan>"""
+            .replace /\u00a0/g, ' '  # undo escape
+            math.formula = dom.unescape math.formula
+            out.push "$MATH#{i}$"
+            math.out = """<tspan data-tex="#{dom.escapeQuote math.formula}" data-display="#{math.display}">&VeryThinSpace;</tspan>"""
             if i < maths.length-1
               out.push text[math.end...maths[i+1].start]
             else
               out.push text[math.end..]
-          new Worker '/tex2svg.js'
+            if job = @tex[[math.formula, math.display]]
+              job.texts[id] = true
+              setTimeout (do (job) => @texRender job, id), 0
+            else
+              job = @tex[[math.formula, math.display]] =
+                formula: math.formula
+                display: math.display
+                texts: "#{id}": true
+              @texQueue.push job
+            if @texQueue.length == 1  # added job while idle
+              @texInit()
+              @texJob()
           out.join ''
         else
           text
@@ -1124,11 +1125,13 @@ class Render
         ///g, (m, left, inner) ->
           "<tspan class='strike'>#{inner}</tspan>"
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
+        .replace /\$MATH(\d+)\$/g, (match, i) ->
+          maths[i].out
       if id == pointers.text and input.value == content
         cursor = input.selectionStart
-        content = escape(content[...cursor]) +
+        content = dom.escape(content[...cursor]) +
                   '<tspan class="cursor">&VeryThinSpace;</tspan>' +
-                  escape(content[cursor..])
+                  dom.escape(content[cursor..])
         unless pointers.cursor?
           @root.appendChild pointers.cursor = dom.create 'line',
             class: 'cursor'
@@ -1147,13 +1150,51 @@ class Render
             transform: "translate(#{x + (obj.tx ? 0)} #{y + (obj.ty ? 0)})"
         , 0
       else
-        content = escape content
+        content = dom.escape content
       content = markdown content
       text.innerHTML = content
-      tspanRE = /<tspan data-tex="([^"]*)"/g
-      while match = tspanRE.exec content
-        console.log unescapeQuote match[1]
+      #tspanRE = /<tspan data-tex="([^"]*)"/g
+      #while match = tspanRE.exec content
+      #  console.log dom.unescapeQuote match[1]
     text
+  texInit: ->
+    return if @tex2svg?
+    @tex2svg = new Worker '/tex2svg.js'
+    @tex2svg.onmessage = (e) =>
+      job = @texQueue.shift()
+      {formula, display, svg} = e.data
+      unless formula == job.formula and display == job.display
+        console.warn "Mismatch between #{formula},#{display} and #{job.formula},#{job.display}"
+      job.svg = svg
+      match = /width=['"]([^'"]*)['"]/.exec svg
+      job.width = match[1]
+      for id of job.texts
+        @texRender job, id
+      @texJob()
+  texRender: (job, id) ->
+    g = @dom[id]
+    for node in g.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
+      dom.attr node, dx: job.width
+      nodeBBox = node.getBBox()
+      g.appendChild svgG = dom.create 'g'
+      svgG.innerHTML = job.svg
+      baseline = svgG.firstChild.style.verticalAlign
+      if baseline.startsWith '-'
+        baseline = baseline[1..]
+      else
+        baseline = "-#{baseline}"
+      dom.attr svgG.firstChild,
+        y: baseline
+      svgBBox = svgG.getBBox()
+      dom.attr svgG.firstChild,
+        x: nodeBBox.x - svgBBox.width - nodeBBox.width/2
+        y: svgBBox.y - svgBBox.height
+  texJob: ->
+    return unless @texQueue.length
+    job = @texQueue[0]
+    @tex2svg.postMessage
+      formula: job.formula
+      display: job.display
   render: (obj, options = {}) ->
     elt =
       switch obj.type
