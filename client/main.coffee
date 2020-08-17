@@ -1072,20 +1072,20 @@ class Render
       ## https://gist.github.com/jbroadway/2836900
       markdown = (text) ->
         text
-        .replace /(?<!\\)(`+)([^]*?)\1/g, (m, left, inner) ->
-          "<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
+        .replace /(^|[^\\])(`+)([^]*?)\2/g, (m, pre, left, inner) ->
+          "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
         .replace ///
-          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-          (?<!\\)(\*+|_+)(?!\s)([^]+?)(?<!\s)\1
+          (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
+          (\*+|_+)(\S(?:[^]*?\S)?)\2
           (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-        ///g, (m, left, inner) ->
-          "<tspan class='#{if left.length > 1 then 'strong' else 'emph'}'>#{inner}</tspan>"
+        ///g, (m, pre, left, inner) ->
+          "#{pre}<tspan class='#{if left.length > 1 then 'strong' else 'emph'}'>#{inner}</tspan>"
         .replace ///
-          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-          (?<!\\)(~~)(?!\s)([^]+?)(?<!\s)\1
+          (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
+          (~~)(\S(?:[^]*?\S)?)\2
           (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-        ///g, (m, left, inner) ->
-          "<tspan class='strike'>#{inner}</tspan>"
+        ///g, (m, pre, left, inner) ->
+          "#{pre}<tspan class='strike'>#{inner}</tspan>"
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
       if id == pointers.text
         input = document.getElementById 'textInput'
