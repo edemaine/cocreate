@@ -850,7 +850,8 @@ class Selection
     @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
   remove: (id) ->
-    boardRoot.removeChild @selected[id]
+    unless @selected[id] == true  # added via `addId`
+      boardRoot.removeChild @selected[id]
     delete @selected[id]
   clear: ->
     @remove id for id of @selected
