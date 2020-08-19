@@ -321,7 +321,7 @@ tools =
   text:
     icon: 'text'
     hotspot: [.77, .89]
-    help: 'Type text (click location, then type at bottom), including Markdown *italic*, **bold**, `code`, ~~strike~~'
+    help: 'Type text (click location or existing text, then type at bottom), including Markdown *italic*, **bold**, `code`, ~~strike~~'
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
@@ -340,31 +340,43 @@ tools =
         input: (e) ->
           return unless pointers.text?
           text = input.value
-          if text != Objects.findOne(pointers.text).text
+          if text != (oldText = Objects.findOne(pointers.text).text)
             Meteor.call 'objectEdit',
               id: pointers.text
               text: text
+            unless pointers.undoable?
+              undoableOp pointers.undoable =
+                type: 'multi'
+                ops: []
+            pointers.undoable.ops.push
+              type: 'edit'
+              id: pointers.text
+              before: text: oldText
+              after: text: text
     start: ->
       pointers.highlight = new Highlighter
-    stop: textStop = ->
+      textStop()
+    stop: textStop = (keepHighlight) ->
+      input = document.getElementById 'textInput'
+      input.value = ''
+      input.disabled = true
       selection.clear()
-      pointers.highlight?.clear()
+      pointers.highlight?.clear() unless keepHighlight
       pointers.cursor?.remove()
       pointers.cursor = null
       return unless (id = pointers.text)?
-      object = Objects.findOne id
-      if object.text
-        undoableOp
-          type: 'new'
-          obj: object
-      else  # delete empty text objects
-        Meteor.call 'objectDel', id
+      if (object = Objects.findOne id)?
+        if object.text
+          render.renderText object, text: true  # remove cursor
+        else
+          index = undoStack.indexOf pointers.undoable
+          undoStack.splice index, 1 if index >= 0
+          Meteor.call 'objectDel', id
+      pointers.undoable = null
       pointers.text = null
-      if (obj = Objects.findOne(id))?
-        render.renderText obj, text: true
     down: (e) ->
       ## Stop editing any previous text object.
-      textStop()
+      textStop true
       ## In future, may support dragging a rectangular container for text,
       ## but maybe only after SVG 2's <text> flow support...
       h = pointers.highlight
@@ -374,19 +386,27 @@ tools =
       if h.id?
         pointers.text = h.id
         selection.add h
+        text = Objects.findOne(pointers.text)?.text ? ''
       else
         pointers.text = Meteor.apply 'objectNew', [
           room: currentRoom
           page: currentPage
           type: 'text'
           pts: [eventToPoint e]
-          text: ''
+          text: text = ''
           color: currentColor
           fontSize: currentFontSize
         ], returnStubValue: true
         selection.addId pointers.text
+        undoableOp pointers.undoable =
+          type: 'multi'
+          ops: [
+            type: 'new'
+            obj: object = Objects.findOne pointers.text
+          ]
       input = document.getElementById 'textInput'
-      input.value = Objects.findOne(pointers.text)?.text ? ''
+      input.value = text
+      input.disabled = false
       input.focus()
     move: (e) ->
       h = pointers.highlight
@@ -834,7 +854,8 @@ class Selection
     @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
   remove: (id) ->
-    boardRoot.removeChild @selected[id]
+    unless @selected[id] == true  # added via `addId`
+      boardRoot.removeChild @selected[id]
     delete @selected[id]
   clear: ->
     @remove id for id of @selected
@@ -1061,7 +1082,8 @@ class Render
       ## Based loosely on Coauthor's `replaceMathBlocks`.
       maths = []
       latex = (text) =>
-        mathRE = /\$\$?|\\.|[{}]/g
+        cursorRE = '<tspan class="cursor">[^<>]*<\\/tspan>'
+        mathRE = /// \$\$? | \\. | [{}] | \$(#{cursorRE})\$ ///g
         math = null
         while match = mathRE.exec text
           if math?
@@ -1071,10 +1093,12 @@ class Render
               when '}'
                 math.brace--
                 math.brace = 0 if math.brace < 0  # ignore extra }s
-              when '$', '$$'
-                if math.brace <= 0
+              #when '$', '$$'
+              else
+                if match[0].startsWith('$') and math.brace <= 0
                   math.formulaEnd = match.index
                   math.end = match.index + match[0].length
+                  math.suffix = match[1]
                   maths.push math
                   math = null
           else if match[0].startsWith '$'
@@ -1083,16 +1107,19 @@ class Render
               start: match.index
               formulaStart: match.index + match[0].length
               brace: 0
+              prefix: match[1]
         if maths.length
           out = [text[...maths[0].start]]
           for math, i in maths
             math.formula = text[math.formulaStart...math.formulaEnd]
-            .replace /<tspan class="cursor">[^<>]*<\/tspan>/, (match) ->
+            .replace ///#{cursorRE}///, (match) ->
               out.push match
               ''
-            .replace /\u00a0/g, ' '  # undo escape
+            .replace /\u00a0/g, ' '  # undo dom.escape
             math.formula = dom.unescape math.formula
+            out.push math.prefix if math.prefix?
             out.push "$MATH#{i}$"
+            out.push math.suffix if math.suffix?
             math.out = """<tspan data-tex="#{dom.escapeQuote math.formula}" data-display="#{math.display}">&VeryThinSpace;</tspan>"""
             if i < maths.length-1
               out.push text[math.end...maths[i+1].start]
@@ -1118,50 +1145,60 @@ class Render
       ## Basic Markdown support based on CommonMark and loosely on Slimdown:
       ## https://gist.github.com/jbroadway/2836900
       markdown = (text) ->
-        text = text.replace /(?<!\\)(`+)([^]*?)\1/g, (m, left, inner) ->
-          "<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
+        text = text
+        .replace /(^|[^\\])(`+)([^]*?)\2/g, (m, pre, left, inner) ->
+          "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
         text = latex text
         .replace ///
-          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-          (?<!\\)(\*+|_+)(?!\s)([^]+?)(?<!\s)\1
+          (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
+          (\*+|_+)(\S(?:[^]*?\S)?)\2
           (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-        ///g, (m, left, inner) ->
-          "<tspan class='#{if left.length > 1 then 'strong' else 'emph'}'>#{inner}</tspan>"
+        ///g, (m, pre, left, inner) ->
+          "#{pre}<tspan class='#{if left.length > 1 then 'strong' else 'emph'}'>#{inner}</tspan>"
         .replace ///
-          (?<=^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-          (?<!\\)(~~)(?!\s)([^]+?)(?<!\s)\1
+          (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
+          (~~)(\S(?:[^]*?\S)?)\2
           (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-        ///g, (m, left, inner) ->
-          "<tspan class='strike'>#{inner}</tspan>"
+        ///g, (m, pre, left, inner) ->
+          "#{pre}<tspan class='strike'>#{inner}</tspan>"
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
         .replace /\$MATH(\d+)\$/g, (match, i) ->
           maths[i].out
-      if id == pointers.text and input.value == content
+      if id == pointers.text
+        input = document.getElementById 'textInput'
         cursor = input.selectionStart
+        if input.value != content  # newer text from server (parallel editing)
+          ## If suffix starting at current cursor matches new text, then move
+          ## cursor to start at new version of suffix.  Otherwise leave as is.
+          suffix = input.value[cursor..]
+          if suffix == content[-suffix.length..]
+            cursor = content.length - suffix.length
+          input.value = content
+          setTimeout ->
+            input.selectionStart = input.selectionEnd = cursor
+          , 0
         content = dom.escape(content[...cursor]) +
                   '<tspan class="cursor">&VeryThinSpace;</tspan>' +
                   dom.escape(content[cursor..])
-        unless pointers.cursor?
-          @root.appendChild pointers.cursor = dom.create 'line',
-            class: 'cursor'
-        dom.attr pointers.cursor,
+        g.appendChild pointers.cursor = dom.create 'line',
+          class: 'cursor'
           ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
           'stroke-width': 2 * 0.05555 * obj.fontSize
           ## 1.2 is to exaggerate
           y1: -0.5 * 1.2 * obj.fontSize
           y2:  0.5 * 1.2 * obj.fontSize
-        setTimeout ->
+        setTimeout pointers.cursorUpdate = ->
           return unless pointers.cursor?
-          bbox = text.querySelector('.cursor').getBBox()
+          bbox = text.querySelector('tspan.cursor').getBBox()
           x = bbox.x + 0.5 * bbox.width
           y = bbox.y + 0.5 * bbox.height
-          dom.attr pointers.cursor,
-            transform: "translate(#{x + (obj.tx ? 0)} #{y + (obj.ty ? 0)})"
+          dom.attr pointers.cursor, transform: "translate(#{x} #{y})"
         , 0
       else
         content = dom.escape content
       content = markdown content
       text.innerHTML = content
+    text
     wrapper
   texInit: ->
     return if @tex2svg?
@@ -1171,7 +1208,7 @@ class Render
       {formula, display, svg} = e.data
       unless formula == job.formula and display == job.display
         console.warn "Mismatch between #{formula},#{display} and #{job.formula},#{job.display}"
-      exScale = 0.52
+      exScale = 0.523
       exScaler = (match, dimen, value) ->
         "#{dimen}=\"#{job[dimen] = exScale * parseFloat value}\""
       svg = svg
@@ -1205,6 +1242,7 @@ class Render
       dom.attr svgG,
         transform: "translate(#{x} #{y}) scale(#{fontSize})"
     selection.redraw id, @dom[id] if selection.has id
+    pointers.cursorUpdate?() if id == pointers.text
   texJob: ->
     return unless @texQueue.length
     job = @texQueue[0]
@@ -1238,6 +1276,7 @@ class Render
       return console.warn "Attempt to delete unknown object ID #{id}?!"
     @root.removeChild @dom[id]
     delete @dom[id]
+    textStop() if id == pointers.text
   #has: (obj) ->
   #  (id obj) of @dom
   shouldNotExist: (obj) ->
