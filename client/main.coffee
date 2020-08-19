@@ -1236,6 +1236,7 @@ class Render
       tspanBBox = tspan.getBBox()
       g.appendChild svgG = dom.create 'g'
       svgG.innerHTML = job.svg
+      .replace /currentColor/g, object.color
       x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
       ## Roboto Slab in https://opentype.js.org/font-inspector.html:
       unitsPerEm = 1000 # Font Header table
