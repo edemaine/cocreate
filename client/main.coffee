@@ -541,15 +541,19 @@ tools =
     icon: 'download-svg'
     help: 'Download/export entire drawing as an SVG file'
     once: ->
-      ## Compute bounding box, assuming spanned by <circle> (from pen groups),
-      ## <polyline>, <rect>, and <ellipse> elements
+      ## Temporarily remove transform for export
+      root = currentBoard().firstChild # <g>
+      oldTransform = root.getAttribute 'transform'
+      root.removeAttribute 'transform'
+      ## Compute bounding box using SVG's getBBox() and getCTM()
       min =
         x: Infinity
         y: Infinity
       max =
         x: -Infinity
         y: -Infinity
-      for elt in currentBoard().querySelectorAll 'circle, polyline, rect, ellipse, text'
+      for elt in root.childNodes
+        continue if elt.classList.contains 'grid'
         ## Compute bounding box and incorporate transformation
         ## (assuming no rotation, so enough to look at two corners).
         bbox = elt.getBBox()
@@ -569,7 +573,6 @@ tools =
       boardGrid.update currentGrid, {min, max}
       ## Create SVG header
       svg = currentBoard().innerHTML
-      .replace /^\s*<g transform[^<>]*>/, '<g>'
       .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
       fonts = ''
       if /<text/.test svg
@@ -594,7 +597,8 @@ tools =
         #{svg}
         </svg>
       """
-      ## Reset grid
+      ## Reset transform and grid
+      root.setAttribute 'transform', oldTransform
       boardGrid.update()
       ## Download file
       download = document.getElementById 'download'
