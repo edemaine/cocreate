@@ -1,11 +1,13 @@
 ## 'push' diffs used to just list a single point, but arrays are more helpful
 ## to deal with coalesced events, so make them all arrays.
-ObjectsDiff.find
-  type: 'push'
-  pts: $not: $type: 'array'
-.forEach (diff) ->
-  ObjectsDiff.update diff._id,
-    $set: pts: [diff.pts]
+## This update is slow, so it's disabled by default.
+if false
+  ObjectsDiff.find
+    type: 'push'
+    pts: $not: $type: 'array'
+  .forEach (diff) ->
+    ObjectsDiff.update diff._id,
+      $set: pts: [diff.pts]
 
 ## `pen` objects used to have no `width` attribute, and `pts` points' `w`
 ## attribute used to be an absolute width.  Now `w` is a multiplier for `width`.
