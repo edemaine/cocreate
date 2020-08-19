@@ -28,7 +28,7 @@
     "meteor-node-stubs": "^1.0.0",
     "pepjs": "^0.5.2",
     "pug": "^3.0.0",
-    "tex2svg-webworker": "0.0.0"
+    "tex2svg-webworker": "^0.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.11.0",
@@ -36,7 +36,6 @@
     "babel-loader": "^7.1.5",
     "coffee-loader": "^1.0.0",
     "coffeescript": "^2.5.1",
-    "mathjax-full": "^3.0.5",
     "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"

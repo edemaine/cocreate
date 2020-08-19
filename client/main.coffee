@@ -772,11 +772,10 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     target = document.elementFromPoint e.clientX, e.clientY
-    while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line', 'text']
+    while target? and not target.dataset.id?
+      return if target.classList.contains 'board'
       target = target.parentNode
     return unless target?
-    return unless tag in ['g', 'polyline', 'rect', 'ellipse']
-    return unless target.dataset.id?
     #return if target == @highlighted
     ## Shouldn't get pointer events on highlighted or selected overlays thanks
     ## to `pointer-events: none`, but check for them just in case:
@@ -796,8 +795,13 @@ class Highlighter
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
-    if target.tagName.toLowerCase() == 'text'
-      html = html.replace /\bfill=(["'][^"']+["'])/g, "stroke=$1"
+    if /<text\b/.test html
+      width = 1.5 # for text
+      html = html.replace /\bfill=(["'][^"']+["'])/g, (match, fill) ->
+        out = "#{match} stroke=#{fill} stroke-width=\"#{width}\""
+        width = 100 # for LaTeX SVGs
+        out
+      .replace /<svg\b/, '$& overflow="visible"'
     @highlighted.innerHTML = html
     true
   select: (target) ->
@@ -1034,20 +1038,23 @@ class Render
     ellipse
   renderText: (obj, options) ->
     id = @id obj
-    unless (g = @dom[id])?
-      @root.appendChild @dom[id] = g =
-        dom.create 'g', null, dataset: id: id
+    unless (wrapper = @dom[id])?
+      @root.appendChild @dom[id] = wrapper =
+        dom.create 'g', null,
+          dataset: id: id
+      wrapper.appendChild g = dom.create 'g'
       g.appendChild text = dom.create 'text'
     else
+      g = wrapper.firstChild
       text = g.firstChild
-      while (svgG = g.lastChild) != text
-        svgG.remove()
     dom.attr g,
       transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
       fill: obj.color
       style: "font-size:#{obj.fontSize}px"
-    if options?.text != false
+    if options?.text != false or options?.fontSize != false
+      ## Remove any leftover TeX expressions
+      svgG.remove() while (svgG = g.lastChild) != text
       content = obj.text
       input = document.getElementById 'textInput'
       ## Extract $math$ and $$display math$$ expressions.
@@ -1093,7 +1100,9 @@ class Render
               out.push text[math.end..]
             if job = @tex[[math.formula, math.display]]
               job.texts[id] = true
-              setTimeout (do (job) => @texRender job, id), 0
+              if job.svg? # already computed
+                do (job) =>
+                  setTimeout (=> @texRender job, id), 0
             else
               job = @tex[[math.formula, math.display]] =
                 formula: math.formula
@@ -1153,10 +1162,7 @@ class Render
         content = dom.escape content
       content = markdown content
       text.innerHTML = content
-      #tspanRE = /<tspan data-tex="([^"]*)"/g
-      #while match = tspanRE.exec content
-      #  console.log dom.unescapeQuote match[1]
-    text
+    wrapper
   texInit: ->
     return if @tex2svg?
     @tex2svg = new Worker '/tex2svg.js'
@@ -1165,30 +1171,40 @@ class Render
       {formula, display, svg} = e.data
       unless formula == job.formula and display == job.display
         console.warn "Mismatch between #{formula},#{display} and #{job.formula},#{job.display}"
+      exScale = 0.52
+      exScaler = (match, dimen, value) ->
+        "#{dimen}=\"#{job[dimen] = exScale * parseFloat value}\""
+      svg = svg
+      .replace /\b(width)="([\-\.\d]+)ex"/, exScaler
+      .replace /\b(height)="([\-\.\d]+)ex"/, exScaler
+      .replace /\bvertical-align:\s*([\-\.\d]+)ex/, (match, depth) ->
+        job.depth = -parseFloat depth
+        ''
       job.svg = svg
-      match = /width=['"]([^'"]*)['"]/.exec svg
-      job.width = match[1]
       for id of job.texts
         @texRender job, id
       @texJob()
   texRender: (job, id) ->
-    g = @dom[id]
-    for node in g.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
-      dom.attr node, dx: job.width
-      nodeBBox = node.getBBox()
+    g = @dom[id].firstChild
+    for tspan in g.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
+      object = Objects.findOne id
+      continue unless object
+      fontSize = object.fontSize
+      dom.attr tspan, dx: dx = job.width * fontSize
+      tspanBBox = tspan.getBBox()
       g.appendChild svgG = dom.create 'g'
       svgG.innerHTML = job.svg
-      baseline = svgG.firstChild.style.verticalAlign
-      if baseline.startsWith '-'
-        baseline = baseline[1..]
-      else
-        baseline = "-#{baseline}"
-      dom.attr svgG.firstChild,
-        y: baseline
-      svgBBox = svgG.getBBox()
-      dom.attr svgG.firstChild,
-        x: nodeBBox.x - svgBBox.width - nodeBBox.width/2
-        y: svgBBox.y - svgBBox.height
+      x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
+      ## Roboto Slab in https://opentype.js.org/font-inspector.html:
+      unitsPerEm = 1000 # Font Header table
+      descender = 271   # Horizontal Header table
+      ascender = 1048   # Horizontal Header table
+      y = tspanBBox.y + tspanBBox.height * (1 - descender/(descender+ascender))\
+        - job.height * fontSize + job.depth * fontSize / 2
+        # not sure where the /2 comes from... exFactor?
+      dom.attr svgG,
+        transform: "translate(#{x} #{y}) scale(#{fontSize})"
+    selection.redraw id, @dom[id] if selection.has id
   texJob: ->
     return unless @texQueue.length
     job = @texQueue[0]
