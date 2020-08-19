@@ -975,6 +975,7 @@ class Render
     @dom = {}
     @tex = {}
     @texQueue = []
+    @texById = {}
   id: (obj) ->
     ###
     `obj` can be an `ObjectDiff` object, in which case `id` is the object ID
@@ -1076,14 +1077,18 @@ class Render
     if options?.text != false or options?.fontSize != false
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
+      if @texById[id]?
+        for job in @texById[id]
+          delete job.texts[id]
+        delete @texById[id]
       content = obj.text
       input = document.getElementById 'textInput'
       ## Extract $math$ and $$display math$$ expressions.
       ## Based loosely on Coauthor's `replaceMathBlocks`.
       maths = []
       latex = (text) =>
-        cursorRE = '<tspan class="cursor">[^<>]*<\\/tspan>'
-        mathRE = /// \$\$? | \\. | [{}] | \$(#{cursorRE})\$ ///g
+        cursorRE = '<tspan\\s+class="cursor">[^<>]*<\\/tspan>'
+        mathRE = /// \$(#{cursorRE})\$ | \$\$? | \\. | [{}] ///g
         math = null
         while match = mathRE.exec text
           if math?
@@ -1109,6 +1114,7 @@ class Render
               brace: 0
               prefix: match[1]
         if maths.length
+          @texById[id] = jobs = []
           out = [text[...maths[0].start]]
           for math, i in maths
             math.formula = text[math.formulaStart...math.formulaEnd]
@@ -1136,6 +1142,7 @@ class Render
                 display: math.display
                 texts: "#{id}": true
               @texQueue.push job
+            jobs.push job
             if @texQueue.length == 1  # added job while idle
               @texInit()
               @texJob()
