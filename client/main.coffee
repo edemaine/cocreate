@@ -366,9 +366,7 @@ tools =
       pointers.cursor = null
       return unless (id = pointers.text)?
       if (object = Objects.findOne id)?
-        if object.text
-          render.renderText object, text: true  # remove cursor
-        else
+        unless object.text
           index = undoStack.indexOf pointers.undoable
           undoStack.splice index, 1 if index >= 0
           Meteor.call 'objectDel', id
@@ -411,7 +409,7 @@ tools =
     move: (e) ->
       h = pointers.highlight
       target = h.findGroup e
-      if target? and target.tagName.toLowerCase() == 'text'
+      if target? and Objects.findOne(target.dataset.id).type == 'text'
         h.highlight target
       else
         h.clear()
@@ -792,11 +790,10 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     target = document.elementFromPoint e.clientX, e.clientY
-    while target? and (tag = target.tagName.toLowerCase()) in ['circle', 'line']
+    while target? and not target.dataset.id?
+      return if target.classList.contains 'board'
       target = target.parentNode
     return unless target?
-    return unless tag in ['g', 'polyline', 'rect', 'ellipse', 'text']
-    return unless target.dataset.id?
     #return if target == @highlighted
     ## Shouldn't get pointer events on highlighted or selected overlays thanks
     ## to `pointer-events: none`, but check for them just in case:
@@ -816,8 +813,13 @@ class Highlighter
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
-    if target.tagName.toLowerCase() == 'text'
-      html = html.replace /\bfill=(["'][^"']+["'])/g, "stroke=$1"
+    if /<text\b/.test html
+      width = 1.5 # for text
+      html = html.replace /\bfill=(["'][^"']+["'])/g, (match, fill) ->
+        out = "#{match} stroke=#{fill} stroke-width=\"#{width}\""
+        width = 100 # for LaTeX SVGs
+        out
+      .replace /<svg\b/, '$& overflow="visible"'
     @highlighted.innerHTML = html
     true
   select: (target) ->
@@ -969,6 +971,9 @@ edge = (obj, p1, p2) ->
 class Render
   constructor: (@root) ->
     @dom = {}
+    @tex = {}
+    @texQueue = []
+    @texById = {}
   id: (obj) ->
     ###
     `obj` can be an `ObjectDiff` object, in which case `id` is the object ID
@@ -1053,28 +1058,99 @@ class Render
     ellipse
   renderText: (obj, options) ->
     id = @id obj
-    unless (text = @dom[id])?
-      @root.appendChild @dom[id] = text =
-        dom.create 'text', null, dataset: id: id
+    unless (wrapper = @dom[id])?
+      @root.appendChild @dom[id] = wrapper =
+        dom.create 'g', null,
+          dataset: id: id
+      wrapper.appendChild g = dom.create 'g'
+      g.appendChild text = dom.create 'text'
+    else
+      g = wrapper.firstChild
+      text = g.firstChild
+    dom.attr g,
+      transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
-      x: obj.pts[0].x
-      y: obj.pts[0].y
       fill: obj.color
       style: "font-size:#{obj.fontSize}px"
-    if options?.text != false
+    if options?.text != false or options?.fontSize != false
+      ## Remove any leftover TeX expressions
+      svgG.remove() while (svgG = g.lastChild) != text
+      @texDelete id if @texById[id]?
       content = obj.text
-      escape = (text) ->
-        text
-        .replace /&/g, '&amp;'
-        .replace /</g, '&lt;'
-        .replace />/g, '&gt;'
-        .replace /[ ]/g, '&nbsp;'
+      input = document.getElementById 'textInput'
+      ## Extract $math$ and $$display math$$ expressions.
+      ## Based loosely on Coauthor's `replaceMathBlocks`.
+      maths = []
+      latex = (text) =>
+        cursorRE = '<tspan\\s+class="cursor">[^<>]*<\\/tspan>'
+        mathRE = /// \$(#{cursorRE})\$ | \$\$? | \\. | [{}] ///g
+        math = null
+        while match = mathRE.exec text
+          if math?
+            switch match[0]
+              when '{'
+                math.brace++
+              when '}'
+                math.brace--
+                math.brace = 0 if math.brace < 0  # ignore extra }s
+              #when '$', '$$'
+              else
+                if match[0].startsWith('$') and math.brace <= 0
+                  math.formulaEnd = match.index
+                  math.end = match.index + match[0].length
+                  math.suffix = match[1]
+                  maths.push math
+                  math = null
+          else if match[0].startsWith '$'
+            math =
+              display: match[0].length > 1
+              start: match.index
+              formulaStart: match.index + match[0].length
+              brace: 0
+              prefix: match[1]
+        if maths.length
+          @texById[id] = jobs = []
+          out = [text[...maths[0].start]]
+          for math, i in maths
+            math.formula = text[math.formulaStart...math.formulaEnd]
+            .replace ///#{cursorRE}///, (match) ->
+              out.push match
+              ''
+            .replace /\u00a0/g, ' '  # undo dom.escape
+            math.formula = dom.unescape math.formula
+            out.push math.prefix if math.prefix?
+            out.push "$MATH#{i}$"
+            out.push math.suffix if math.suffix?
+            math.out = """<tspan data-tex="#{dom.escapeQuote math.formula}" data-display="#{math.display}">&VeryThinSpace;</tspan>"""
+            if i < maths.length-1
+              out.push text[math.end...maths[i+1].start]
+            else
+              out.push text[math.end..]
+            if job = @tex[[math.formula, math.display]]
+              job.texts[id] = true
+              if job.svg? # already computed
+                do (job) =>
+                  setTimeout (=> @texRender job, id), 0
+            else
+              job = @tex[[math.formula, math.display]] =
+                formula: math.formula
+                display: math.display
+                texts: "#{id}": true
+              @texQueue.push job
+            jobs.push job
+            if @texQueue.length == 1  # added job while idle
+              @texInit()
+              @texJob()
+          out.join ''
+        else
+          text
       ## Basic Markdown support based on CommonMark and loosely on Slimdown:
       ## https://gist.github.com/jbroadway/2836900
       markdown = (text) ->
-        text
+        text = text
         .replace /(^|[^\\])(`+)([^]*?)\2/g, (m, pre, left, inner) ->
           "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
+        text = latex text
         .replace ///
           (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
           (\*+|_+)(\S(?:[^]*?\S)?)\2
@@ -1088,6 +1164,8 @@ class Render
         ///g, (m, pre, left, inner) ->
           "#{pre}<tspan class='strike'>#{inner}</tspan>"
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
+        .replace /\$MATH(\d+)\$/g, (match, i) ->
+          maths[i].out
       if id == pointers.text
         input = document.getElementById 'textInput'
         cursor = input.selectionStart
@@ -1101,35 +1179,78 @@ class Render
           setTimeout ->
             input.selectionStart = input.selectionEnd = cursor
           , 0
-        content = escape(content[...cursor]) +
+        content = dom.escape(content[...cursor]) +
                   '<tspan class="cursor">&VeryThinSpace;</tspan>' +
-                  escape(content[cursor..])
-        unless pointers.cursor?
-          @root.appendChild pointers.cursor = dom.create 'line',
-            class: 'cursor'
-          ## Attributes set below
+                  dom.escape(content[cursor..])
+        g.appendChild pointers.cursor = dom.create 'line',
+          class: 'cursor'
+          ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
+          'stroke-width': 2 * 0.05555 * obj.fontSize
+          ## 1.2 is to exaggerate
+          y1: -0.5 * 1.2 * obj.fontSize
+          y2:  0.5 * 1.2 * obj.fontSize
+        setTimeout pointers.cursorUpdate = ->
+          return unless pointers.cursor?
+          bbox = text.querySelector('tspan.cursor').getBBox()
+          x = bbox.x + 0.5 * bbox.width
+          y = bbox.y + 0.5 * bbox.height
+          dom.attr pointers.cursor, transform: "translate(#{x} #{y})"
+        , 0
       else
-        content = escape content
+        content = dom.escape content
       content = markdown content
       text.innerHTML = content
-    ## Even if text didn't change, if size or translation did,
-    ## we need to update SVG cursor geometry.
-    if id == pointers.text
-      dom.attr pointers.cursor,
-        ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
-        'stroke-width': 2 * 0.05555 * obj.fontSize
-        ## 1.2 is to exaggerate
-        y1: -0.5 * 1.2 * obj.fontSize
-        y2:  0.5 * 1.2 * obj.fontSize
-      setTimeout ->
-        return unless pointers.cursor?
-        bbox = text.querySelector('.cursor').getBBox()
-        x = bbox.x + 0.5 * bbox.width
-        y = bbox.y + 0.5 * bbox.height
-        dom.attr pointers.cursor,
-          transform: "translate(#{x + (obj.tx ? 0)} #{y + (obj.ty ? 0)})"
-      , 0
     text
+    wrapper
+  texInit: ->
+    return if @tex2svg?
+    @tex2svg = new Worker '/tex2svg.js'
+    @tex2svg.onmessage = (e) =>
+      {formula, display, svg} = e.data
+      job = @tex[[formula,display]]
+      unless job?
+        return console.warn "No job for #{formula},#{display}"
+      unless formula == job.formula and display == job.display
+        console.warn "Mismatch between #{formula},#{display} and #{job.formula},#{job.display}"
+      exScale = 0.523
+      exScaler = (match, dimen, value) ->
+        "#{dimen}=\"#{job[dimen] = exScale * parseFloat value}\""
+      svg = svg
+      .replace /\b(width)="([\-\.\d]+)ex"/, exScaler
+      .replace /\b(height)="([\-\.\d]+)ex"/, exScaler
+      .replace /\bvertical-align:\s*([\-\.\d]+)ex/, (match, depth) ->
+        job.depth = -parseFloat depth
+        ''
+      .replace /<rect\s+data-background="true"/g, "$& fill=\"#f88\""
+      job.svg = svg
+      for id of job.texts
+        @texRender job, id
+      @texJob()
+  texRender: (job, id) ->
+    g = @dom[id].firstChild
+    for tspan in g.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
+      object = Objects.findOne id
+      continue unless object
+      fontSize = object.fontSize
+      dom.attr tspan, dx: dx = job.width * fontSize
+      tspanBBox = tspan.getBBox()
+      g.appendChild svgG = dom.create 'g'
+      svgG.innerHTML = job.svg
+      x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
+      ## Roboto Slab in https://opentype.js.org/font-inspector.html:
+      unitsPerEm = 1000 # Font Header table
+      descender = 271   # Horizontal Header table
+      ascender = 1048   # Horizontal Header table
+      y = tspanBBox.y + tspanBBox.height * (1 - descender/(descender+ascender))\
+        - job.height * fontSize + job.depth * fontSize / 2
+        # not sure where the /2 comes from... exFactor?
+      dom.attr svgG,
+        transform: "translate(#{x} #{y}) scale(#{fontSize})"
+    selection.redraw id, @dom[id] if selection.has id
+    pointers.cursorUpdate?() if id == pointers.text
+  texJob: ->
+    return unless @texQueue.length
+    @tex2svg.postMessage @texQueue.shift()
   render: (obj, options = {}) ->
     elt =
       switch obj.type
@@ -1158,6 +1279,17 @@ class Render
     @root.removeChild @dom[id]
     delete @dom[id]
     textStop() if id == pointers.text
+    @texDelete id if @texById[id]?
+  texDelete: (id) ->
+    for job in check = @texById[id]
+      delete job.texts[id]
+    delete @texById[id]
+    ## After we potentially rerender text, check for expired cache jobs
+    setTimeout =>
+      for job in check
+        unless (t for t of job.texts).length
+          delete @tex[[job.formula, job.display]]
+    , 0
   #has: (obj) ->
   #  (id obj) of @dom
   shouldNotExist: (obj) ->

@@ -60,3 +60,23 @@ export svgPoint = (svg, x, y, matrix = svg) ->
   pt.x = x
   pt.y = y
   pt.matrixTransform matrix
+
+export escape = (text) ->
+  text
+  .replace /&/g, '&amp;'
+  .replace /</g, '&lt;'
+  .replace />/g, '&gt;'
+  .replace /[ ]/g, '\u00a0'
+export unescape = (text) ->
+  text
+  .replace /&gt;/g, '>'
+  .replace /&lt;/g, '<'
+  .replace /&amp;/g, '&'
+export escapeQuote = (text) ->
+  text
+  .replace /&/g, '&amp;'
+  .replace /"/g, '&quot;'
+export unescapeQuote = (text) ->
+  text
+  .replace /&quot;/g, '"'
+  .replace /&amp;/g, '&'
