@@ -409,7 +409,7 @@ tools =
     move: (e) ->
       h = pointers.highlight
       target = h.findGroup e
-      if target? and target.tagName.toLowerCase() == 'text'
+      if target? and Objects.findOne(target.dataset.id).type == 'text'
         h.highlight target
       else
         h.clear()
