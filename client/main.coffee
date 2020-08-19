@@ -1206,8 +1206,10 @@ class Render
     return if @tex2svg?
     @tex2svg = new Worker '/tex2svg.js'
     @tex2svg.onmessage = (e) =>
-      job = @texQueue.shift()
       {formula, display, svg} = e.data
+      job = @tex[[formula,display]]
+      unless job?
+        return console.warn "No job for #{formula},#{display}"
       unless formula == job.formula and display == job.display
         console.warn "Mismatch between #{formula},#{display} and #{job.formula},#{job.display}"
       exScale = 0.523
@@ -1219,6 +1221,7 @@ class Render
       .replace /\bvertical-align:\s*([\-\.\d]+)ex/, (match, depth) ->
         job.depth = -parseFloat depth
         ''
+      .replace /<rect\s+data-background="true"/g, "$& fill=\"#f88\""
       job.svg = svg
       for id of job.texts
         @texRender job, id
@@ -1247,10 +1250,7 @@ class Render
     pointers.cursorUpdate?() if id == pointers.text
   texJob: ->
     return unless @texQueue.length
-    job = @texQueue[0]
-    @tex2svg.postMessage
-      formula: job.formula
-      display: job.display
+    @tex2svg.postMessage @texQueue.shift()
   render: (obj, options = {}) ->
     elt =
       switch obj.type
