@@ -366,9 +366,7 @@ tools =
       pointers.cursor = null
       return unless (id = pointers.text)?
       if (object = Objects.findOne id)?
-        if object.text
-          render.renderText object, text: true  # remove cursor
-        else
+        unless object.text
           index = undoStack.indexOf pointers.undoable
           undoStack.splice index, 1 if index >= 0
           Meteor.call 'objectDel', id
@@ -1077,10 +1075,7 @@ class Render
     if options?.text != false or options?.fontSize != false
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
-      if @texById[id]?
-        for job in @texById[id]
-          delete job.texts[id]
-        delete @texById[id]
+      @texDelete id if @texById[id]?
       content = obj.text
       input = document.getElementById 'textInput'
       ## Extract $math$ and $$display math$$ expressions.
@@ -1284,6 +1279,17 @@ class Render
     @root.removeChild @dom[id]
     delete @dom[id]
     textStop() if id == pointers.text
+    @texDelete id if @texById[id]?
+  texDelete: (id) ->
+    for job in check = @texById[id]
+      delete job.texts[id]
+    delete @texById[id]
+    ## After we potentially rerender text, check for expired cache jobs
+    setTimeout =>
+      for job in check
+        unless (t for t of job.texts).length
+          delete @tex[[job.formula, job.display]]
+    , 0
   #has: (obj) ->
   #  (id obj) of @dom
   shouldNotExist: (obj) ->
