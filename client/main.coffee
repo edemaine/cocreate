@@ -51,10 +51,11 @@ tools =
     move: (e) ->
       return unless start = pointers[e.pointerId]
       current = eventToRawPoint e
-      board.transform.x = start.transform.x + current.x - start.x
-      board.transform.y = start.transform.y + current.y - start.y
+      board.transform.x = start.transform.x +
+        (current.x - start.x) / board.transform.scale
+      board.transform.y = start.transform.y +
+        (current.y - start.y) / board.transform.scale
       board.retransform()
-      remotesRender?.retransform()
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
@@ -120,8 +121,8 @@ tools =
           ## Don't set h.moved out here in case no objects selected
           for id, obj of pointers.objects
             h.moved ?= {}
-            tx = (obj.tx ? 0) + here.x - h.start.x
-            ty = (obj.ty ? 0) + here.y - h.start.y
+            tx = (obj.tx ? 0) + (here.x - h.start.x) / board.transform.scale
+            ty = (obj.ty ? 0) + (here.y - h.start.y) / board.transform.scale
             Meteor.call 'objectEdit', {id, tx, ty}
             h.moved[id] = {tx, ty}
       else
@@ -518,8 +519,10 @@ tools =
     move: (e) ->
       return unless start = pointers[e.pointerId]
       current = eventToRawPoint e
-      historyBoard.transform.x = start.transform.x + current.x - start.x
-      historyBoard.transform.y = start.transform.y + current.y - start.y
+      historyBoard.transform.x = start.transform.x +
+        (current.x - start.x) / historyBoard.transform.scale
+      historyBoard.transform.y = start.transform.y +
+        (current.y - start.y) / historyBoard.transform.scale
       historyBoard.retransform()
   downloadSVG:
     icon: 'download-svg'
@@ -636,6 +639,20 @@ tools =
         if error?
           return console.error "Failed to duplicate page on server: #{error}"
         changePage page
+  pageZoomOut:
+    icon: 'search-minus'
+    help: 'Zoom out 20%'
+    once: steppedZoom = (delta = -1) ->
+      factor = 1.2
+      log = Math.round Math.log(currentBoard().transform.scale) /
+                       Math.log factor
+      log += delta
+      currentBoard().transform.scale = factor ** log
+      currentBoard().retransform()
+  pageZoomIn:
+    icon: 'search-plus'
+    help: 'Zoom in 20%'
+    once: -> steppedZoom +1
 
 currentTool = 'pan'
 drawingTools =
@@ -945,14 +962,17 @@ class Board
     @transform =
       x: 0
       y: 0
+      scale: 1
     @resize()
   resize: ->
     ## @bbox maintains client bounding box (top/left/bottom/right) of board
     @bbox = @svg.getBoundingClientRect()
+    @remotesRender?.resize()
     @grid?.update()
   retransform: ->
     @root.setAttribute 'transform',
-      "translate(#{@transform.x} #{@transform.y})"
+      "scale(#{@transform.scale}) translate(#{@transform.x} #{@transform.y})"
+    @remotesRender?.retransform()
     ## Update grid after `transform` attribute gets rendered.
     Meteor.setTimeout =>
       @grid?.update()
@@ -1376,8 +1396,8 @@ class RemotesRender
     do @transforms[id] = ->
       maxX = board.bbox.width - (1 - hotspot[0] - remoteIconOutside) * remoteIconSize
       maxY = board.bbox.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
-      x = remote.cursor.x + board.transform.x
-      y = remote.cursor.y + board.transform.y
+      x = (remote.cursor.x + board.transform.x) * board.transform.scale
+      y = (remote.cursor.y + board.transform.y) * board.transform.scale
       unless goodX = (minX <= x <= maxX) and
              goodY = (minY <= y <= maxY)
         x1 = board.bbox.width / 2
@@ -1437,17 +1457,16 @@ class RemotesRender
     for id, elt of @elts
       elt.style.opacity = 1 - (now - @updated[id]) / 1000 / remotes.fade
 
-remotesRender = null
 observeRemotes = ->
-  remotesRender = new RemotesRender
+  board.remotesRender = new RemotesRender
   Remotes.find
     room: currentRoom
   .observe
-    added: (remote) -> remotesRender.render remote
-    changed: (remote, oldRemote) -> remotesRender.render remote, oldRemote
-    removed: (remote) -> remotesRender.delete remote
+    added: (remote) -> board.remotesRender.render remote
+    changed: (remote, oldRemote) -> board.remotesRender.render remote, oldRemote
+    removed: (remote) -> board.remotesRender.delete remote
 setInterval ->
-  remotesRender?.timer()
+  board.remotesRender?.timer()
 , 1000
 
 class Grid
@@ -1800,7 +1819,6 @@ resize = (reps = 1) ->
     document.documentElement.style.setProperty attrib,
       "#{scrollbar + paletteSize()}px"
   board.resize()
-  remotesRender?.resize()
   setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
