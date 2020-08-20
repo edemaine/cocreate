@@ -644,10 +644,23 @@ tools =
     help: 'Zoom out 20%'
     once: steppedZoom = (delta = -1) ->
       factor = 1.2
-      log = Math.round Math.log(currentBoard().transform.scale) /
-                       Math.log factor
+      transform = currentBoard().transform
+      log = Math.round(Math.log(transform.scale) / Math.log(factor))
       log += delta
-      currentBoard().transform.scale = factor ** log
+      newScale = factor ** log
+      ###
+      Maintain center point (x,y):
+        bbox.width/2 = (x + transform.x) * transform.scale
+          => x = bbox.width/2 / transform.scale - transform.x
+        bbox.width/2 = (x + newX) * newScale
+          => newX = bbox.width/2 / newScale - x
+           = bbox.width/2 / newScale - bbox.width/2 / transform.scale + transform.x
+           = bbox.width/2 * (1 / newScale - 1 / transform.scale) + transform.x
+      ###
+      {width, height} = currentBoard().bbox
+      transform.x += width/2 * (1/newScale - 1/transform.scale)
+      transform.y += height/2 * (1/newScale - 1/transform.scale)
+      transform.scale = newScale
       currentBoard().retransform()
   pageZoomIn:
     icon: 'search-plus'
