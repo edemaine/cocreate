@@ -647,25 +647,16 @@ tools =
       transform = currentBoard().transform
       log = Math.round(Math.log(transform.scale) / Math.log(factor))
       log += delta
-      newScale = factor ** log
-      ###
-      Maintain center point (x,y):
-        bbox.width/2 = (x + transform.x) * transform.scale
-          => x = bbox.width/2 / transform.scale - transform.x
-        bbox.width/2 = (x + newX) * newScale
-          => newX = bbox.width/2 / newScale - x
-           = bbox.width/2 / newScale - bbox.width/2 / transform.scale + transform.x
-           = bbox.width/2 * (1 / newScale - 1 / transform.scale) + transform.x
-      ###
-      {width, height} = currentBoard().bbox
-      transform.x += width/2 * (1/newScale - 1/transform.scale)
-      transform.y += height/2 * (1/newScale - 1/transform.scale)
-      transform.scale = newScale
-      currentBoard().retransform()
+      currentBoard().setScale factor ** log
   pageZoomIn:
     icon: 'search-plus'
     help: 'Zoom in 20%'
     once: -> steppedZoom +1
+  pageZoomReset:
+    icon: 'search-one'
+    help: 'Reset zoom to 100%'
+    once: ->
+      currentBoard().setScale 1
 
 currentTool = 'pan'
 drawingTools =
@@ -982,6 +973,20 @@ class Board
     @bbox = @svg.getBoundingClientRect()
     @remotesRender?.resize()
     @grid?.update()
+  setScale: (newScale) ->
+    ###
+    Maintain center point (x,y):
+      bbox.width/2 = (x + transform.x) * transform.scale
+        => x = bbox.width/2 / transform.scale - transform.x
+      bbox.width/2 = (x + newX) * newScale
+        => newX = bbox.width/2 / newScale - x
+         = bbox.width/2 / newScale - bbox.width/2 / transform.scale + transform.x
+         = bbox.width/2 * (1 / newScale - 1 / transform.scale) + transform.x
+    ###
+    @transform.x += @bbox.width/2 * (1/newScale - 1/@transform.scale)
+    @transform.y += @bbox.height/2 * (1/newScale - 1/@transform.scale)
+    @transform.scale = newScale
+    @retransform()
   retransform: ->
     @root.setAttribute 'transform',
       "scale(#{@transform.scale}) translate(#{@transform.x} #{@transform.y})"
