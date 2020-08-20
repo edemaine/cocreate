@@ -264,7 +264,7 @@ tools =
     icon: 'eraser'
     hotspot: [0.4, 0.9]
     help: 'Erase entire objects: click for one object, drag for multiple objects'
-    hotkey: '-'
+    hotkey: 'x'
     stop: -> selectHighlightReset()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
@@ -641,7 +641,8 @@ tools =
         changePage page
   pageZoomOut:
     icon: 'search-minus'
-    help: 'Zoom out 20%'
+    help: 'Zoom out 20%, relative to center'
+    hotkey: '-'
     once: steppedZoom = (delta = -1) ->
       factor = 1.2
       transform = currentBoard().transform
@@ -650,11 +651,13 @@ tools =
       currentBoard().setScale factor ** log
   pageZoomIn:
     icon: 'search-plus'
-    help: 'Zoom in 20%'
+    help: 'Zoom in 20%, relative to center'
+    hotkey: ['+', '=']
     once: -> steppedZoom +1
   pageZoomReset:
     icon: 'search-one'
     help: 'Reset zoom to 100%'
+    hotkey: '0'
     once: ->
       currentBoard().setScale 1
 
