@@ -4,15 +4,8 @@ import * as remotes from './lib/remotes.coffee'
 import * as throttle from './lib/throttle.coffee'
 import * as timesync from './lib/timesync.coffee'
 
-board = null     # set to svg#board element
-boardBB = null   # client bounding box (top/left/bottom/right) of board
-boardRoot = null # root <g> element within board for transform
-boardGrid = null # first <g> element within root for grid background
+board = historyBoard = null # Board objects
 gridDefault = true
-boardTransform = # board translation/rotation
-  x: 0
-  y: 0
-historyBoard = historyRoot = historyTransform = null
 selection = null # Selection object representing selected objects
 undoStack = []
 redoStack = []
@@ -52,21 +45,16 @@ tools =
     hotkey: 'hold SPACE'
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
-      pointers[e.pointerId].transform = Object.assign {}, boardTransform
+      pointers[e.pointerId].transform = Object.assign {}, board.transform
     up: (e) ->
       delete pointers[e.pointerId]
     move: (e) ->
       return unless start = pointers[e.pointerId]
       current = eventToRawPoint e
-      boardTransform.x = start.transform.x + current.x - start.x
-      boardTransform.y = start.transform.y + current.y - start.y
-      boardRoot.setAttribute 'transform',
-        "translate(#{boardTransform.x} #{boardTransform.y})"
-      remotesRender?.transform()
-      ## Do updates after boardRoot's `transform` attribute gets set.
-      Meteor.setTimeout ->
-        boardGrid.update()
-      , 0
+      board.transform.x = start.transform.x + current.x - start.x
+      board.transform.y = start.transform.y + current.y - start.y
+      board.retransform()
+      remotesRender?.retransform()
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
@@ -454,9 +442,6 @@ tools =
     hotspot: [0.5, 0.5]
     help: 'Time travel to the past (by dragging the bottom slider)'
     start: ->
-      historyTransform =
-        x: 0
-        y: 0
       historyObjects = {}
       range = document.getElementById 'historyRange'
       range.value = 0
@@ -472,11 +457,9 @@ tools =
             skip: lastTarget
             limit: target - lastTarget
         else
-          historyBoard.innerHTML = ''
-          historyBoard.appendChild historyRoot = dom.create 'g'
-          historyRoot.setAttribute 'transform',
-            "translate(#{historyTransform.x} #{historyTransform.y})"
-          historyRender = new Render historyRoot
+          historyBoard.clear()
+          historyBoard.retransform()
+          historyRender = new Render historyBoard.root
           options =
             limit: target
         return if options.limit == 0
@@ -523,27 +506,27 @@ tools =
           pointers.listen() if index <= range.value
     stop: ->
       document.getElementById('historyRange').removeEventListener 'change', pointers.listen
-      document.getElementById('historyBoard').innerHTML = ''
+      historyBoard.clear()
       pointers.sub.stop()
       pointers.observe.stop()
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
-      pointers[e.pointerId].transform = Object.assign {}, boardTransform
+      pointers[e.pointerId].transform =
+        Object.assign {}, historyBoard.transform
     up: (e) ->
       delete pointers[e.pointerId]
     move: (e) ->
       return unless start = pointers[e.pointerId]
       current = eventToRawPoint e
-      historyTransform.x = start.transform.x + current.x - start.x
-      historyTransform.y = start.transform.y + current.y - start.y
-      historyRoot.setAttribute 'transform',
-        "translate(#{historyTransform.x} #{historyTransform.y})"
+      historyBoard.transform.x = start.transform.x + current.x - start.x
+      historyBoard.transform.y = start.transform.y + current.y - start.y
+      historyBoard.retransform()
   downloadSVG:
     icon: 'download-svg'
     help: 'Download/export entire drawing as an SVG file'
     once: ->
       ## Temporarily remove transform for export
-      root = currentBoard().firstChild # <g>
+      root = currentBoard().root # <g>
       oldTransform = root.getAttribute 'transform'
       root.removeAttribute 'transform'
       ## Compute bounding box using SVG's getBBox() and getCTM()
@@ -560,9 +543,9 @@ tools =
         bbox = elt.getBBox()
         transform = elt.getCTM()
         stroke = (parseFloat elt.getAttribute('stroke-width') ? 0) / 2
-        minCorner = dom.svgPoint currentBoard(),
+        minCorner = dom.svgPoint currentBoard().svg,
           bbox.x - stroke, bbox.y - stroke, transform
-        maxCorner = dom.svgPoint currentBoard(),
+        maxCorner = dom.svgPoint currentBoard().svg,
           bbox.x + stroke + bbox.width, bbox.y + stroke + bbox.height, transform
         min.x = Math.min min.x, minCorner.x
         max.x = Math.max max.x, maxCorner.x
@@ -571,9 +554,9 @@ tools =
       if min.x == Infinity
         min.x = min.y = max.x = max.y = 0
       ## Temporarily make grid space entire drawing
-      boardGrid.update currentGrid, {min, max}
+      currentBoard().grid?.update currentGrid, {min, max}
       ## Create SVG header
-      svg = currentBoard().innerHTML
+      svg = currentBoard().svg.innerHTML
       .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
       fonts = ''
       if /<text/.test svg
@@ -600,7 +583,7 @@ tools =
       """
       ## Reset transform and grid
       root.setAttribute 'transform', oldTransform
-      boardGrid.update()
+      currentBoard().grid?.update()
       ## Download file
       download = document.getElementById 'download'
       download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
@@ -726,7 +709,7 @@ pressureW = (e) -> 0.5 + e.pressure
 #  0.5 + (1.5 - 0.5) * t
 
 eventToPoint = (e) ->
-  {x, y} = dom.svgPoint board, e.clientX, e.clientY, boardRoot
+  {x, y} = dom.svgPoint board.svg, e.clientX, e.clientY, board.root
   {x, y}
 
 eventToPointW = (e) ->
@@ -751,7 +734,7 @@ restrictTouch = (e) ->
   currentTool of drawingTools
 
 pointerEvents = ->
-  dom.listen [board, historyBoard],
+  dom.listen [board.svg, historyBoard.svg],
     pointerdown: (e) ->
       e.preventDefault()
       return if restrictTouch e
@@ -773,7 +756,7 @@ pointerEvents = ->
       ## Prevent right click from bringing up context menu, as it interferes
       ## with e.g. drawing.
       e.preventDefault()
-  dom.listen board,
+  dom.listen board.svg,
     pointermove: (e) ->
       return unless currentRoom?
       return if restrictTouch e
@@ -812,7 +795,7 @@ class Highlighter
     @target = target
     @id = target.dataset.id
     @highlighted ?= dom.create 'g', class: 'highlight'
-    boardRoot.appendChild @highlighted  # ensure on top
+    board.root.appendChild @highlighted  # ensure on top
     doubler = (match, left, number, right) -> "#{left}#{2 * number}#{right}"
     html = target.outerHTML
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
@@ -836,7 +819,7 @@ class Highlighter
     selected
   clear: ->
     if @highlighted?
-      boardRoot.removeChild @highlighted
+      board.root.removeChild @highlighted
       @target = @highlighted = @id = null
 
 class Selection
@@ -853,12 +836,12 @@ class Selection
     @selected[id] = true
   redraw: (id, target) ->
     unless @selected[id] == true  # added via `addId`
-      boardRoot.removeChild @selected[id]
+      board.root.removeChild @selected[id]
     @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
   remove: (id) ->
     unless @selected[id] == true  # added via `addId`
-      boardRoot.removeChild @selected[id]
+      board.root.removeChild @selected[id]
     delete @selected[id]
   clear: ->
     @remove id for id of @selected
@@ -954,6 +937,28 @@ historyAdvance = (delta) ->
   event = document.createEvent 'HTMLEvents'
   event.initEvent 'change', false, true
   range.dispatchEvent event
+
+class Board
+  constructor: (domId) ->
+    @svg = document.getElementById domId
+    @svg.appendChild @root = dom.create 'g'
+    @transform =
+      x: 0
+      y: 0
+    @resize()
+  resize: ->
+    ## @bbox maintains client bounding box (top/left/bottom/right) of board
+    @bbox = @svg.getBoundingClientRect()
+    @grid?.update()
+  retransform: ->
+    @root.setAttribute 'transform',
+      "translate(#{@transform.x} #{@transform.y})"
+    ## Update grid after `transform` attribute gets rendered.
+    Meteor.setTimeout =>
+      @grid?.update()
+    , 0
+  clear: ->
+    @root.innerHTML = ''
 
 dot = (obj, p) ->
   dom.create 'circle',
@@ -1311,9 +1316,9 @@ class Render
 
 render = null
 observeRender = ->
-  boardRoot.innerHTML = ''
-  render = new Render boardRoot
-  boardGrid = new Grid boardRoot
+  board.clear()
+  render = new Render board.root
+  board.grid = new Grid board.root
   Objects.find
     room: currentRoom
     page: currentPage
@@ -1368,15 +1373,15 @@ class RemotesRender
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
     minX = (hotspot[0] - remoteIconOutside) * remoteIconSize
     minY = (hotspot[1] - remoteIconOutside) * remoteIconSize
-    maxX = boardBB.width - (1 - hotspot[0] - remoteIconOutside) * remoteIconSize
-    maxY = boardBB.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
     do @transforms[id] = ->
-      x = remote.cursor.x + boardTransform.x
-      y = remote.cursor.y + boardTransform.y
+      maxX = board.bbox.width - (1 - hotspot[0] - remoteIconOutside) * remoteIconSize
+      maxY = board.bbox.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
+      x = remote.cursor.x + board.transform.x
+      y = remote.cursor.y + board.transform.y
       unless goodX = (minX <= x <= maxX) and
              goodY = (minY <= y <= maxY)
-        x1 = boardBB.width / 2
-        y1 = boardBB.height / 2
+        x1 = board.bbox.width / 2
+        y1 = board.bbox.height / 2
         x2 = x
         y2 = y
         unless goodX
@@ -1422,9 +1427,9 @@ class RemotesRender
       delete @elts[id]
       delete @transforms[id]
   resize: ->
-    @svg.setAttribute 'viewBox', "0 0 #{boardBB.width} #{boardBB.height}"
-    @transform()
-  transform: ->
+    @svg.setAttribute 'viewBox', "0 0 #{board.bbox.width} #{board.bbox.height}"
+    @retransform()
+  retransform: ->
     for id, transform of @transforms
       transform()
   timer: (elt, id) ->
@@ -1454,8 +1459,8 @@ class Grid
     gridSize = 37.76
     @grid.innerHTML = ''
     bounds ?=
-      min: dom.svgPoint @svg, boardBB.left, boardBB.top, @grid
-      max: dom.svgPoint @svg, boardBB.right, boardBB.bottom, @grid
+      min: dom.svgPoint @svg, board.bbox.left, board.bbox.top, @grid
+      max: dom.svgPoint @svg, board.bbox.right, board.bbox.bottom, @grid
     margin = gridSize
     switch mode
       when true
@@ -1544,7 +1549,7 @@ changePage = (page) ->
     roomObserveRemotes = observeRemotes()
     document.body.classList.remove 'nopage'
   else
-    boardRoot.innerHTML = ''
+    board.clear()
     document.body.classList.add 'nopage' # in particular, disable pointer events
   updatePageNum()
   selectTool null
@@ -1558,7 +1563,7 @@ changePage = (page) ->
         gridTool.classList.add 'active'
       else
         gridTool.classList.remove 'active'
-      boardGrid?.update()
+      board.grid?.update()
 updatePageNum = ->
   pageNumber = currentPageIndex()
   pageNumber++ if pageNumber?
@@ -1662,7 +1667,7 @@ selectTool = (tool) ->
     # Deselect color and width if not in pen mode
     #dom.select '.color'
     #dom.select '.width'
-    icons.setCursor board, tools[currentTool].icon,
+    icons.setCursor board.svg, tools[currentTool].icon,
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?()
@@ -1760,7 +1765,7 @@ selectColor = (color, keepTool) ->
   selectDrawingTool() unless keepTool
   ## Set cursor to colored pencil
   if currentTool == 'pen'
-    icons.setCursor board, penIcon(currentColor), ...tools[currentTool].hotspot
+    icons.setCursor board.svg, penIcon(currentColor), ...tools[currentTool].hotspot
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
@@ -1794,16 +1799,14 @@ resize = (reps = 1) ->
       scrollbar = div.offsetHeight - div.clientHeight
     document.documentElement.style.setProperty attrib,
       "#{scrollbar + paletteSize()}px"
-  boardBB = board.getBoundingClientRect()
-  boardGrid?.update()
+  board.resize()
   remotesRender?.resize()
   setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
   document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
-  board = document.getElementById 'board'
-  board.appendChild boardRoot = dom.create 'g'
-  historyBoard = document.getElementById 'historyBoard'
+  board = new Board 'board'
+  historyBoard = new Board 'historyBoard'
   paletteTools()
   paletteWidths()
   paletteFontSizes()
