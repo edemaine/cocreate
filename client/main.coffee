@@ -1586,6 +1586,9 @@ urlChange = ->
 
 paletteTools = ->
   tooltip = null  # currently open tooltip
+  removeTooltip = ->
+    tooltip?.remove()
+    tooltip = null
   toolsDiv = document.getElementById 'tools'
   pagesDiv = document.getElementById 'pages'
   align = 'top'
@@ -1605,7 +1608,9 @@ paletteTools = ->
         dataset: tool: tool
         innerHTML: icons.svgIcon icon
       ,
-        click: (e) -> selectTool e.currentTarget.dataset.tool
+        click: (e) ->
+          removeTooltip()
+          selectTool e.currentTarget.dataset.tool
       if help
         if hotkey
           hotkey = [hotkey] unless Array.isArray hotkey
@@ -1616,7 +1621,7 @@ paletteTools = ->
         do (div, align, orientation, help) ->
           dom.listen div,
             pointerenter: ->
-              tooltip?.remove()
+              removeTooltip()
               divBBox = div.getBoundingClientRect()
               document.body.appendChild tooltip = dom.create 'div', null,
                 className: "tooltip #{align} #{orientation}"
@@ -1630,12 +1635,8 @@ paletteTools = ->
                   else # horizontal
                     left: "calc(#{divBBox.left + 0.5 * divBBox.width}px - 0.5 * var(--tooltip-width))"
               ,
-                pointerenter: ->
-                  tooltip?.remove()
-                  tooltip = null
-            pointerleave: ->
-              tooltip?.remove()
-              tooltip = null
+                pointerenter: removeTooltip
+            pointerleave: removeTooltip
       init?()
 
 lastTool = null
