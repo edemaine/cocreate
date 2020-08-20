@@ -333,6 +333,7 @@ tools =
       dom.listen input,
         keydown: (e) ->
           e.stopPropagation() # avoid hotkeys
+          e.target.blur() if e.key == 'Escape'
           updateCursor()
         focus: updateCursor
         click: updateCursor
