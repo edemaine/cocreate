@@ -1375,6 +1375,7 @@ observeRender = ->
         color: obj.color != old.color
         width: obj.width != old.width
         text: obj.text != old.text
+        fontSize: obj.fontSize != old.fontSize
     removed: (obj) ->
       render.delete obj
 
