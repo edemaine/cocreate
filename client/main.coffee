@@ -314,7 +314,7 @@ tools =
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
-      updateCursor = ->
+      updateCursor = (e) ->
         setTimeout ->
           return unless pointers.text?
           render.render Objects.findOne(pointers.text), text: true
@@ -323,8 +323,7 @@ tools =
         keydown: (e) ->
           e.stopPropagation() # avoid hotkeys
           e.target.blur() if e.key == 'Escape'
-          updateCursor()
-        focus: updateCursor
+          updateCursor e
         click: updateCursor
         paste: updateCursor
         input: (e) ->
@@ -362,7 +361,8 @@ tools =
           Meteor.call 'objectDel', id
       pointers.undoable = null
       pointers.text = null
-    down: (e) ->
+    up: (e) ->
+      return unless e.type == 'pointerup' # ignore pointerleave
       ## Stop editing any previous text object.
       textStop true
       ## In future, may support dragging a rectangular container for text,
@@ -802,8 +802,8 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     target = document.elementFromPoint e.clientX, e.clientY
-    while target? and not target.dataset.id?
-      return if target.classList.contains 'board'
+    while target? and not target.dataset?.id?
+      return if target.classList?.contains 'board'
       target = target.parentNode
     return unless target?
     #return if target == @highlighted
