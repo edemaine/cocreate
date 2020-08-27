@@ -228,16 +228,17 @@ tools =
     down: (e) ->
       return if pointers[e.pointerId]
       origin = eventToPoint e
+      object =
+        room: currentRoom
+        page: currentPage
+        type: 'rect'
+        pts: [origin, origin]
+        color: currentColor
+        width: currentWidth
+      object.fill = currentFill if currentFillOn
       pointers[e.pointerId] =
         origin: origin
-        id: Meteor.apply 'objectNew', [
-          room: currentRoom
-          page: currentPage
-          type: 'rect'
-          pts: [origin, origin]
-          color: currentColor
-          width: currentWidth
-        ], returnStubValue: true
+        id: Meteor.apply 'objectNew', [object], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
@@ -268,16 +269,17 @@ tools =
     down: (e) ->
       return if pointers[e.pointerId]
       origin = eventToPoint e
+      object =
+        room: currentRoom
+        page: currentPage
+        type: 'ellipse'
+        pts: [origin, origin]
+        color: currentColor
+        width: currentWidth
+      object.fill = currentFill if currentFillOn
       pointers[e.pointerId] =
         origin: origin
-        id: Meteor.apply 'objectNew', [
-          room: currentRoom
-          page: currentPage
-          type: 'ellipse'
-          pts: [origin, origin]
-          color: currentColor
-          width: currentWidth
-        ], returnStubValue: true
+        id: Meteor.apply 'objectNew', [object], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
@@ -722,6 +724,8 @@ colors = [
   '#eced00' # custom yellow
 ]
 currentColor = 'black'
+currentFill = 'white'
+currentFillOn = false
 
 widths = [
   1
@@ -1131,7 +1135,7 @@ class Render
       stroke: obj.color
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
-      fill: 'none'
+      fill: obj.fill or 'none'
     rect
   renderEllipse: (obj) ->
     id = @id obj
@@ -1149,7 +1153,7 @@ class Render
       ry: (yMax - yMin) / 2
       stroke: obj.color
       'stroke-width': obj.width
-      fill: 'none'
+      fill: obj.fill or 'none'
     ellipse
   renderText: (obj, options) ->
     id = @id obj
@@ -1764,6 +1768,23 @@ selectDrawingTool = ->
   unless currentTool of drawingTools
     selectTool lastDrawingTool
 
+paletteFill = ->
+  document.getElementById('fillOn').innerHTML =
+    icons.svgIcon icons.modIcon 'tint', fill: 'currentColor'
+  document.getElementById('fillOff').innerHTML =
+    icons.svgIcon icons.modIcon 'tint-slash', fill: 'currentColor'
+  dom.listen document.getElementById('fillTool'),
+    click: (e) ->
+      currentFillOn = not currentFillOn
+      updateFill()
+  updateFill()
+updateFill = ->
+  document.getElementById('fillOn').style.display =
+    if currentFillOn then 'block' else 'none'
+  document.getElementById('fillOff').style.display =
+    if currentFillOn then 'none' else 'block'
+  document.getElementById('fillTool').style.color = currentFill
+
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
   for color in colors
@@ -1772,7 +1793,9 @@ paletteColors = ->
       style: backgroundColor: color
       dataset: color: color
     ,
-      click: (e) -> selectColor e.currentTarget.dataset.color
+      click: (e) ->
+        (if e.shiftKey then selectFill else selectColor) \
+          e.currentTarget.dataset.color
 
 widthSize = 22
 paletteWidths = ->
@@ -1854,6 +1877,15 @@ selectColor = (color, keepTool) ->
   if currentTool == 'pen'
     icons.setCursor board.svg, penIcon(currentColor), ...tools[currentTool].hotspot
 
+selectFill = (color) ->
+  currentFill = color
+  currentFillOn = true
+  updateFill()
+  if selection.nonempty()
+    selection.edit 'fill', currentFill
+    keepTool = true
+  selectDrawingTool() unless keepTool
+
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
   if selection.nonempty()
@@ -1896,6 +1928,7 @@ Meteor.startup ->
   paletteTools()
   paletteWidths()
   paletteFontSizes()
+  paletteFill()
   paletteColors()
   selectTool()
   selectColor null, true
