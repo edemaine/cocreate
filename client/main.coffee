@@ -211,26 +211,28 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      pt = eventToPoint e
-      pointers[e.pointerId] = Meteor.apply 'objectNew', [
-        room: currentRoom
-        page: currentPage
-        type: 'rect'
-        pts: [pt, pt]
-        color: currentColor
-        width: currentWidth
-      ], returnStubValue: true
+      origin = eventToPoint e
+      pointers[e.pointerId] =
+        origin: origin
+        id: Meteor.apply 'objectNew', [
+          room: currentRoom
+          page: currentPage
+          type: 'rect'
+          pts: [origin, origin]
+          color: currentColor
+          width: currentWidth
+        ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
         type: 'new'
-        obj: Objects.findOne pointers[e.pointerId]
+        obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
       pointers.throttle
-        id: pointers[e.pointerId]
-        pts: 1: eventToPoint e
+        id: pointers[e.pointerId].id
+        pts: 1: eventToConstrainedPoint e, pointers[e.pointerId].origin
   ellipse:
     icon: 'ellipse'
     hotspot: [0.201888, 0.75728]
@@ -240,26 +242,28 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      pt = eventToPoint e
-      pointers[e.pointerId] = Meteor.apply 'objectNew', [
-        room: currentRoom
-        page: currentPage
-        type: 'ellipse'
-        pts: [pt, pt]
-        color: currentColor
-        width: currentWidth
-      ], returnStubValue: true
+      origin = eventToPoint e
+      pointers[e.pointerId] =
+        origin: origin
+        id: Meteor.apply 'objectNew', [
+          room: currentRoom
+          page: currentPage
+          type: 'ellipse'
+          pts: [origin, origin]
+          color: currentColor
+          width: currentWidth
+        ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
         type: 'new'
-        obj: Objects.findOne pointers[e.pointerId]
+        obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
       pointers.throttle
-        id: pointers[e.pointerId]
-        pts: 1: eventToPoint e
+        id: pointers[e.pointerId].id
+        pts: 1: eventToConstrainedPoint e, pointers[e.pointerId].origin
   eraser:
     icon: 'eraser'
     hotspot: [0.4, 0.9]
@@ -735,6 +739,21 @@ pressureW = (e) -> 0.5 + e.pressure
 eventToPoint = (e) ->
   {x, y} = dom.svgPoint board.svg, e.clientX, e.clientY, board.root
   {x, y}
+
+eventToConstrainedPoint = (e, origin) ->
+  pt = eventToPoint e
+  ## When holding shift, constrain 1:1 aspect ratio from origin, following
+  ## the largest delta and maintaining their signs (like Illustrator).
+  if e.shiftKey
+    dx = pt.x - origin.x
+    dy = pt.y - origin.y
+    adx = Math.abs dx
+    ady = Math.abs dy
+    if adx > ady
+      pt.y = origin.y + adx * Math.sign dy
+    else if adx < ady
+      pt.x = origin.x + ady * Math.sign dx
+  pt
 
 eventToPointW = (e) ->
   pt = eventToPoint e
