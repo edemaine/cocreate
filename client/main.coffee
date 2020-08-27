@@ -172,42 +172,52 @@ tools =
   segment:
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
-    help: 'Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical.'
+    help: "Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: ['l', '\\']
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      pt = eventToPoint e
-      pointers[e.pointerId] = Meteor.apply 'objectNew', [
-        room: currentRoom
-        page: currentPage
-        type: 'poly'
-        pts: [pt, pt]
-        color: currentColor
-        width: currentWidth
-      ], returnStubValue: true
+      origin = eventToPoint e
+      pointers[e.pointerId] =
+        origin: origin
+        id: Meteor.apply 'objectNew', [
+          room: currentRoom
+          page: currentPage
+          type: 'poly'
+          pts: [origin, origin]
+          color: currentColor
+          width: currentWidth
+        ], returnStubValue: true
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
         type: 'new'
-        obj: Objects.findOne pointers[e.pointerId]
+        obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
+      {origin, id, alt} = pointers[e.pointerId]
       pt = eventToPoint e
       ## Force horizontal/vertical line when holding shift
       if e.shiftKey
-        start = Objects.findOne(pointers[e.pointerId]).pts[0]
-        dx = Math.abs pt.x - start.x
-        dy = Math.abs pt.y - start.y
+        dx = Math.abs pt.x - origin.x
+        dy = Math.abs pt.y - origin.y
         if dx > dy
-          pt.y = start.y
+          pt.y = origin.y
         else
-          pt.x = start.x
+          pt.x = origin.x
+      pts =
+        1: pt
+      ## When holding Alt/Option, make origin be the center.
+      if e.altKey
+        pts[0] = symmetricPoint pts[1], origin
+      else if alt  # was holding down Alt, go back to original first point
+        pts[0] = origin
+      pointers[e.pointerId].alt = e.altKey
       pointers.throttle
-        id: pointers[e.pointerId]
-        pts: 1: pt
+        id: id
+        pts: pts
   rect:
     icon: 'rect'
     hotspot: [0.0625, 0.883]
