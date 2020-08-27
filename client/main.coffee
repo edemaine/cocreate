@@ -17,6 +17,12 @@ currentRoom = currentPage = null
 currentGrid = null
 allowTouch = true
 
+Alt =
+  if navigator?.platform.startsWith 'Mac'
+    'Option'
+  else
+    'Alt'
+
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
   return true if p == true or q == true
@@ -29,13 +35,13 @@ tools =
   undo:
     icon: 'undo'
     help: 'Undo the last operation you did'
-    hotkey: 'CTRL-Z'
+    hotkey: 'Ctrl-Z'
     once: ->
       undo()
   redo:
     icon: 'redo'
     help: 'Redo: Undo the last undo you did (if you did no operations since)'
-    hotkey: ['CTRL-Y', 'CTRL-SHIFT-Z']
+    hotkey: ['Ctrl-Y', 'Ctrl-Shift-Z']
     once: ->
       redo()
   pan:
@@ -59,7 +65,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: 'Select objects (multiple if holding <kbd>SHIFT</kbd>) and then change their color/width or drag to move them'
+    help: 'Select objects (multiple if holding <kbd>Shift</kbd>) and then change their color/width or drag to move them'
     hotkey: 's'
     start: ->
       pointers.objects = {}
@@ -166,7 +172,7 @@ tools =
   segment:
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
-    help: 'Draw straight line segment between endpoints (drag). Hold <kbd>SHIFT</kbd> to constrain to horizontal/vertical.'
+    help: 'Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical.'
     hotkey: ['l', '\\']
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
@@ -205,7 +211,7 @@ tools =
   rect:
     icon: 'rect'
     hotspot: [0.0625, 0.883]
-    help: 'Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>SHIFT</kbd> to constrain to square.'
+    help: "Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: 'r'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
@@ -228,15 +234,24 @@ tools =
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
-    move: (e) ->
+    move: rectMove = (e) ->
       return unless pointers[e.pointerId]
+      {id, origin, alt} = pointers[e.pointerId]
+      pts =
+        1: eventToConstrainedPoint e, origin
+      ## When holding Alt/Option, make origin be the center.
+      if e.altKey
+        pts[0] = symmetricPoint pts[1], origin
+      else if alt  # was holding down Alt, go back to original first point
+        pts[0] = origin
+      pointers[e.pointerId].alt = e.altKey
       pointers.throttle
-        id: pointers[e.pointerId].id
-        pts: 1: eventToConstrainedPoint e, pointers[e.pointerId].origin
+        id: id
+        pts: pts
   ellipse:
     icon: 'ellipse'
     hotspot: [0.201888, 0.75728]
-    help: 'Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>SHIFT</kbd> to constrain to circle.'
+    help: "Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to circle, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: 'o'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
@@ -259,11 +274,7 @@ tools =
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
-    move: (e) ->
-      return unless pointers[e.pointerId]
-      pointers.throttle
-        id: pointers[e.pointerId].id
-        pts: 1: eventToConstrainedPoint e, pointers[e.pointerId].origin
+    move: rectMove
   eraser:
     icon: 'eraser'
     hotspot: [0.4, 0.9]
@@ -742,7 +753,7 @@ eventToPoint = (e) ->
 
 eventToConstrainedPoint = (e, origin) ->
   pt = eventToPoint e
-  ## When holding shift, constrain 1:1 aspect ratio from origin, following
+  ## When holding Shift, constrain 1:1 aspect ratio from origin, following
   ## the largest delta and maintaining their signs (like Illustrator).
   if e.shiftKey
     dx = pt.x - origin.x
@@ -770,6 +781,10 @@ eventToPointW = (e) ->
 eventToRawPoint = (e) ->
   x: e.clientX
   y: e.clientY
+
+symmetricPoint = (pt, origin) ->
+  x: 2*origin.x - pt.x
+  y: 2*origin.y - pt.y
 
 restrictTouch = (e) ->
   not allowTouch and \
