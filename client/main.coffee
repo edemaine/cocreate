@@ -166,7 +166,7 @@ tools =
   segment:
     icon: 'segment'
     hotspot: [0.0625, 0.9375]
-    help: 'Draw straight line segment between endpoints (drag)'
+    help: 'Draw straight line segment between endpoints (drag). Hold <kbd>SHIFT</kbd> to constrain to horizontal/vertical.'
     hotkey: ['l', '\\']
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
@@ -205,7 +205,7 @@ tools =
   rect:
     icon: 'rect'
     hotspot: [0.0625, 0.883]
-    help: 'Draw axis-aligned rectangle between endpoints (drag)'
+    help: 'Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>SHIFT</kbd> to constrain to square.'
     hotkey: 'r'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
@@ -236,7 +236,7 @@ tools =
   ellipse:
     icon: 'ellipse'
     hotspot: [0.201888, 0.75728]
-    help: 'Draw axis-aligned ellipsis inside rectangle between endpoints (drag)'
+    help: 'Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>SHIFT</kbd> to constrain to circle.'
     hotkey: 'o'
     start: ->
       pointers.throttle = throttle.method 'objectEdit'
@@ -1679,10 +1679,12 @@ paletteTools = ->
       if help
         if hotkey
           hotkey = [hotkey] unless Array.isArray hotkey
+          help += """<span class="hotkeys">"""
           for key in hotkey
             help += """<kbd class="hotkey">#{key}</kbd>"""
             key = key.replace /\s/g, ''
             hotkeys[key] = do (tool) -> -> selectTool tool
+          help += """</span>"""
         do (div, align, orientation, help) ->
           dom.listen div,
             pointerenter: ->
