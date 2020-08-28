@@ -36,6 +36,17 @@ Installation instructions:
 6. `mup deploy` each time you want to deploy code to server
    (initially and after each `git pull`)
 
+## Kadira
+
+To monitor server performance, you can install an
+[open-source Kadira server](https://github.com/kadira-open/kadira-server),
+and either add the `Kadira.connect` call to `server/kadira.coffee` or
+set the `KADIRA_APP_ID` and `KADIRA_APP_SECRET` environment variables in
+`.deploy/mup.js` (but don't publish these credentials).
+
+To get open-source Kadira running (on a different server), I recommend
+[kadira-compose](https://github.com/edemaine/kadira-compose).
+
 ## MongoDB
 
 All of Cocreate's data is stored in the Mongo database
