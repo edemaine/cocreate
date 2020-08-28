@@ -372,7 +372,7 @@ tools =
               before: text: oldText
               after: text: text
     start: ->
-      pointers.highlight = new Highlighter
+      pointers.highlight = new Highlighter 'text'
       textStop()
     stop: textStop = (keepHighlight) ->
       input = document.getElementById 'textInput'
@@ -844,7 +844,7 @@ pointerEvents = ->
       remotes.update remote
 
 class Highlighter
-  constructor: ->
+  constructor: (@type) ->
     @target = null       # <g/polyline/rect/ellipse/text>
     @highlighted = null  # <g/polyline/rect/ellipse/text class="highlight">
     @id = null           # highlighted object ID
@@ -863,6 +863,9 @@ class Highlighter
     ## to `pointer-events: none`, but check for them just in case:
     for elt in [target, target.parentNode]
       return if elt?.getAttribute('class') in ['highlight', 'selected']
+    ## Check for specific match type
+    if @type?
+      return unless Objects.findOne(target.dataset.id)?.type == @type
     target
   highlight: (target) ->
     ## `target` should be the result of `findGroup`,
