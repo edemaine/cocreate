@@ -18,6 +18,7 @@ Meteor.methods
       page: String
       tool: String
       color: String
+      fill: Match.Optional String
       cursor:
         x: Number
         y: Number

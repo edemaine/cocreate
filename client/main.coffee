@@ -220,6 +220,7 @@ tools =
         pts: pts
   rect:
     icon: 'rect'
+    iconFill: 'rect-fill'
     hotspot: [0.0625, 0.883]
     help: "Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: 'r'
@@ -261,6 +262,7 @@ tools =
         pts: pts
   ellipse:
     icon: 'ellipse'
+    iconFill: 'ellipse-fill'
     hotspot: [0.201888, 0.75728]
     help: "Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to circle, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: 'o'
@@ -832,12 +834,14 @@ pointerEvents = ->
     pointermove: (e) ->
       return unless currentRoom?
       return if restrictTouch e
-      remotes.update
+      remote =
         room: currentRoom
         page: currentPage
         tool: currentTool
         color: currentColor
         cursor: eventToPointW e
+      remote.fill = currentFill if currentFillOn
+      remotes.update remote
 
 class Highlighter
   constructor: ->
@@ -1447,8 +1451,9 @@ class RemotesRender
       @root.appendChild elt
     unless remote.tool == oldRemote.tool and remote.color == oldRemote.color
       if icon = tools[remote.tool]?.icon
-        if remote.tool == 'pen'
-          icon = penIcon remote.color ? colors[0]
+        if remote.tool of drawingTools
+          icon = drawingToolIcon remote.tool,
+            (remote.color ? colors[0]), remote.fill
         elt.innerHTML = icons.cursorIcon icon, ...tools[remote.tool].hotspot
       else
         elt.innerHTML = ''
@@ -1747,8 +1752,8 @@ selectTool = (tool) ->
     lastTool = currentTool
     currentTool = tool
   dom.select '.tool', "[data-tool='#{currentTool}']"
-  if currentTool == 'pen'
-    selectColor() # set color-specific pen icon
+  if currentTool of drawingTools
+    selectColor() # set color-specific icon
   else if currentTool == 'history'
     icons.setCursor document.getElementById('historyRange'),
       tools['history'].icon, ...tools['history'].hotspot
@@ -1784,6 +1789,7 @@ updateFill = ->
   document.getElementById('fillOff').style.display =
     if currentFillOn then 'none' else 'block'
   document.getElementById('fillTool').style.color = currentFill
+  colorIcon()
 
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
@@ -1857,13 +1863,20 @@ paletteFontSizes = ->
       ]
     ]
 
-penIcon = (color) ->
-  icons.modIcon 'pencil-alt',
-    fill: color
-    stroke: 'black'
-    'stroke-width': '15'
-    'stroke-linecap': 'round'
-    'stroke-linejoin': 'round'
+drawingToolIcon = (tool, color, fill) ->
+  icon = tools[tool]?.icon
+  return icon unless icon?
+  attr = fill: color
+  if tool == 'pen' or color == 'white'
+    Object.assign attr,
+      stroke: 'black'
+      'stroke-width': '15'
+      'stroke-linecap': 'round'
+      'stroke-linejoin': 'round'
+  icon = icons.modIcon icon, attr
+  if fill and iconFill = tools[tool].iconFill
+    icon = icons.stackIcons [icon, icons.modIcon iconFill, fill: fill]
+  icon
 
 selectColor = (color, keepTool) ->
   currentColor = color if color?
@@ -1873,9 +1886,15 @@ selectColor = (color, keepTool) ->
     selection.edit 'color', currentColor
     keepTool = true
   selectDrawingTool() unless keepTool
-  ## Set cursor to colored pencil
-  if currentTool == 'pen'
-    icons.setCursor board.svg, penIcon(currentColor), ...tools[currentTool].hotspot
+  colorIcon()
+
+colorIcon = ->
+  ## Drawing tools' cursors depend on the current color
+  if currentTool of drawingTools
+    icons.setCursor board.svg,
+      drawingToolIcon(currentTool, currentColor,
+        if currentFillOn then currentFill),
+      ...tools[currentTool].hotspot
 
 selectFill = (color) ->
   currentFill = color
@@ -1883,8 +1902,8 @@ selectFill = (color) ->
   updateFill()
   if selection.nonempty()
     selection.edit 'fill', currentFill
-    keepTool = true
-  selectDrawingTool() unless keepTool
+  else
+    selectDrawingTool()
 
 selectWidth = (width, keepTool) ->
   currentWidth = parseFloat width if width?
