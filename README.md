@@ -11,9 +11,9 @@ Here is a summary of the main features of Cocreate.
 Features marked with <sup>★</sup> are rare among shared whiteboard tools.
 
 * Instantly create a new board and share the URL to draw together with others.
-  **No accounts required**.
+  **No accounts required**<sup>★</sup>.
 * **See everyone's cursors**, updated live
-* Drawing features:
+* See everyone's drawing **while they draw**<sup>★</sup>
   * **Freehand pen** drawing, with **pressure sensitivity**<sup>★</sup> for supporting devices
     (e.g., Wacom, Surface, iPad Pencil)
   * Separation of pen, touch, and mouse inputs<sup>★</sup>: disable drawing via touch
@@ -32,6 +32,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
 * Basic **grid**
 * **Undo/redo** (of your own operations)
 * **Time travel**<sup>★</sup> to see entire past history of the board
+* Runs on computers, tablets, and phones (any modern web browser)
 * **Free/open source**<sup>★</sup> ([MIT license](LICENSE))
 
 There are
