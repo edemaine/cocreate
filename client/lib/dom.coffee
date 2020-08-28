@@ -61,6 +61,41 @@ export svgPoint = (svg, x, y, matrix = svg) ->
   pt.y = y
   pt.matrixTransform matrix
 
+export svgTransformPoint = (svg, {x, y}, matrix) ->
+  matrix = matrix.getCTM() if matrix.getCTM?
+  pt = svg.createSVGPoint()
+  pt.x = x
+  pt.y = y
+  pt.matrixTransform matrix
+
+export svgExtremes = (svg, elt) ->
+  ###
+  Compute bounding box of element in global SVG coordinates, incorporating
+  transformations (assuming no rotation, so enough to look at two corners).
+  Return value is of the form {min: {x: ..., y: ...}, max: {x: ..., y: ...}}
+  ###
+  bbox = elt.getBBox()
+  transform = elt.getCTM()
+  stroke = (parseFloat elt.getAttribute('stroke-width') ? 0) / 2
+  min: svgPoint svg, bbox.x - stroke, bbox.y - stroke, transform
+  max: svgPoint svg, bbox.x + stroke + bbox.width,
+                     bbox.y + stroke + bbox.height, transform
+
+export pointsToRect = (p, q) ->
+  x: x = Math.min p.x, q.x
+  y: y = Math.min p.y, q.y
+  width: Math.max(p.x, q.x) - x
+  height: Math.max(p.y, q.y) - y
+
+export pointsToSVGRect = (p, q, svg) ->
+  {x, y, width, height} = pointsToRect p, q
+  rect = svg.createSVGRect()
+  rect.x = x
+  rect.y = y
+  rect.width = width
+  rect.height = height
+  rect
+
 export escape = (text) ->
   text
   .replace /&/g, '&amp;'

@@ -67,7 +67,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: 'Select objects (multiple if holding <kbd>Shift</kbd>) and then change their color/width or drag to move them'
+    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>) and then change their color/width or drag to move them'
     hotkey: 's'
     start: ->
       pointers.objects = {}
@@ -76,14 +76,16 @@ tools =
       for key, highlighter of pointers
         if highlighter instanceof Highlighter
           highlighter.clear()
+          highlighter.selector?.remove()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       return if h.down  # in case of repeat events
       h.down = e
-      h.start = eventToRawPoint e
+      h.start = eventToPoint e
       h.moved = null
       ## Refresh previously selected objects, in particular so tx/ty up-to-date
+      pointers.objects = {}
       for id in selection.ids()
         pointers.objects[id] = Objects.findOne id
       unless h.id?  # see if we pressed on something
@@ -104,9 +106,45 @@ tools =
             selection.remove h.id
             delete pointers.objects[h.id]
           h.clear()
+      else  # click on blank space -> show selection rectangle
+        board.root.appendChild h.selector = dom.create 'rect',
+          class: 'selector'
+          x1: h.start.x
+          y1: h.start.y
     up: (e) ->
       h = pointers[e.pointerId]
-      if h?.moved
+      if h?.selector?
+        start = dom.svgTransformPoint board.svg, h.start, board.root
+        here = eventToPoint e
+        here = dom.svgTransformPoint board.svg, here, board.root
+        rect = dom.pointsToSVGRect start, here, board.svg, board.root
+        matched = []
+        for elt in board.root.childNodes
+          continue if elt.classList.contains 'grid'
+          continue if elt.classList.contains 'selected'
+          continue if elt.classList.contains 'highlight'
+          continue unless elt.dataset.id
+          ## Check whether any descendant non-<g> element intersects.
+          ## (SVG.checkIntersection doesn't work for <g> elements.)
+          recurse = (part) ->
+            if part.tagName == 'g'
+              for subpart in part.childNodes
+                return true if recurse subpart
+            else if board.svg.checkIntersection part, rect
+              return true
+            false
+          if recurse elt  # hit
+            matched.push elt
+        ## Now that we've traversed the DOM, modify the selection
+        for elt in matched
+          if selection.has elt.dataset.id  # Toggle selection
+            selection.remove elt.dataset.id
+          else
+            h.highlight elt
+            selection.add h
+        h.selector.remove()
+        h.selector = null
+      else if h?.moved
         undoableOp
           type: 'multi'
           ops:
@@ -123,14 +161,16 @@ tools =
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       if h.down
-        if distanceThreshold h.down, e, dragDist
+        here = eventToPoint e
+        if h.selector?
+          dom.attr h.selector, dom.pointsToRect h.start, here
+        else if distanceThreshold h.down, e, dragDist
           h.down = true
-          here = eventToRawPoint e
           ## Don't set h.moved out here in case no objects selected
           for id, obj of pointers.objects
             h.moved ?= {}
-            tx = (obj.tx ? 0) + (here.x - h.start.x) / board.transform.scale
-            ty = (obj.ty ? 0) + (here.y - h.start.y) / board.transform.scale
+            tx = (obj.tx ? 0) + (here.x - h.start.x)
+            ty = (obj.ty ? 0) + (here.y - h.start.y)
             Meteor.call 'objectEdit', {id, tx, ty}
             h.moved[id] = {tx, ty}
       else
@@ -572,19 +612,11 @@ tools =
         y: -Infinity
       for elt in root.childNodes
         continue if elt.classList.contains 'grid'
-        ## Compute bounding box and incorporate transformation
-        ## (assuming no rotation, so enough to look at two corners).
-        bbox = elt.getBBox()
-        transform = elt.getCTM()
-        stroke = (parseFloat elt.getAttribute('stroke-width') ? 0) / 2
-        minCorner = dom.svgPoint currentBoard().svg,
-          bbox.x - stroke, bbox.y - stroke, transform
-        maxCorner = dom.svgPoint currentBoard().svg,
-          bbox.x + stroke + bbox.width, bbox.y + stroke + bbox.height, transform
-        min.x = Math.min min.x, minCorner.x
-        max.x = Math.max max.x, maxCorner.x
-        min.y = Math.min min.y, minCorner.y
-        max.y = Math.max max.y, maxCorner.y
+        extreme = dom.svgExtremes currentBoard().svg, elt
+        min.x = Math.min min.x, extreme.min.x
+        max.x = Math.max max.x, extreme.max.x
+        min.y = Math.min min.y, extreme.min.y
+        max.y = Math.max max.y, extreme.max.y
       if min.x == Infinity
         min.x = min.y = max.x = max.y = 0
       ## Temporarily make grid space entire drawing
@@ -1143,15 +1175,7 @@ class Render
     unless (rect = @dom[id])?
       @root.appendChild @dom[id] = rect =
         dom.create 'rect', null, dataset: id: id
-    xMin = Math.min obj.pts[0].x, obj.pts[1].x
-    xMax = Math.max obj.pts[0].x, obj.pts[1].x
-    yMin = Math.min obj.pts[0].y, obj.pts[1].y
-    yMax = Math.max obj.pts[0].y, obj.pts[1].y
-    dom.attr rect,
-      x: xMin
-      y: yMin
-      width: xMax - xMin
-      height: yMax - yMin
+    dom.attr rect, Object.assign dom.pointsToRect(obj.pts[0], obj.pts[1]),
       stroke: obj.color
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
