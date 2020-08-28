@@ -625,7 +625,7 @@ tools =
       download.click()
   github:
     icon: 'github'
-    help: 'Go to Github repository: source code, bug reports, and feature requests'
+    help: 'Go to Github repository: documentation, source code, bug reports, and feature requests'
     once: ->
       import('/package.json').then (json) ->
         window.open json.homepage
