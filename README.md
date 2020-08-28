@@ -22,6 +22,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   * **Text** tool with **LaTeX math**<sup>★</sup> support
     (via [MathJax](https://www.mathjax.org/))
     and basic Markdown formatting
+  * Select (via direct clicking or rectangular drag) and modify/drag objects
   * Other basic tools: pan, zoom, eraser
   * Basic settings: line thickness (scaling correctly with zoom), color palette, fill, font size
 * **Vector** representation:
@@ -40,7 +41,6 @@ There are
 Short-term goals include:
 
 * [Uploading images/SVG/PDF to annotate](https://github.com/edemaine/cocreate/issues/22)
-* [A better select tool](https://github.com/edemaine/cocreate/issues/17)
 
 Feel free to help by submitting a pull request!
 
