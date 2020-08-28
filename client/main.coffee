@@ -15,6 +15,8 @@ remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 currentRoom = currentPage = null
 currentGrid = null
+currentFill = 'white'
+currentFillOn = false
 allowTouch = true
 
 Alt =
@@ -689,6 +691,19 @@ tools =
     hotkey: '0'
     once: ->
       currentBoard().setScale 1
+  fill:
+    palette: 'colors'
+    help: 'Toggle filling of rectangles and ellipses. <kbd>Shift</kbd>-click a color to set fill color.'
+    init: (div) ->
+      div.innerHTML =
+        (icons.svgIcon (icons.modIcon 'tint', fill: 'currentColor'),
+                       id: 'fillOn') +
+        (icons.svgIcon (icons.modIcon 'tint-slash', fill: 'currentColor'),
+                       id: 'fillOff')
+      updateFill()
+    once: ->
+      currentFillOn = not currentFillOn
+      updateFill()
 
 currentTool = 'pan'
 drawingTools =
@@ -726,8 +741,6 @@ colors = [
   '#eced00' # custom yellow
 ]
 currentColor = 'black'
-currentFill = 'white'
-currentFillOn = false
 
 widths = [
   1
@@ -1694,12 +1707,19 @@ paletteTools = ->
   toolsDiv = document.getElementById 'tools'
   pagesDiv = document.getElementById 'pages'
   align = 'top'
-  for tool, {icon, help, hotkey, init} of tools
-    container = if tool.startsWith 'page' then pagesDiv else toolsDiv
+  for tool, {icon, help, hotkey, init, palette} of tools
+    palette ?= if tool.startsWith 'page' then 'pages' else 'tools'
+    container = palette = document.getElementById palette
+    while palette.classList.contains 'subpalette'
+      palette = palette.parentNode
     orientation = ''
-    if container.classList.contains 'horizontal'
+    if palette.classList.contains 'horizontal'
       orientation = 'horizontal'
-    else if container.classList.contains 'vertical'
+      if palette.classList.contains 'top'
+        orientation += ' top'
+      else if palette.classList.contains 'bottom'
+        orientation += ' bottom'
+    else if palette.classList.contains 'vertical'
       orientation = 'vertical'
     if tool.startsWith 'spacer'
       container.appendChild dom.create 'div', class: 'spacer'
@@ -1708,7 +1728,7 @@ paletteTools = ->
       container.appendChild div = dom.create 'div', null,
         className: 'tool'
         dataset: tool: tool
-        innerHTML: icons.svgIcon icon
+        innerHTML: if icon then icons.svgIcon icon
       ,
         click: (e) ->
           removeTooltip()
@@ -1728,7 +1748,7 @@ paletteTools = ->
               removeTooltip()
               divBBox = div.getBoundingClientRect()
               document.body.appendChild tooltip = dom.create 'div', null,
-                className: "tooltip #{align} #{orientation}"
+                className: "tooltip align-#{align} #{orientation}"
                 innerHTML: help
                 style:
                   if orientation == 'vertical'
@@ -1736,12 +1756,12 @@ paletteTools = ->
                       top: "#{divBBox.top}px"
                     else # bottom
                       bottom: "calc(100% - #{divBBox.bottom}px)"
-                  else # horizontal
+                  else # horizontal top/bottom
                     left: "calc(#{divBBox.left + 0.5 * divBBox.width}px - 0.5 * var(--tooltip-width))"
               ,
                 pointerenter: removeTooltip
             pointerleave: removeTooltip
-      init?()
+      init? div
 
 lastTool = null
 selectTool = (tool) ->
@@ -1776,22 +1796,13 @@ selectDrawingTool = ->
   unless currentTool of drawingTools
     selectTool lastDrawingTool
 
-paletteFill = ->
-  document.getElementById('fillOn').innerHTML =
-    icons.svgIcon icons.modIcon 'tint', fill: 'currentColor'
-  document.getElementById('fillOff').innerHTML =
-    icons.svgIcon icons.modIcon 'tint-slash', fill: 'currentColor'
-  dom.listen document.getElementById('fillTool'),
-    click: (e) ->
-      currentFillOn = not currentFillOn
-      updateFill()
-  updateFill()
 updateFill = ->
-  document.getElementById('fillOn').style.display =
-    if currentFillOn then 'block' else 'none'
-  document.getElementById('fillOff').style.display =
-    if currentFillOn then 'none' else 'block'
-  document.getElementById('fillTool').style.color = currentFill
+  fillTool = document.querySelector('.tool[data-tool="fill"]')
+  if currentFillOn
+    fillTool.classList.add 'active'
+  else
+    fillTool.classList.remove 'active'
+  fillTool.style.color = currentFill
   colorIcon()
 
 paletteColors = ->
@@ -1950,7 +1961,6 @@ Meteor.startup ->
   paletteTools()
   paletteWidths()
   paletteFontSizes()
-  paletteFill()
   paletteColors()
   selectTool()
   selectColor null, true

@@ -3,6 +3,7 @@
   // The following grow to accomodate scrollbars if needed:
   --palette-left-width: var(--palette-size)
   --palette-bottom-height: var(--palette-size)
+  --palette-top-height: var(--palette-size)
   --palette-color: #ccc
   --palette-border: 2px
   --tooltip-color: hsl(60, 50%, 76%)
@@ -132,23 +133,43 @@ input
     &:before
       left: calc(-2 * var(--tooltip-arrow))
       border-right-color: var(--tooltip-color)
-    &.top:before
+    &.align-top:before
       top: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
-    &.bottom:before
+    &.align-bottom:before
       bottom: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
   &.horizontal
-    top: var(--palette-top-height)
-    margin-top: var(--tooltip-arrow)
-    // Up arrow
-    &:before
-      top: calc(-2 * var(--tooltip-arrow))
-      border-bottom-color: var(--tooltip-color)
-      left: calc(50% - var(--tooltip-arrow))
+    &.top
+      top: var(--palette-top-height)
+      margin-top: var(--tooltip-arrow)
+      // Up arrow
+      &:before
+        top: calc(-2 * var(--tooltip-arrow))
+        border-bottom-color: var(--tooltip-color)
+        left: calc(50% - var(--tooltip-arrow))
+    &.bottom
+      bottom: var(--palette-bottom-height)
+      margin-bottom: var(--tooltip-arrow)
+      // Down arrow
+      &:before
+        bottom: calc(-2 * var(--tooltip-arrow))
+        border-top-color: var(--tooltip-color)
+        left: calc(50% - var(--tooltip-arrow))
   .hotkeys
     float: right
     .hotkey
       margin-top: 1px
       margin-left: 3px
+
+.tool[data-tool="fill"]
+  #fillOn
+    display: block
+  #fillOff
+    display: none
+  &.active
+    #fillOn
+      display: block
+    #fillOff
+      display: none
 
 .spacer
   flex-basis: 100%
