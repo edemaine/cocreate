@@ -68,7 +68,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, drag to move them, or <kbd>Delete</kbd> them.'
+    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, drag to move them, <kbd>Delete</kbd> them, or duplicate them via <kbd>Ctrl-D</kbd>.'
     hotkey: 's'
     start: ->
       pointers.objects = {}
@@ -961,9 +961,14 @@ class Selection
     @selected[id] = highlighter.select()
     @outline()
   addId: (id) ->
-    ## Add an object to the selection before it's been rendered
-    ## (triggering redraw when it gets rendered).
-    @selected[id] = true
+    if target = document.querySelector \
+         """#board > g > [data-id="#{CSS.escape id}"]"""
+      @rehighlighter.highlight target
+      @selected[id] = @rehighlighter.select()
+    else
+      ## Add an object to the selection before it's been rendered
+      ## (triggering redraw when it gets rendered).
+      @selected[id] = true
   redraw: (id, target) ->
     unless @selected[id] == true  # added via `addId`
       board.root.removeChild @selected[id]
@@ -1610,13 +1615,13 @@ setInterval ->
   board.remotesRender?.timer()
 , 1000
 
+gridSize = 37.76
 class Grid
   constructor: (root) ->
     @svg = root.parentNode
     root.appendChild @grid = dom.create 'g', class: 'grid'
     @update()
   update: (mode = currentGrid, bounds) ->
-    gridSize = 37.76
     @grid.innerHTML = ''
     bounds ?=
       min: dom.svgPoint @svg, board.bbox.left, board.bbox.top, @grid
@@ -2043,6 +2048,27 @@ Meteor.startup ->
             spaceDown = true
             oldPointers = pointers
             selectTool 'pan', noStop: true
+        when 'd', 'D'  ## duplicate
+          if (e.ctrlKey or e.metaKey) and selection.nonempty()
+            e.preventDefault()  # ctrl-D bookmarks on Chrome
+            newObjs =
+              for id in selection.ids()
+                obj = Objects.findOne id
+                delete obj._id
+                obj.tx ?= 0
+                obj.ty ?= 0
+                obj.tx += gridSize
+                obj.ty += gridSize
+                obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
+                obj
+            undoableOp
+              type: 'multi'
+              ops:
+                for obj in newObjs
+                  type: 'new'
+                  obj: obj
+            selection.clear()
+            selection.addId obj._id for obj in newObjs
         else
           if e.key of hotkeys
             hotkeys[e.key]()
