@@ -68,7 +68,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>) and then change their color/width or drag to move them'
+    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, drag to move them, or <kbd>Delete</kbd> them.'
     hotkey: 's'
     start: ->
       pointers.objects = {}
@@ -994,10 +994,9 @@ class Selection
       type: 'multi'
       ops:
         for id in @ids()
-          obj = Objects.findOne id
-          Meteor.call 'objectDel', id
           type: 'del'
-          obj: obj
+          obj: Objects.findOne id
+    , true
     @clear()
   edit: (attrib, value) ->
     objs =
@@ -1039,7 +1038,7 @@ undoableOp = (op, now) ->
   redoStack = []
   undoStack.push op
   doOp op if now
-doOp = (op, reverse) ->
+doOp = (op, reverse = false) ->
   switch op.type
     when 'multi'
       ops = op.ops
