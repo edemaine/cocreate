@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/edemaine/cocreate",
   "scripts": {
+    "doc-icons": "coffee --transpile doc/icons/make.coffee",
     "prepare": "cp node_modules/tex2svg-webworker/dist/tex2svg.js public/",
     "start": "meteor run",
     "test": "meteor test --once --driver-package meteortesting:mocha",
@@ -33,11 +34,12 @@
   "devDependencies": {
     "@babel/core": "^7.11.0",
     "@babel/preset-env": "^7.11.0",
-    "babel-loader": "^7.1.5",
-    "coffee-loader": "^1.0.0",
-    "coffeescript": "^2.5.1",
-    "uglifyjs-webpack-plugin": "^2.2.0",
-    "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12"
+    "coffeescript": "^2.5.1"
+  },
+  "meteor": {
+    "mainModule": {
+      "client": "client/main.coffee",
+      "server": "server/main.coffee"
+    }
   }
 }

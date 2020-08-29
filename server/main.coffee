@@ -1,0 +1,8 @@
+import '../lib/main'
+import './bootstrap'
+import './indexes'
+import './api'
+import './objects'
+import './remotes'
+import './rooms'
+import './timesync'

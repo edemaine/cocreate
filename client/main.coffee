@@ -1,8 +1,10 @@
-import * as icons from './lib/icons.coffee'
-import * as dom from './lib/dom.coffee'
-import * as remotes from './lib/remotes.coffee'
-import * as throttle from './lib/throttle.coffee'
-import * as timesync from './lib/timesync.coffee'
+import '../lib/main'
+import './lib/polyfill'
+import icons from './lib/icons'
+import dom from './lib/dom'
+import remotes from './lib/remotes'
+import throttle from './lib/throttle'
+import timesync from './lib/timesync'
 
 board = historyBoard = null # Board objects
 gridDefault = true
@@ -514,14 +516,7 @@ tools =
     once: ->
       navigator.clipboard.writeText document.URL
   newRoom:
-    icon: icons.stackIcons [
-      'door-open'
-      icons.modIcon 'circle',
-        fill: 'var(--palette-color)'
-        transform: "translate(300 256) scale(0.55) translate(-256 -256)"
-      icons.modIcon 'plus-circle',
-        transform: "translate(300 256) scale(0.45) translate(-256 -256)"
-    ]
+    icon: 'door-plus-circle'
     help: 'Create a new room/board (with new URL) in a new browser tab/window'
     once: ->
       window.open '/'
