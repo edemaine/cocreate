@@ -27,11 +27,11 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   * Other basic tools: pan, zoom, eraser
   * Basic settings: line thickness (scaling correctly with zoom), color palette, fill, font size
 * **Vector** representation:
-  * **Select, edit, and move** existing objects,
+  * **Select, edit, move, duplicate<sup>★</sup>, delete** existing objects,
     including **rectangular select**<sup>★</sup>
-  * Export as **SVG**
+  * Export as **SVG**<sup>★</sup>
 * **Multiple pages**<sup>★</sup>
-  * Page **duplication** (for animation or exploring alternatives)
+  * **Page duplication**<sup>★</sup> (for animation or exploring alternatives)
   * Basic **grid**
 * **Undo/redo** (of your own operations)
 * **Time travel**<sup>★</sup> to see entire past history of the board
