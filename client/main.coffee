@@ -2118,6 +2118,9 @@ Meteor.startup ->
           if (e.ctrlKey or e.metaKey) and selection.nonempty()
             e.preventDefault()  # ctrl-D bookmarks on Chrome
             selection.duplicate()
+        when 'Escape'
+          if currentTool == 'history'
+            selectTool 'history'  # escape history view by toggling
         else
           if e.key of hotkeys
             hotkeys[e.key]()
