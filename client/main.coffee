@@ -604,21 +604,11 @@ tools =
       oldTransform = root.getAttribute 'transform'
       root.removeAttribute 'transform'
       ## Compute bounding box using SVG's getBBox() and getCTM()
-      min =
-        x: Infinity
-        y: Infinity
-      max =
-        x: -Infinity
-        y: -Infinity
-      for elt in root.childNodes
-        continue if elt.classList.contains 'grid'
-        extreme = dom.svgExtremes currentBoard().svg, elt
-        min.x = Math.min min.x, extreme.min.x
-        max.x = Math.max max.x, extreme.max.x
-        min.y = Math.min min.y, extreme.min.y
-        max.y = Math.max max.y, extreme.max.y
-      if min.x == Infinity
-        min.x = min.y = max.x = max.y = 0
+      {min, max} = dom.unionSvgExtremes currentBoard().svg,
+        for elt in root.childNodes
+          continue if elt.classList.contains 'grid'
+          continue unless elt.dataset.id
+          elt
       ## Temporarily make grid space entire drawing
       currentBoard().grid?.update currentGrid, {min, max}
       ## Create SVG header
@@ -947,13 +937,14 @@ class Highlighter
       @target = @highlighted = @id = null
 
 class Selection
-  constructor: ->
+  constructor: (@board) ->
     @selected = {}  # mapping from object ID to .selected DOM element
     @rehighlighter = new Highlighter  # used in redraw()
   add: (highlighter) ->
     id = highlighter.id
     return unless id?
     @selected[id] = highlighter.select()
+    @outline()
   addId: (id) ->
     ## Add an object to the selection before it's been rendered
     ## (triggering redraw when it gets rendered).
@@ -963,10 +954,12 @@ class Selection
       board.root.removeChild @selected[id]
     @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
+    @outline()
   remove: (id) ->
     unless @selected[id] == true  # added via `addId`
       board.root.removeChild @selected[id]
     delete @selected[id]
+    @outline()
   clear: ->
     @remove id for id of @selected
   ids: ->
@@ -1005,8 +998,18 @@ class Selection
           before: "#{attrib}": obj[attrib]
           after: "#{attrib}": value
     , true
-
-selection = new Selection
+  outline: ->
+    if @nonempty()
+      @board.root.appendChild @rect ?= dom.create 'rect',
+        class: 'outline'
+      dom.attr @rect, dom.pointsToRect dom.unionSvgExtremes @board.svg,
+        for id, elt of @selected
+          continue if elt == true  # added via `addId`
+          elt
+      , @board.root
+    else
+      @rect?.remove()
+      @rect = null
 
 undoableOp = (op, now) ->
   redoStack = []
@@ -1982,6 +1985,7 @@ Meteor.startup ->
   document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
   board = new Board 'board'
   historyBoard = new Board 'historyBoard'
+  selection = new Selection board
   paletteTools()
   paletteWidths()
   paletteFontSizes()
