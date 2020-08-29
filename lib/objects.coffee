@@ -47,7 +47,7 @@ Meteor.methods
             check pts, [xyType]
             pts.length == 2
           color: String
-          fill: Match.Optional String
+          fill: Match.Optional Match.OneOf String, null
           width: Number
       when 'text'
         Object.assign pattern,
@@ -110,6 +110,9 @@ Meteor.methods
     if obj.type in ['pen', 'poly', 'rect', 'ellipse']
       Object.assign pattern,
         width: Match.Optional Number
+    if obj.type in ['rect', 'ellipse']
+      Object.assign pattern,
+        fill: Match.Optional Match.OneOf String, null
     if obj.type == 'text'
       Object.assign pattern,
         text: Match.Optional String

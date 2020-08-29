@@ -995,17 +995,26 @@ class Selection
           obj: obj
     @clear()
   edit: (attrib, value) ->
+    objs =
+      for id in @ids()
+        obj = Objects.findOne id
+        switch attrib
+          when 'width'
+            continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse']
+          when 'fill'
+            continue unless obj.type in ['rect', 'ellipse']
+        obj
+    return unless objs.length
     undoableOp
       type: 'multi'
       ops:
-        for id in @ids()
-          obj = Objects.findOne id
-          unless obj?[attrib]
-            console.warn "Object #{id} has no #{attrib} attribute"
-            continue
+        for obj in objs
+          #unless obj?[attrib]
+          #  console.warn "Object #{id} has no #{attrib} attribute"
+          #  continue
           type: 'edit'
-          id: id
-          before: "#{attrib}": obj[attrib]
+          id: obj._id
+          before: "#{attrib}": obj[attrib] ? null
           after: "#{attrib}": value
     , true
   outline: ->
