@@ -110,14 +110,14 @@ export unionSvgExtremes = (svg, elts, relative) ->
       svgExtremes svg, elt, relative
   )
 
-export pointsToRect = (p, q) ->
+export pointsToRect = (p, q, epsilon = 0) ->
   if p.min? and p.max?
     q = p.max
     p = p.min
   x: x = Math.min p.x, q.x
   y: y = Math.min p.y, q.y
-  width: Math.max(p.x, q.x) - x
-  height: Math.max(p.y, q.y) - y
+  width: (Math.max(p.x, q.x) - x) or epsilon
+  height: (Math.max(p.y, q.y) - y) or epsilon
 
 export pointsToSVGRect = (p, q, svg) ->
   {x, y, width, height} = pointsToRect p, q

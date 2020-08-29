@@ -1270,7 +1270,10 @@ class Render
     unless (rect = @dom[id])?
       @root.appendChild @dom[id] = rect =
         dom.create 'rect', null, dataset: id: id
-    dom.attr rect, Object.assign dom.pointsToRect(obj.pts[0], obj.pts[1]),
+    dim = dom.pointsToRect obj.pts[0], obj.pts[1]
+    dim.width or= Number.EPSILON
+    dim.height or= Number.EPSILON
+    dom.attr rect, Object.assign dim,
       stroke: obj.color
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
@@ -1281,15 +1284,14 @@ class Render
     unless (ellipse = @dom[id])?
       @root.appendChild @dom[id] = ellipse =
         dom.create 'ellipse', null, dataset: id: id
-    xMin = Math.min obj.pts[0].x, obj.pts[1].x
-    xMax = Math.max obj.pts[0].x, obj.pts[1].x
-    yMin = Math.min obj.pts[0].y, obj.pts[1].y
-    yMax = Math.max obj.pts[0].y, obj.pts[1].y
+    {x, y, width, height} = dom.pointsToRect obj.pts[0], obj.pts[1]
+    rx = (width / 2) or Number.EPSILON
+    ry = (height / 2) or Number.EPSILON
     dom.attr ellipse,
-      cx: (xMin + xMax) / 2
-      cy: (yMin + yMax) / 2
-      rx: (xMax - xMin) / 2
-      ry: (yMax - yMin) / 2
+      cx: x + rx
+      cy: y + ry
+      rx: rx
+      ry: ry
       stroke: obj.color
       'stroke-width': obj.width
       fill: obj.fill or 'none'
