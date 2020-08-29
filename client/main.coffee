@@ -68,7 +68,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, drag to move them, <kbd>Delete</kbd> them, or duplicate them via <kbd>Ctrl-D</kbd>.'
+    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), duplicate via <kbd>Ctrl-D</kbd>, or <kbd>Delete</kbd> them.'
     hotkey: 's'
     start: ->
       pointers.objects = {}
@@ -162,11 +162,12 @@ tools =
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
       if h.down
-        here = eventToPoint e
         if h.selector?
+          here = eventToPoint e
           dom.attr h.selector, dom.pointsToRect h.start, here
         else if distanceThreshold h.down, e, dragDist
           h.down = true
+          here = eventToOrthogonalPoint e, h.start
           ## Don't set h.moved out here in case no objects selected
           for id, obj of pointers.objects
             h.moved ?= {}
@@ -241,17 +242,8 @@ tools =
     move: (e) ->
       return unless pointers[e.pointerId]
       {origin, id, alt} = pointers[e.pointerId]
-      pt = eventToPoint e
-      ## Force horizontal/vertical line when holding shift
-      if e.shiftKey
-        dx = Math.abs pt.x - origin.x
-        dy = Math.abs pt.y - origin.y
-        if dx > dy
-          pt.y = origin.y
-        else
-          pt.x = origin.x
       pts =
-        1: pt
+        1: eventToOrthogonalPoint e, origin
       ## When holding Alt/Option, make origin be the center.
       if e.altKey
         pts[0] = symmetricPoint pts[1], origin
@@ -830,6 +822,18 @@ eventToConstrainedPoint = (e, origin) ->
       pt.y = origin.y + adx * Math.sign dy
     else if adx < ady
       pt.x = origin.x + ady * Math.sign dx
+  pt
+
+eventToOrthogonalPoint = (e, origin) ->
+  pt = eventToPoint e
+  ## Force horizontal/vertical line from origin when holding shift
+  if e.shiftKey
+    dx = Math.abs pt.x - origin.x
+    dy = Math.abs pt.y - origin.y
+    if dx > dy
+      pt.y = origin.y
+    else
+      pt.x = origin.x
   pt
 
 eventToPointW = (e) ->
