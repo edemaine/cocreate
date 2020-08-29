@@ -18,6 +18,7 @@ currentGrid = null
 currentFill = 'white'
 currentFillOn = false
 allowTouch = true
+spaceDown = false
 
 Alt =
   if navigator?.platform.startsWith 'Mac'
@@ -1814,10 +1815,11 @@ paletteTools = ->
       init? div
 
 lastTool = null
-selectTool = (tool) ->
+selectTool = (tool, options) ->
+  {noStart, noStop} = options if options?
   if tools[tool]?.once?
     return tools[tool].once?()
-  tools[currentTool]?.stop?()
+  tools[currentTool]?.stop?() unless noStop
   document.body.classList.remove "tool-#{currentTool}" if currentTool
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool
@@ -1839,7 +1841,7 @@ selectTool = (tool) ->
     icons.setCursor board.svg, tools[currentTool].icon,
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
-  tools[currentTool]?.start?()
+  tools[currentTool]?.start?() unless noStart
   document.body.classList.add "tool-#{currentTool}" if currentTool
   lastDrawingTool = currentTool if currentTool of drawingTools
 selectDrawingTool = ->
@@ -2022,7 +2024,7 @@ Meteor.startup ->
     resize: resize
     popstate: urlChange
   , true # call now
-  spaceDown = false
+  oldPointers = null
   dom.listen window,
     keydown: (e) ->
       switch e.key
@@ -2037,10 +2039,11 @@ Meteor.startup ->
             redo()
         when 'Delete', 'Backspace'
           selection.delete()
-        when ' '
+        when ' '  ## pan via space-drag
           if currentTool not in ['pan', 'history']
             spaceDown = true
-            selectTool 'pan'
+            oldPointers = pointers
+            selectTool 'pan', noStop: true
         else
           if e.key of hotkeys
             hotkeys[e.key]()
@@ -2048,9 +2051,10 @@ Meteor.startup ->
             hotkeys[e.key.toLowerCase()]?()
     keyup: (e) ->
       switch e.key
-        when ' '
+        when ' '  ## end of pan via space-drag
           if spaceDown
-            selectTool lastTool
+            selectTool lastTool, noStart: true
+            pointers = oldPointers
             spaceDown = false
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->
