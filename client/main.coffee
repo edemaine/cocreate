@@ -603,6 +603,14 @@ tools =
       root = currentBoard().root # <g>
       oldTransform = root.getAttribute 'transform'
       root.removeAttribute 'transform'
+      ## Temporarily remove highlight, selected, and outline elements
+      removed = []
+      for elt in root.childNodes
+        for className in ['highlight', 'selected', 'outline']
+          if elt.classList.contains className
+            removed.push elt
+            break
+      elt.remove() for elt in removed
       ## Compute bounding box using SVG's getBBox() and getCTM()
       {min, max} = dom.unionSvgExtremes currentBoard().svg,
         for elt in root.childNodes
@@ -637,8 +645,10 @@ tools =
         #{svg}
         </svg>
       """
+      ## Restore deleted elements
+      root.appendChild elt for elt in removed
       ## Reset transform and grid
-      root.setAttribute 'transform', oldTransform
+      root.setAttribute 'transform', oldTransform if oldTransform?
       currentBoard().grid?.update()
       ## Download file
       download = document.getElementById 'download'
