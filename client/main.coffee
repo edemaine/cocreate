@@ -1006,7 +1006,9 @@ class Selection
           type: 'del'
           obj: Objects.findOne id
     , true
-    @clear()
+    ## Clear any highlights in addition to clearing selection
+    selectHighlightReset()
+    #@clear()
   edit: (attrib, value) ->
     objs =
       for id in @ids()
