@@ -736,6 +736,10 @@ tools =
     once: ->
       currentFillOn = not currentFillOn
       updateFill()
+      if selection.nonempty()
+        selection.edit 'fill', if currentFillOn then currentFill else null
+      else
+        selectDrawingTool()
 
 currentTool = 'pan'
 drawingTools =
