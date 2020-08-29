@@ -40,6 +40,9 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   without hiding features behind dropdowns,
   while tooltips explain the many buttons
 * **Free/open source**<sup>★</sup> ([MIT license](LICENSE))
+* Via [Comingle](https://github.com/edemaine/comingle),
+  you can have one interface with both your video conference and
+  your shared Cocreate drawing (and any other web tools).
 
 There are
 [plans for many more features](https://github.com/edemaine/cocreate/issues).
@@ -49,6 +52,12 @@ Short-term goals include:
 
 Feel free to help by submitting a pull request!
 
-## [Installation](INSTALL.md) ##
+## [User Guide](doc/README.md)
 
-See [detailed installation instructions](INSTALL.md).
+Want to know how to get started or how to use the features listed above?
+[Read our documentation](docs/README.md).
+
+## [Installation](INSTALL.md)
+
+To run your own Cocreate server, see
+[detailed installation instructions](INSTALL.md).
