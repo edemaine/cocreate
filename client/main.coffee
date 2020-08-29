@@ -181,6 +181,9 @@ tools =
           h.highlight target
         else
           h.clear()
+    select: (ids) ->
+      selectHighlightReset()
+      selection.addId id for id in ids
   pen:
     icon: 'pencil-alt'
     hotspot: [0, 1]
@@ -467,6 +470,18 @@ tools =
         h.highlight target
       else
         h.clear()
+    select: (ids) ->
+      return unless ids.length == 1
+      return if pointers.text == ids[0]
+      obj = Objects.findOne ids[0]
+      return unless obj?.type == 'text'
+      textStop()
+      pointers.text = obj._id
+      selection.addId pointers.text
+      input = document.getElementById 'textInput'
+      input.value = obj.text
+      input.disabled = false
+      input.focus()
   spacer: {}
   touch:
     icon: 'hand-pointer'
@@ -1033,6 +1048,27 @@ class Selection
           before: "#{attrib}": obj[attrib] ? null
           after: "#{attrib}": value
     , true
+  duplicate: ->
+    oldIds = selection.ids()
+    newObjs =
+      for id in oldIds
+        obj = Objects.findOne id
+        delete obj._id
+        obj.tx ?= 0
+        obj.ty ?= 0
+        obj.tx += gridSize
+        obj.ty += gridSize
+        obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
+        obj
+    undoableOp
+      type: 'multi'
+      ops:
+        for obj in newObjs
+          type: 'new'
+          obj: obj
+      selection: oldIds
+    @clear()
+    @addId obj._id for obj in newObjs
   outline: ->
     if @nonempty()
       @board.root.appendChild @rect ?= dom.create 'rect',
@@ -1076,6 +1112,25 @@ doOp = (op, reverse = false) ->
           op.after
     else
       console.error "Unknown op type #{op.type} for undo/redo"
+selectOp = (op, reverse = false) ->
+  return unless tools[currentTool]?.select?
+  recurse = (sub) ->
+    if sub.selection? and reverse
+      sub.selection
+    else
+      switch sub.type
+        when 'new', 'del'
+          if (sub.type == 'new') == reverse  # delete
+            []
+          else  # insert
+            [sub.obj._id]
+        when 'edit'
+          [sub.id]
+        when 'multi'
+          [].concat ...(recurse part for part in sub.ops)
+        else
+          []
+  tools[currentTool].select recurse op
 undo = ->
   if currentTool == 'history'
     return historyAdvance -1
@@ -1084,6 +1139,7 @@ undo = ->
   doOp op, true
   redoStack.push op
   selectHighlightReset()
+  selectOp op, true
 redo = ->
   if currentTool == 'history'
     return historyAdvance +1
@@ -1092,6 +1148,7 @@ redo = ->
   doOp op, false
   undoStack.push op
   selectHighlightReset()
+  selectOp op, false
 historyAdvance = (delta) ->
   range = document.getElementById 'historyRange'
   value = parseInt range.value
@@ -2058,24 +2115,7 @@ Meteor.startup ->
         when 'd', 'D'  ## duplicate
           if (e.ctrlKey or e.metaKey) and selection.nonempty()
             e.preventDefault()  # ctrl-D bookmarks on Chrome
-            newObjs =
-              for id in selection.ids()
-                obj = Objects.findOne id
-                delete obj._id
-                obj.tx ?= 0
-                obj.ty ?= 0
-                obj.tx += gridSize
-                obj.ty += gridSize
-                obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
-                obj
-            undoableOp
-              type: 'multi'
-              ops:
-                for obj in newObjs
-                  type: 'new'
-                  obj: obj
-            selection.clear()
-            selection.addId obj._id for obj in newObjs
+            selection.duplicate()
         else
           if e.key of hotkeys
             hotkeys[e.key]()
