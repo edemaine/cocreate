@@ -671,7 +671,7 @@ tools =
     help: 'Go to Github repository: documentation, source code, bug reports, and feature requests'
     once: ->
       import('/package.json').then (json) ->
-        window.open json.homepage
+        window.open json.homepage, '_blank', 'noopener'
   pagePrev:
     icon: 'chevron-left-square'
     help: 'Go to previous page'
