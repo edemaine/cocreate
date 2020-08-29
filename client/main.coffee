@@ -969,6 +969,7 @@ class Selection
          """#board > g > [data-id="#{CSS.escape id}"]"""
       @rehighlighter.highlight target
       @selected[id] = @rehighlighter.select()
+      @outline()
     else
       ## Add an object to the selection before it's been rendered
       ## (triggering redraw when it gets rendered).
