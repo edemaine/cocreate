@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-43 -43 598 598">
+<rect x="-43" y="-43" width="598" height="598" fill="#ccc"/>
 <path d="M256,404c-106,0-192-66.3-192-148s86-148,192-148s192,66.3,192,148S362,404,256,404z"/>
 </svg>
