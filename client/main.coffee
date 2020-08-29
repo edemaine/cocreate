@@ -487,7 +487,9 @@ tools =
       input = document.getElementById 'textInput'
       input.value = obj.text
       input.disabled = false
-      input.focus()
+      ## Giving the input focus makes it hard to do repeated global undo/redo;
+      ## instead the text-entry box does its own undo/redo.
+      #input.focus()
   spacer: {}
   touch:
     icon: 'hand-pointer'
