@@ -22,11 +22,12 @@ currentFillOn = false
 allowTouch = true
 spaceDown = false
 
-Alt =
-  if navigator?.platform.startsWith 'Mac'
-    'Option'
-  else
-    'Alt'
+if navigator?.platform.startsWith 'Mac'
+  Ctrl = 'Command'
+  Alt = 'Option'
+else
+  Ctrl = 'Ctrl'
+  Alt = 'Alt'
 
 distanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -40,13 +41,13 @@ tools =
   undo:
     icon: 'undo'
     help: 'Undo the last operation you did'
-    hotkey: 'Ctrl-Z'
+    hotkey: "#{Ctrl}-Z"
     once: ->
       undo()
   redo:
     icon: 'redo'
     help: 'Redo: Undo the last undo you did (if you did no operations since)'
-    hotkey: ['Ctrl-Y', 'Ctrl-Shift-Z']
+    hotkey: ["#{Ctrl}-Y", "#{Ctrl}-Shift-Z"]
     once: ->
       redo()
   pan:
@@ -70,7 +71,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: 'Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), duplicate via <kbd>Ctrl-D</kbd>, or <kbd>Delete</kbd> them.'
+    help: "Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), duplicate via <kbd>#{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them."
     hotkey: 's'
     start: ->
       pointers.objects = {}
