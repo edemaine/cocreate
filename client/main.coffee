@@ -912,6 +912,7 @@ pointerEvents = ->
   dom.listen board.svg,
     pointermove: (e) ->
       return unless currentRoom?
+      return unless currentPage?
       return if restrictTouch e
       remote =
         room: currentRoom
