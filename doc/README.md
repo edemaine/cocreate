@@ -6,9 +6,12 @@ by yourself and working live with others (e.g., in a video conference).
 See [the feature list](https://github.com/edemaine/cocreate/#features)
 for a high-level overview.
 
+<!-- markdownlint-disable line-length -->
+
 ## Getting Started
 
 To get started, you need
+
 * a device (computer, tablet, or phone,
   equipped with mouse, pen, and/or touchscreen); and
 * a modern web browser (we recommend
@@ -163,6 +166,7 @@ You can select more objects with multiple rectangles by holding
 it toggles in/out of the selection.
 
 **Editing objects.**
+
 * To change the selected objects' **line width**,
   just click/tap the desired line width.
 * To change the selected objects' **outline color**,
@@ -259,7 +263,8 @@ Like the
 [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool),
 if you hover over an object (with mouse or pen),
 you will see it "highlight" in the form of a shadow.
-If you then click/tap, you will erase that object (and only that object).
+If you then click/tap, you will erase that object
+(and only that object, if you don't move before releasing).
 Alternatively, you can click/tap and hold, and drag over multiple objects
 to erase them all once.
 (Currently you need to drag somewhat slowly over the objects to erase
@@ -279,6 +284,7 @@ and you can start typing.
 You (and everyone) will immediately see your text rendered on the page as well.
 
 You can use basic Markdown syntax to style your text:
+
 * `*italic*` renders as *italic*.
 * `**bold**` renders as **bold**.
 * ``` `code` ``` renders as `code`.
@@ -431,6 +437,7 @@ Cocreate.  This is helpful if you get lost zooming in or out.
 ## Attribute Tools (bottom palette)
 
 The tools in the bottom palette serve two functions:
+
 * they change the attributes (line width, font size, and color)
   for any objects you'll draw next; and
 * they change the attributes of any objects you currently have selected,

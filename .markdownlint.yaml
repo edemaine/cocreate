@@ -1,0 +1,5 @@
+no-inline-html:
+  allowed_elements:
+  - img
+  - kbd
+  - sup

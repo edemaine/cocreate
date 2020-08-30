@@ -25,7 +25,8 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     (via [MathJax](https://www.mathjax.org/))
     and basic Markdown formatting
   * Other basic tools: pan, zoom, eraser
-  * Basic settings: line thickness (scaling correctly with zoom), color palette, fill, font size
+  * Basic settings: line thickness (scaling correctly with zoom),
+    color palette, fill, font size
 * **Vector** representation:
   * **Select, edit, move, duplicate<sup>★</sup>, delete** existing objects,
     including **rectangular select**<sup>★</sup>

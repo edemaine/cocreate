@@ -19,6 +19,7 @@
   "documentation": "https://github.com/edemaine/cocreate/blob/master/doc/README.md",
   "scripts": {
     "doc:icons": "coffee --transpile doc/icons/make.coffee",
+    "doc:lint": "markdownlint **/*.md --ignore node_modules",
     "prepare": "cp node_modules/tex2svg-webworker/dist/tex2svg.js public/",
     "start": "meteor run",
     "test": "meteor test --once --driver-package meteortesting:mocha",
@@ -35,7 +36,8 @@
   "devDependencies": {
     "@babel/core": "^7.11.0",
     "@babel/preset-env": "^7.11.0",
-    "coffeescript": "^2.5.1"
+    "coffeescript": "^2.5.1",
+    "markdownlint-cli": "^0.23.2"
   },
   "meteor": {
     "mainModule": {
