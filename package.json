@@ -16,8 +16,9 @@
     "url": "https://github.com/edemaine/cocreate/issues"
   },
   "homepage": "https://github.com/edemaine/cocreate",
+  "documentation": "https://github.com/edemaine/cocreate/blob/master/doc/README.md",
   "scripts": {
-    "doc-icons": "coffee --transpile doc/icons/make.coffee",
+    "doc:icons": "coffee --transpile doc/icons/make.coffee",
     "prepare": "cp node_modules/tex2svg-webworker/dist/tex2svg.js public/",
     "start": "meteor run",
     "test": "meteor test --once --driver-package meteortesting:mocha",

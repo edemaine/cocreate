@@ -376,6 +376,12 @@ This button opens a new browser tab with Cocreate's
 [read the source code](https://github.com/edemaine/cocreate/), and
 [report bugs and request features](https://github.com/edemaine/cocreate/issues).
 
+### <img src="icons/question-circle.svg" width="18" alt="Help Icon"> Help Link
+
+This button opens a new browser tab with
+[this User Guide](https://github.com/edemaine/cocreate/blob/master/doc/README.md).
+Perhaps it's how you got here?
+
 ## Page Tools (top palette)
 
 Each Cocreate board can have multiple pages, ordered 1, 2, ...

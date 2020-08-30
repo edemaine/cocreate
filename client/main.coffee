@@ -673,6 +673,12 @@ tools =
     once: ->
       import('/package.json').then (json) ->
         window.open json.homepage, '_blank', 'noopener'
+  help:
+    icon: 'question-circle'
+    help: 'Open the Cocreate User Guide for online help'
+    once: ->
+      import('/package.json').then (json) ->
+        window.open json.documentation, '_blank', 'noopener'
   pagePrev:
     icon: 'chevron-left-square'
     help: 'Go to previous page'
