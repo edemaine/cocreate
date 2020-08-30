@@ -55,7 +55,7 @@ Feel free to help by submitting a pull request!
 ## [User Guide](doc/README.md)
 
 Want to know how to get started or how to use the features listed above?
-[Read our documentation](docs/README.md).
+[Read our user guide](docs/README.md).
 
 ## [Installation](INSTALL.md)
 

@@ -496,7 +496,7 @@ tools =
   spacer: {}
   touch:
     icon: 'hand-pointer'
-    help: 'Allow drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
+    help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
     init: touchUpdate = ->
       touchTool = document.querySelector '.tool[data-tool="touch"]'
       if allowTouch
