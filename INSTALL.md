@@ -48,11 +48,17 @@ To monitor server performance, you can use one of the following:
   [kadira-compose](https://github.com/edemaine/kadira-compose).
 
 After creating an application on one of the servers above,
-create `server/kadira.coffee` with the following lines:
+edit `settings.json` to look like the following
+(omit `endpoint` if you're using Monti):
 
-```coffee
-Kadira.connect 'xxxxxxxxxxxxxxxxx', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-  endpoint: 'https://your-kadira-server:22022'  # omit this line if using Monti
+```json
+{
+  "kadira": {
+    "appId": "xxxxxxxxxxxxxxxxx", 
+    "appSecret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "endpoint": "https://your-kadira-server:22022"
+  }
+}
 ```
 
 ## MongoDB
