@@ -61,6 +61,12 @@ edit `settings.json` to look like the following
 }
 ```
 
+To ensure Git doesn't accidentally commit your secrets in this file, use
+
+```
+git update-index --assume-unchanged settings.json
+```
+
 ## MongoDB
 
 All of Cocreate's data is stored in the Mongo database
