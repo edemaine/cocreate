@@ -54,7 +54,7 @@ edit `settings.json` to look like the following
 ```json
 {
   "kadira": {
-    "appId": "xxxxxxxxxxxxxxxxx", 
+    "appId": "xxxxxxxxxxxxxxxxx",
     "appSecret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "endpoint": "https://your-kadira-server:22022"
   }
