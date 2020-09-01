@@ -15,13 +15,14 @@ export method = (name) ->
 
   throttled = (...args) ->
     if waiting
-      waiting = args
+      waiting = args  # overwrite any existing update
     else
+      waiting = true
       Meteor.call name, ...args, (error, result) ->
         if waiting
-          if waiting == true
+          if waiting == true  # nothing queued up
             waiting = false
-          else
+          else                # do update on queue
             nextArgs = waiting
             waiting = false
             throttled ...nextArgs
