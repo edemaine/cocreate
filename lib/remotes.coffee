@@ -12,6 +12,7 @@ export fade = 60
 
 Meteor.methods
   remoteUpdate: (remote) ->
+    @unblock()
     check remote,
       _id: String
       room: String
