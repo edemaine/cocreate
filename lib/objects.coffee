@@ -3,7 +3,7 @@ import {checkRoom} from './rooms.coffee'
 import {checkPage} from './pages.coffee'
 
 @Objects = new Mongo.Collection 'objects'
-@ObjectsDiff = new Mongo.Collection 'objects.diff'
+@ObjectsDiff = new Mongo.Collection 'objects.diff' if Meteor.isServer
 
 xyType =
   x: Number

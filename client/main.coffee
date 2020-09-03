@@ -5,6 +5,7 @@ import dom from './lib/dom'
 import remotes from './lib/remotes'
 import throttle from './lib/throttle'
 import timesync from './lib/timesync'
+import {meteorCallPromise} from '/lib/meteorPromise'
 
 board = historyBoard = null # Board objects
 gridDefault = true
@@ -534,24 +535,20 @@ tools =
         page: currentPage
       lastTarget = null
       historyRender = null
+      diffs = []
       range.addEventListener 'change', pointers.listen = (e) ->
         target = parseInt range.value
+        ## Re-use last object set and render if just increasing in time.
         if lastTarget? and target >= lastTarget
-          options =
-            skip: lastTarget
-            limit: target - lastTarget
+          apply = diffs[lastTarget...target]
         else
           historyBoard.clear()
           historyBoard.retransform()
           historyRender = new Render historyBoard.root
-          options =
-            limit: target
-        return if options.limit == 0
+          apply = diffs[...target]
+        return if apply.length == 0
         lastTarget = target
-        #count = 0
-        for diff from ObjectsDiff.find query, options
-          #count++
-          #break if count > target
+        for diff in apply
           switch diff.type
             when 'pen', 'poly', 'rect', 'ellipse', 'text'
               obj = diff
@@ -576,23 +573,14 @@ tools =
             when 'del'
               historyRender.delete diff
               delete historyObjects[diff.id]
-      pointers.sub = subscribe 'history', currentRoom, currentPage
       range.max = 0
-      pointers.observe = ObjectsDiff.find query
-      .observe
-        addedAt: (doc, index) ->
-          range.max++
-          pointers.listen() if index <= range.value
-        changedAt: (doc, index) ->
-          pointers.listen() if index <= range.value
-        removedAt: (doc, index) ->
-          range.max--
-          pointers.listen() if index <= range.value
+      loadingUpdate +1
+      diffs = await meteorCallPromise 'history', currentRoom, currentPage
+      loadingUpdate -1
+      range.max = diffs.length
     stop: ->
       document.getElementById('historyRange').removeEventListener 'change', pointers.listen
       historyBoard.clear()
-      pointers.sub.stop()
-      pointers.observe.stop()
     down: (e) ->
       pointers[e.pointerId] = eventToRawPoint e
       pointers[e.pointerId].transform =

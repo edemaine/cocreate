@@ -10,7 +10,7 @@ Remotes.rawCollection().createIndex
 Objects.rawCollection().createIndex
   room: 1
 
-## For 'history' subscription
+## For 'history' method
 ObjectsDiff.rawCollection().createIndex
   room: 1
   page: 1
