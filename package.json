@@ -27,16 +27,16 @@
     "visualize": "meteor --production --extra-packages bundle-visualizer"
   },
   "dependencies": {
-    "@babel/runtime": "^7.8.3",
+    "@babel/runtime": "^7.11.2",
     "markdownlint-rule-github-internal-links": "0.0.0",
-    "meteor-node-stubs": "^1.0.0",
+    "meteor-node-stubs": "^1.0.1",
     "pepjs": "^0.5.2",
     "pug": "^3.0.0",
     "tex2svg-webworker": "^0.1.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.11.0",
-    "@babel/preset-env": "^7.11.0",
+    "@babel/core": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
     "coffeescript": "^2.5.1",
     "markdownlint-cli": "^0.23.2"
   },
