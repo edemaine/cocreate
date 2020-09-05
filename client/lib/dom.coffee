@@ -46,6 +46,12 @@ export listen = (elt, events, now) ->
       elt.addEventListener key, value
       value() if now
 
+export classSet = (elt, key, value) ->
+  if value
+    elt.classList.add key
+  else
+    elt.classList.remove key
+
 export select = (allQuery, subQuery) ->
   for elt in document.querySelectorAll "#{allQuery}.selected"
     elt.classList.remove 'selected'

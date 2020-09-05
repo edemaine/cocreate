@@ -20,6 +20,7 @@ currentRoom = currentPage = null
 currentGrid = null
 currentFill = 'white'
 currentFillOn = false
+gridSnap = false
 allowTouch = true
 spaceDown = false
 
@@ -103,6 +104,7 @@ tools =
         selection.clear()
         pointers.objects = {}
       if h.id?  # have something highlighted, possibly just now
+        h.start = snapPoint h.start  # don't snap selection rectangle
         unless selection.has h.id
           pointers.objects[h.id] = Objects.findOne h.id
           selection.add h
@@ -171,12 +173,13 @@ tools =
           dom.attr h.selector, dom.pointsToRect h.start, here
         else if distanceThreshold h.down, e, dragDist
           h.down = true
-          here = eventToOrthogonalPoint e, h.start
+          here = snapPoint eventToOrthogonalPoint e, h.start
           ## Don't set h.moved out here in case no objects selected
           for id, obj of pointers.objects
             h.moved ?= {}
             tx = (obj.tx ? 0) + (here.x - h.start.x)
             ty = (obj.ty ? 0) + (here.y - h.start.y)
+            continue if h.moved[id]?.tx == tx and h.moved[id]?.ty == ty
             Meteor.call 'objectEdit', {id, tx, ty}
             h.moved[id] = {tx, ty}
       else
@@ -229,7 +232,7 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      origin = eventToPoint e
+      origin = snapPoint eventToPoint e
       pointers[e.pointerId] =
         origin: origin
         id: Meteor.apply 'objectNew', [
@@ -248,15 +251,17 @@ tools =
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      {origin, id, alt} = pointers[e.pointerId]
+      {origin, id, alt, last} = pointers[e.pointerId]
       pts =
-        1: eventToOrthogonalPoint e, origin
+        1: snapPoint eventToOrthogonalPoint e, origin
       ## When holding Alt/Option, make origin be the center.
       if e.altKey
         pts[0] = symmetricPoint pts[1], origin
       else if alt  # was holding down Alt, go back to original first point
         pts[0] = origin
       pointers[e.pointerId].alt = e.altKey
+      return if JSON.stringify(last) == JSON.stringify(pts)
+      pointers[e.pointerId].last = pts
       pointers.throttle
         id: id
         pts: pts
@@ -270,7 +275,7 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      origin = eventToPoint e
+      origin = snapPoint eventToPoint e
       object =
         room: currentRoom
         page: currentPage
@@ -290,15 +295,17 @@ tools =
       delete pointers[e.pointerId]
     move: rectMove = (e) ->
       return unless pointers[e.pointerId]
-      {id, origin, alt} = pointers[e.pointerId]
+      {id, origin, alt, last} = pointers[e.pointerId]
       pts =
-        1: eventToConstrainedPoint e, origin
+        1: snapPoint eventToConstrainedPoint e, origin
       ## When holding Alt/Option, make origin be the center.
       if e.altKey
         pts[0] = symmetricPoint pts[1], origin
       else if alt  # was holding down Alt, go back to original first point
         pts[0] = origin
       pointers[e.pointerId].alt = e.altKey
+      return if JSON.stringify(last) == JSON.stringify(pts)
+      pointers[e.pointerId].last = pts
       pointers.throttle
         id: id
         pts: pts
@@ -312,7 +319,7 @@ tools =
       pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
-      origin = eventToPoint e
+      origin = snapPoint eventToPoint e
       object =
         room: currentRoom
         page: currentPage
@@ -457,7 +464,7 @@ tools =
           room: currentRoom
           page: currentPage
           type: 'text'
-          pts: [eventToPoint e]
+          pts: [snapPoint eventToPoint e]
           text: text = ''
           color: currentColor
           fontSize: currentFontSize
@@ -499,11 +506,8 @@ tools =
     icon: 'hand-pointer'
     help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
     init: touchUpdate = ->
-      touchTool = document.querySelector '.tool[data-tool="touch"]'
-      if allowTouch
-        touchTool.classList.add 'active'
-      else
-        touchTool.classList.remove 'active'
+      dom.classSet document.querySelector('.tool[data-tool="touch"]'),
+        'active', allowTouch
     once: ->
       allowTouch = not allowTouch
       touchUpdate()
@@ -512,6 +516,13 @@ tools =
     help: 'Toggle grid/graph paper'
     once: ->
       Meteor.call 'gridToggle', currentPage
+  gridSnap:
+    icon: 'grid-snap'
+    help: 'Toggle snapping to grid (except pen tool)'
+    once: ->
+      gridSnap = not gridSnap
+      dom.classSet document.querySelector('.tool[data-tool="gridSnap"]'),
+        'active', gridSnap
   linkRoom:
     icon: 'clipboard-link'
     help: 'Copy a link to this room/board to clipboard (for sharing with others)'
@@ -847,6 +858,12 @@ eventToOrthogonalPoint = (e, origin) ->
       pt.y = origin.y
     else
       pt.x = origin.x
+  pt
+
+snapPoint = (pt) ->
+  if gridSnap
+    pt.x = gridSize * Math.round pt.x / gridSize
+    pt.y = gridSize * Math.round pt.y / gridSize
   pt
 
 eventToPointW = (e) ->
@@ -1717,19 +1734,15 @@ class Grid
 loadingCount = 0
 loadingUpdate = (delta) ->
   loadingCount += delta
-  loading = document.getElementById 'loading'
-  if loadingCount > 0
-    loading.classList.add 'loading'
-  else
-    loading.classList.remove 'loading'
+  loading = loadingCount > 0
+  dom.classSet document.getElementById('loading'), 'loading', loading
+  unless loading
     updateBadRoom()
 
 updateBadRoom = ->
-  badRoom = document.getElementById 'badRoom'
-  if currentRoom? and Rooms.findOne currentRoom
-    badRoom.classList.remove 'show'
-  else
-    badRoom.classList.add 'show'
+  bad = not (currentRoom? and Rooms.findOne currentRoom)
+  dom.classSet document.getElementById('badRoom'), 'show', bad
+  if bad
     currentRoom = null
     changePage null
 
@@ -1777,10 +1790,10 @@ changePage = (page) ->
   if currentPage?
     roomObserveObjects = observeRender()
     roomObserveRemotes = observeRemotes()
-    document.body.classList.remove 'nopage'
   else
     board.clear()
-    document.body.classList.add 'nopage' # in particular, disable pointer events
+  dom.classSet document.body, 'nopage', not currentPage?
+    # in particular, disable pointer events when no page
   updatePageNum()
   selectTool null
   currentGrid = null
@@ -1788,11 +1801,8 @@ changePage = (page) ->
     pageData = Pages.findOne currentPage
     if currentGrid != pageData?.grid
       currentGrid = pageData?.grid
-      gridTool = document.querySelector '.tool[data-tool="grid"]'
-      if currentGrid
-        gridTool.classList.add 'active'
-      else
-        gridTool.classList.remove 'active'
+      dom.classSet document.querySelector('.tool[data-tool="grid"]'),
+        'active', currentGrid
       board.grid?.update()
 updatePageNum = ->
   pageNumber = currentPageIndex()
@@ -1919,10 +1929,7 @@ selectDrawingTool = ->
 
 updateFill = ->
   fillTool = document.querySelector('.tool[data-tool="fill"]')
-  if currentFillOn
-    fillTool.classList.add 'active'
-  else
-    fillTool.classList.remove 'active'
+  dom.classSet fillTool, 'active', currentFillOn
   fillTool.style.color = currentFill
   colorIcon()
 
