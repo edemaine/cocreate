@@ -1460,7 +1460,12 @@ class Render
     wrapper
   texInit: ->
     return if @tex2svg?
-    @tex2svg = new Worker '/tex2svg.js'
+    if Meteor.settings.public.tex2svg
+      @tex2svg = new Worker window.URL.createObjectURL new Blob ["""
+        importScripts(#{JSON.stringify Meteor.settings.public.tex2svg});
+      """], type: 'text/javascript'
+    else
+      @tex2svg = new Worker '/tex2svg.js'
     @tex2svg.onmessage = (e) =>
       {formula, display, svg} = e.data
       job = @tex[[formula,display]]

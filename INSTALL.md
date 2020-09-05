@@ -96,6 +96,27 @@ query or update the collections.  (Start with `show collections`, then
 e.g. `db.messages.find()`.)
 On a test server, you can run `meteor mongo` to get the same interface.
 
+## CDN
+
+Cocreate uses
+[tex2svg-webworker](https://github.com/edemaine/tex2svg-webworker/)
+to render LaTeX math.
+For sake of performance, we recommend serving this rather large WebWorker
+script via CDN, and the [provided `settings.json`](settings.json)
+does so via [JSDelivr](https://www.jsdelivr.com/).
+You can configure `settings.json` to use a different CDN as follows:
+
+```json
+{
+  "public": {
+    "tex2svg": "https://your.cdn/tex2svg.js"
+  }
+}
+```
+
+Without this setting, e.g. when developing via `meteor`,
+the WebWorker script will be served from the Cocreate server.
+
 ## bcrypt on Windows
 
 To install `bcrypt` on Windows (to avoid warnings about it missing), install
