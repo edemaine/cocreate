@@ -324,6 +324,25 @@ When you create a
 [<img src="icons/plus-square.svg" width="18" alt="New Page Icon"> New Page](#-new-page),
 it has a grid or not according to the current page.
 
+### <img src="icons/grid-snap.svg" width="18" alt="Grid Snap Icon"> Grid Snap Toggle
+
+This button toggles "snapping" geometry to the grid (the same grid drawn by
+the [<img src="icons/grid.svg" width="18" alt="Grid Icon"> Grid Toggle](#-grid-toggle)).
+[<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool),
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool), and
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool)
+will have their defining points rounded to the nearest grid point.
+The [<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen Tool](#-pen-tool)
+is unaffected by grid snapping.
+
+[<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Selecting](#-select-tool)
+and dragging objects will move by multiples of grid squares.
+This can be useful in combination when duplicating objects, which shift
+by exactly one grid dimension down and right, so you can use grid-snapped
+dragging to get them back into perfect alignment with the original.
+Selecting objects (by clicking on them or dragging a rectangle)
+is unaffected by grid snapping.
+
 ### <img src="icons/clipboard-link.svg" width="18" alt="Copy Link Icon"> Copy Link
 
 This button copies a link to this Cocreate room/board to your clipboard.
