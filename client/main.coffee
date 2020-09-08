@@ -2163,6 +2163,17 @@ Meteor.startup ->
       else
         page = Math.min roomData.pages.length, Math.max 1, page
         changePage roomData.pages[page-1]
+  dom.listen name = document.getElementById('name'),
+    keydown: (e) ->
+      e.stopPropagation() # avoid width setting hotkey
+    input: (e) ->
+      localStorage.setItem 'name', name.value
+  name.value = localStorage.getItem 'name'
+  dom.listen window,
+    storage: (e) ->
+      switch e.key
+        when 'name'
+          name.value = e.newValue
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
