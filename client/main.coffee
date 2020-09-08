@@ -1620,8 +1620,9 @@ class RemotesRender
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
+    text = elt.childNodes[1]
     unless remote.name == oldRemote.name
-      elt.childNodes[1].innerHTML = dom.escape remote.name ? ''
+      text.innerHTML = dom.escape remote.name ? ''
     elt.style.visibility =
       if remote.page == currentPage
         'visible'
@@ -1679,6 +1680,14 @@ class RemotesRender
         translate(#{-hotspot[0]} #{-hotspot[1]})
         scale(#{1/icons.cursorSize})
       """
+      if x >= 0.8 * maxX + 0.2 * minX
+        dom.attr text,
+          dx: -2
+          'text-anchor': 'end'
+      else
+        dom.attr text,
+          dx: icons.cursorSize + 2
+          'text-anchor': 'start'
   delete: (remote) ->
     id = remote._id ? remote
     if elt = @elts[id]
