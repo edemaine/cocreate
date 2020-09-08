@@ -739,6 +739,7 @@ tools =
     hotkey: '0'
     once: ->
       currentBoard().setScale 1
+  pageSpacer: {}
   fill:
     palette: 'colors'
     help: 'Toggle filling of rectangles and ellipses. <kbd>Shift</kbd>-click a color to set fill color.'
@@ -919,6 +920,7 @@ pointerEvents = ->
       return unless currentPage?
       return if restrictTouch e
       remote =
+        name: document.getElementById('name').value.trim()
         room: currentRoom
         page: currentPage
         tool: currentTool
@@ -1612,9 +1614,14 @@ class RemotesRender
           icon = drawingToolIcon remote.tool,
             (remote.color ? colors[0]), remote.fill
         elt.innerHTML = icons.cursorIcon icon, ...tools[remote.tool].hotspot
+        elt.appendChild dom.create 'text',
+          dx: icons.cursorSize + 2
+          dy: icons.cursorSize / 2 + 6  # for 16px default font size
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
+    unless remote.name == oldRemote.name
+      elt.childNodes[1].innerHTML = dom.escape remote.name ? ''
     elt.style.visibility =
       if remote.page == currentPage
         'visible'
@@ -1855,7 +1862,7 @@ paletteTools = ->
         orientation += ' bottom'
     else if palette.classList.contains 'vertical'
       orientation = 'vertical'
-    if tool.startsWith 'spacer'
+    if tool.startsWith('spacer') or tool.endsWith('Spacer')
       container.appendChild dom.create 'div', class: 'spacer'
       align = 'bottom'
     else
@@ -1896,6 +1903,8 @@ paletteTools = ->
                 pointerenter: removeTooltip
             pointerleave: removeTooltip
       init? div
+  ## Move name entry to end
+  document.getElementById('pages').appendChild document.getElementById 'name'
 
 lastTool = null
 selectTool = (tool, options) ->

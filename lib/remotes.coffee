@@ -15,6 +15,7 @@ Meteor.methods
     @unblock()
     check remote,
       _id: String
+      name: Match.Optional String
       room: String
       page: String
       tool: String
