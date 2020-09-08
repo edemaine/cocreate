@@ -614,24 +614,25 @@ tools =
       root = currentBoard().root # <g>
       oldTransform = root.getAttribute 'transform'
       root.removeAttribute 'transform'
-      ## Temporarily remove highlight, selected, and outline elements
-      removed = []
-      for elt in root.childNodes
-        for className in ['highlight', 'selected', 'outline']
-          if elt.classList.contains className
-            removed.push elt
-            break
-      elt.remove() for elt in removed
-      ## Compute bounding box using SVG's getBBox() and getCTM()
-      {min, max} = dom.unionSvgExtremes currentBoard().svg,
+      ## Choose elements to export
+      elts =
         for elt in root.childNodes
+          continue if elt.classList.contains 'highlight'
+          continue if elt.classList.contains 'selected'
+          continue if elt.classList.contains 'outline'
           continue if elt.classList.contains 'grid'
           continue unless elt.dataset.id
           elt
+      if selection.nonempty() and currentBoard() == board
+        elts = (elt for elt in elts when selection.has elt.dataset.id)
+      ## Compute bounding box using SVG's getBBox() and getCTM()
+      {min, max} = dom.unionSvgExtremes currentBoard().svg, elts
       ## Temporarily make grid space entire drawing
-      currentBoard().grid?.update currentGrid, {min, max}
+      if currentBoard().grid?
+        currentBoard().grid.update currentGrid, {min, max}
+        elts.splice 0, 0, currentBoard().grid.grid
       ## Create SVG header
-      svg = currentBoard().svg.innerHTML
+      svg = (elt.outerHTML for elt in elts).join '\n'
       .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
       fonts = ''
       if /<text/.test svg
@@ -656,8 +657,6 @@ tools =
         #{svg}
         </svg>
       """
-      ## Restore deleted elements
-      root.appendChild elt for elt in removed
       ## Reset transform and grid
       root.setAttribute 'transform', oldTransform if oldTransform?
       currentBoard().grid?.update()
