@@ -2152,6 +2152,7 @@ Meteor.startup ->
             selectTool lastTool, noStart: true
             pointers = oldPointers
             spaceDown = false
+
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey
@@ -2163,6 +2164,7 @@ Meteor.startup ->
       else
         page = Math.min roomData.pages.length, Math.max 1, page
         changePage roomData.pages[page-1]
+
   dom.listen name = document.getElementById('name'),
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey
@@ -2174,6 +2176,16 @@ Meteor.startup ->
       switch e.key
         when 'name'
           name.value = e.newValue
+    ## Coop protocol
+    message: (e) ->
+      return unless e.data?.coop
+      return unless typeof e.data.user?.fullName == 'string'
+      name.value = e.data.user.fullName
+  (window.parent ? window.opener).postMessage
+    coop: 1
+    status: 'ready'
+  , '*'
+
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
   document.getElementById('newRoomLink').setAttribute 'href',
