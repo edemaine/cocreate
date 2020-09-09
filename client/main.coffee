@@ -896,6 +896,7 @@ pointerEvents = ->
     pointerdown: (e) ->
       e.preventDefault()
       return if restrictTouch e
+      text.blur() for text in document.querySelectorAll 'input'
       tools[currentTool].down? e
     pointerenter: (e) ->
       e.preventDefault()
