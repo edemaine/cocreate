@@ -417,6 +417,11 @@ when you want to start a fresh idea, problem, etc.
 It's also a good idea, for higher performance, to use more pages
 with less information on them.
 
+### Manual Page Number Entry
+
+To jump to a distant page, you can edit the page number (before "of").
+Press <kbd>Enter</kbd> when you've finished typing.
+
 ### <img src="icons/chevron-left-square.svg" width="18" alt="Previous Page Icon"> Previous / <img src="icons/chevron-right-square.svg" width="18" alt="Next Page Icon"> Next Page
 
 These buttons navigate your view to the previous or next page.
@@ -452,6 +457,18 @@ to put it in the center of your view, and then
 
 This button resets the zoom level to 100%, the same as when you first load
 Cocreate.  This is helpful if you get lost zooming in or out.
+
+### Your Name
+
+If you type your name into the box in the top right, then your name
+will appear next to your cursor on everyone else's screen.
+This makes it easy to figure who's drawing and who's pointing at what.
+Assuming your browser isn't in "private" mode, your name gets saved by
+your browser for future visits, and synchronizes across Cocreate tabs.
+
+If you're using Cocreate in
+[Comingle](https://github.com/edemaine/comingle), your name
+in Cocreate automatically gets set to your name in Comingle.
 
 ## Attribute Tools (bottom palette)
 
