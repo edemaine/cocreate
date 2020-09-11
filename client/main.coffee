@@ -198,19 +198,24 @@ tools =
     hotkey: 'p'
     down: (e) ->
       return if pointers[e.pointerId]
-      pointers[e.pointerId] = Meteor.apply 'objectNew', [
-        room: currentRoom
-        page: currentPage
-        type: 'pen'
-        pts: [eventToPointW e]
-        color: currentColor
-        width: currentWidth
-      ], returnStubValue: true
+      pointers[e.pointerId] =
+        id: Meteor.apply 'objectNew', [
+          room: currentRoom
+          page: currentPage
+          type: 'pen'
+          pts: [eventToPointW e]
+          color: currentColor
+          width: currentWidth
+        ], returnStubValue: true
+        push: throttle.method 'objectPush', ([older], [newer]) ->
+          console.assert older.id == newer.id
+          older.pts.push ...newer.pts
+          [older]
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
         type: 'new'
-        obj: Objects.findOne pointers[e.pointerId]
+        obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
@@ -218,8 +223,8 @@ tools =
       #if e.pressure == 0
       #  stop e
       #else
-      Meteor.call 'objectPush',
-        id: pointers[e.pointerId]
+      pointers[e.pointerId].push
+        id: pointers[e.pointerId].id
         pts:
           for e2 in e.getCoalescedEvents?() ? [e]
             eventToPointW e2
@@ -228,8 +233,6 @@ tools =
     hotspot: [0.0625, 0.9375]
     help: "Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: ['l', '\\']
-    start: ->
-      pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
       origin = snapPoint eventToPoint e
@@ -243,6 +246,7 @@ tools =
           color: currentColor
           width: currentWidth
         ], returnStubValue: true
+        edit: throttle.method 'objectEdit'
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
@@ -251,7 +255,7 @@ tools =
       delete pointers[e.pointerId]
     move: (e) ->
       return unless pointers[e.pointerId]
-      {origin, id, alt, last} = pointers[e.pointerId]
+      {origin, id, alt, last, edit} = pointers[e.pointerId]
       pts =
         1: snapPoint eventToOrthogonalPoint e, origin
       ## When holding Alt/Option, make origin be the center.
@@ -262,7 +266,7 @@ tools =
       pointers[e.pointerId].alt = e.altKey
       return if JSON.stringify(last) == JSON.stringify(pts)
       pointers[e.pointerId].last = pts
-      pointers.throttle
+      edit
         id: id
         pts: pts
   rect:
@@ -271,8 +275,6 @@ tools =
     hotspot: [0.0625, 0.883]
     help: "Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: 'r'
-    start: ->
-      pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
       origin = snapPoint eventToPoint e
@@ -287,6 +289,7 @@ tools =
       pointers[e.pointerId] =
         origin: origin
         id: Meteor.apply 'objectNew', [object], returnStubValue: true
+        edit: throttle.method 'objectEdit'
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
@@ -295,7 +298,7 @@ tools =
       delete pointers[e.pointerId]
     move: rectMove = (e) ->
       return unless pointers[e.pointerId]
-      {id, origin, alt, last} = pointers[e.pointerId]
+      {id, origin, alt, last, edit} = pointers[e.pointerId]
       pts =
         1: snapPoint eventToConstrainedPoint e, origin
       ## When holding Alt/Option, make origin be the center.
@@ -306,7 +309,7 @@ tools =
       pointers[e.pointerId].alt = e.altKey
       return if JSON.stringify(last) == JSON.stringify(pts)
       pointers[e.pointerId].last = pts
-      pointers.throttle
+      edit
         id: id
         pts: pts
   ellipse:
@@ -315,8 +318,6 @@ tools =
     hotspot: [0.201888, 0.75728]
     help: "Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to circle, <kbd>#{Alt}</kbd> to center at first point."
     hotkey: 'o'
-    start: ->
-      pointers.throttle = throttle.method 'objectEdit'
     down: (e) ->
       return if pointers[e.pointerId]
       origin = snapPoint eventToPoint e
@@ -331,6 +332,7 @@ tools =
       pointers[e.pointerId] =
         origin: origin
         id: Meteor.apply 'objectNew', [object], returnStubValue: true
+        edit: throttle.method 'objectEdit'
     up: (e) ->
       return unless pointers[e.pointerId]
       undoableOp
