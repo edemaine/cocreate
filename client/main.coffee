@@ -1620,6 +1620,7 @@ class RemotesRender
         elt.appendChild dom.create 'text',
           dx: icons.cursorSize + 2
           dy: icons.cursorSize / 2 + 6  # for 16px default font size
+        oldRemote?.name = null
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
