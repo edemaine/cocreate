@@ -9,10 +9,9 @@ export {fade} from '../../lib/remotes.coffee'
 export id = Random.id()
 
 ###
-Call remoteUpdate method, but wait for existing update to complete first,
-to avoid stacking multiple remoteUpdates.
+Call remoteUpdate method, but throttled to 66 ms ~ 1/15 sec i.e. 15fps.
 ###
-throttledUpdate = throttle.method 'remoteUpdate'
+throttledUpdate = throttle.method 'remoteUpdate', null, 66
 export update = (remote) ->
   remote._id = id
   throttledUpdate remote

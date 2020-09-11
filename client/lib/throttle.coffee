@@ -1,5 +1,3 @@
-export delay = 33  # 33 ms ~ 1/30 sec i.e. 30fps
-
 ###
 Returns a function for calling the given function repeatedly, but only
 actually calls the method after `delay` milliseconds, coalescing multiple
@@ -9,8 +7,10 @@ you can specify `coallescer(older, newer)` to provide a custom reducer that
 combines older and newer call arguments (e.g. concatenating).
 You can also call the `flush` method on the returned function to force the
 execution, e.g., at end of a sequence of operations.
+
+Default delay is 33 ms ~ 1/30 sec i.e. 30fps.
 ###
-export func = (f, coallescer) ->
+export func = (f, coallescer, delay = 33) ->
   ###
   `waiting` stores one of:
   * `null` (not currently waiting for timer, nothing queued up)
@@ -49,8 +49,8 @@ method calls.  By default, new call arguments just overwrite older unsent call
 arguments, but you can specify `coallescer(older, newer)` to provide a custom
 reducer that combines older and newer call arguments (e.g. concatenating).
 ###
-export method = (name, coallescer) ->
-  func ((...args) -> Meteor.call name, ...args), coallescer
+export method = (name, coallescer, delay) ->
+  func ((...args) -> Meteor.call name, ...args), coallescer, delay
 
 ###
 Returns a function for calling the given Meteor method, but which waits for

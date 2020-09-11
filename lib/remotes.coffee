@@ -27,7 +27,9 @@ Meteor.methods
         w: Match.Optional Number
     checkId remote._id, 'remote'
     unless @isSimulation
-      checkRoom remote.room
-      checkPage remote.page
+      ## For efficiency, don't bother checking that room and page are valid;
+      ## an invalid remote won't hurt anything.
+      #checkRoom remote.room
+      #checkPage remote.page
       remote.updated = new Date
     Remotes.upsert remote._id, remote
