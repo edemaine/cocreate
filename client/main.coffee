@@ -92,7 +92,7 @@ tools =
       h.moved = null
       h.edit = throttle.func (diffs) ->
         Meteor.call 'objectsEdit', (diff for id, diff of diffs)
-      , (older, newer) ->
+      , (older = {}, newer) ->
         Object.assign older, newer
       ## Refresh previously selected objects, in particular so tx/ty up-to-date
       pointers.objects = {}
@@ -188,7 +188,7 @@ tools =
             continue if h.moved[id]?.tx == tx and h.moved[id]?.ty == ty
             diffs[id] = {id, tx, ty}
             h.moved[id] = {tx, ty}
-          h.edit diffs
+          h.edit diffs if (id for id of diffs).length
       else
         target = h.findGroup e
         if target?
