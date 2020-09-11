@@ -134,6 +134,11 @@ Meteor.methods
       ObjectsDiff.insert diff
     Objects.update id,
       $set: set
+  objectsEdit: (diffs) ->
+    ## Combine multiple edit operations into a single RPC
+    check diffs, [Object]
+    for diff in diffs
+      Meteor.call 'objectEdit', diff
   objectDel: (id) ->
     check id, String
     unless @isSimulation

@@ -90,6 +90,10 @@ tools =
       h.down = e
       h.start = eventToPoint e
       h.moved = null
+      h.update = throttle.func (diffs) ->
+        Meteor.call 'objectsEdit', (diff for id, diff of diffs)
+      , (older, newer) ->
+        Object.assign older, newer
       ## Refresh previously selected objects, in particular so tx/ty up-to-date
       pointers.objects = {}
       for id in selection.ids()
@@ -175,13 +179,15 @@ tools =
           h.down = true
           here = snapPoint eventToOrthogonalPoint e, h.start
           ## Don't set h.moved out here in case no objects selected
+          diffs = {}
           for id, obj of pointers.objects
             h.moved ?= {}
             tx = (obj.tx ? 0) + (here.x - h.start.x)
             ty = (obj.ty ? 0) + (here.y - h.start.y)
             continue if h.moved[id]?.tx == tx and h.moved[id]?.ty == ty
-            Meteor.call 'objectEdit', {id, tx, ty}
+            diffs[id] = {id, tx, ty}
             h.moved[id] = {tx, ty}
+          h.update diffs
       else
         target = h.findGroup e
         if target?
