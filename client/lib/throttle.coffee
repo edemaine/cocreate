@@ -7,6 +7,8 @@ calls while waiting into the final update, to avoid stacking many calls.
 By default, new call arguments just overwrite older call arguments, but
 you can specify `coallescer(older, newer)` to provide a custom reducer that
 combines older and newer call arguments (e.g. concatenating).
+You can also call the `flush` method on the returned function to force the
+execution, e.g., at end of a sequence of operations.
 ###
 export func = (f, coallescer) ->
   ###
@@ -25,10 +27,19 @@ export func = (f, coallescer) ->
     else
       waiting = args
       Meteor.setTimeout ->
+        return unless waiting?  # done if already flushed
         args = waiting
         waiting = null
         f ...args
       , delay
+
+  throttled.flush = ->
+    return unless waiting?
+    args = waiting
+    waiting = null
+    f ...args
+
+  throttled
 
 ###
 Returns a function for calling the given Meteor method repeatedly, but only

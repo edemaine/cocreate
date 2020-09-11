@@ -90,7 +90,7 @@ tools =
       h.down = e
       h.start = eventToPoint e
       h.moved = null
-      h.update = throttle.func (diffs) ->
+      h.edit = throttle.func (diffs) ->
         Meteor.call 'objectsEdit', (diff for id, diff of diffs)
       , (older, newer) ->
         Object.assign older, newer
@@ -156,6 +156,7 @@ tools =
         h.selector.remove()
         h.selector = null
       else if h?.moved
+        h.edit.flush()
         undoableOp
           type: 'multi'
           ops:
@@ -187,7 +188,7 @@ tools =
             continue if h.moved[id]?.tx == tx and h.moved[id]?.ty == ty
             diffs[id] = {id, tx, ty}
             h.moved[id] = {tx, ty}
-          h.update diffs
+          h.edit diffs
       else
         target = h.findGroup e
         if target?
@@ -219,6 +220,7 @@ tools =
           [older]
     up: (e) ->
       return unless pointers[e.pointerId]
+      pointers[e.pointerId].push.flush()
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
@@ -255,6 +257,7 @@ tools =
         edit: throttle.method 'objectEdit'
     up: (e) ->
       return unless pointers[e.pointerId]
+      pointers[e.pointerId].edit.flush()
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
@@ -298,6 +301,7 @@ tools =
         edit: throttle.method 'objectEdit'
     up: (e) ->
       return unless pointers[e.pointerId]
+      pointers[e.pointerId].edit.flush()
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
@@ -341,6 +345,7 @@ tools =
         edit: throttle.method 'objectEdit'
     up: (e) ->
       return unless pointers[e.pointerId]
+      pointers[e.pointerId].edit.flush()
       undoableOp
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
