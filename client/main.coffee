@@ -1113,12 +1113,25 @@ undoableOp = (op, now) ->
   undoStack.push op
   doOp op if now
 doOp = (op, reverse = false) ->
+  editArgs = (sub) ->
+    Object.assign
+      id: sub.id
+    ,
+      if reverse
+        sub.before
+      else
+        sub.after
   switch op.type
     when 'multi'
       ops = op.ops
       ops = ops[..].reverse() if reverse
-      for sub in ops
-        doOp sub, reverse
+      if ops.every (sub) -> sub.type == 'edit'
+        Meteor.call 'objectsEdit',
+          for sub in ops
+            editArgs sub
+      else
+        for sub in ops
+          doOp sub, reverse
     when 'new', 'del'
       if (op.type == 'new') == reverse
         Meteor.call 'objectDel', op.obj._id
@@ -1129,13 +1142,7 @@ doOp = (op, reverse = false) ->
         #op.obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
         Meteor.call 'objectNew', op.obj
     when 'edit'
-      Meteor.call 'objectEdit', Object.assign
-        id: op.id
-      ,
-        if reverse
-          op.before
-        else
-          op.after
+      Meteor.call 'objectEdit', editArgs op
     else
       console.error "Unknown op type #{op.type} for undo/redo"
 selectOp = (op, reverse = false) ->
