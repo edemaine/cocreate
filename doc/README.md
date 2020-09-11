@@ -116,6 +116,9 @@ This usually works fine, but there are exceptions.  If you draw an object,
 and someone else deletes it, and then you undo the draw operation, then
 you'll attempt to delete it again.  Nothing bad will happen, but you'll
 get an error message in the [JavaScript console](#troubleshooting).
+If you draw an object, someone edits it (e.g. changes the color),
+and you undo and redo drawing the object,
+then you get the original object and the edit is lost.
 There are some other edge cases when two people are editing the same
 object, but usually it all works fine.
 
