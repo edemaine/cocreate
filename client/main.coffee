@@ -910,6 +910,7 @@ pointerEvents = ->
       e.preventDefault()
       return if restrictTouch e
       text.blur() for text in document.querySelectorAll 'input'
+      window.focus()  # for getting keyboard focus when <iframe>d
       tools[currentTool].down? e
     pointerenter: (e) ->
       e.preventDefault()
