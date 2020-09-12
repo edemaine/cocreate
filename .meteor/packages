@@ -15,6 +15,9 @@ es5-shim@4.8.0                # ECMAScript 5 compatibility for older browsers
 ecmascript@0.14.3              # Enable ECMAScript2015+ syntax in app code
 shell-server@0.5.0            # Server-side component of the `meteor shell` command
 
+cultofcoders:redis-oplog
+disable-oplog
+
 coffeescript
 accounts-password@1.6.2
 coagmano:stylus@1.1.0

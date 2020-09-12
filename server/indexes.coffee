@@ -6,6 +6,10 @@ Pages.rawCollection().createIndex
 Remotes.rawCollection().createIndex
   room: 1
 
+## For remote expiration
+Remotes.rawCollection().createIndex
+  updated: 1
+
 ## For 'room' subscription
 Objects.rawCollection().createIndex
   room: 1

@@ -20,7 +20,7 @@ Meteor.methods
       page.created = now
     roomId = page.room
     room = checkRoom roomId
-    pageId = Pages.insert page
+    pageId = Pages.insert page, channel: "rooms::#{roomId}::pages"
     Rooms.update roomId,
       $push: pages:
         $each: [pageId]
@@ -53,3 +53,4 @@ Meteor.methods
     data = checkPage page
     Pages.update page,
       $set: grid: not data.grid
+    , channel: "rooms::#{data.room}::pages"

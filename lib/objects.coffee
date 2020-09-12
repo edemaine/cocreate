@@ -5,6 +5,10 @@ import {checkPage} from './pages.coffee'
 @Objects = new Mongo.Collection 'objects'
 @ObjectsDiff = new Mongo.Collection 'objects.diff' if Meteor.isServer
 
+ObjectsDiff?.configureRedisOplog?(
+  mutation: (options) -> options.pushToRedis = false
+)
+
 xyType =
   x: Number
   y: Number
@@ -68,7 +72,7 @@ Meteor.methods
       now = new Date
       obj.created ?= now
       obj.updated ?= now
-    id = Objects.insert obj
+    id = Objects.insert obj, channel: "rooms::#{obj.room}::objects"
     unless @isSimulation
       delete obj._id
       obj.id = id
@@ -93,6 +97,7 @@ Meteor.methods
           updated: diff.updated
         else
           {}
+    , channel: "rooms::#{diff.room}::objects"
   objectEdit: (diff) ->
     id = diff?.id
     obj = checkObject id
@@ -134,6 +139,7 @@ Meteor.methods
       ObjectsDiff.insert diff
     Objects.update id,
       $set: set
+    , channel: "rooms::#{obj.room}::objects"
   objectsEdit: (diffs) ->
     ## Combine multiple edit operations into a single RPC
     check diffs, [Object]
@@ -149,4 +155,4 @@ Meteor.methods
         page: obj.page
         type: 'del'
         updated: new Date
-    Objects.remove id
+    Objects.remove id, channel: "rooms::#{obj?.room}::objects"

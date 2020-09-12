@@ -23,18 +23,20 @@ on port 3000.
 ## Public Server
 
 To deploy to a **public server**, we recommend deploying from a development
-machine via [meteor-up](https://github.com/kadirahq/meteor-up).
+machine via [meteor-up](http://meteor-up.com/).
 Installation instructions:
 
 1. Install Meteor and download Cocreate as above.
-2. Install `mup` via `npm install -g mup`
+2. Install [`mup`](http://meteor-up.com/) and
+   [`mup-redis`](https://github.com/zodern/mup-redis)
+   via `npm install -g mup mup-redis`
    (after installing [Node](https://nodejs.org/en/) and thus NPM).
-3. Edit `.deploy/mup.js` to point to your SSH key (for accessing the server),
-   and your SSL certificate (for an https server).
-4. `cd .deploy`
-5. `mup setup` to install all necessary software on the server
-6. `mup deploy` each time you want to deploy code to server
-   (initially and after each `git pull`)
+3. Copy `settings.json` to `.deploy/settings.json` and edit if desired.
+4. Edit `.deploy/mup.js` to point to your SSH key (for accessing the server).
+5. `cd .deploy`
+6. `mup setup` to install all necessary software on the server.
+7. `mup deploy` each time you want to deploy code to server
+   (initially and after each `git pull`).
 
 ## Application Performance Management (APM)
 
@@ -48,7 +50,7 @@ To monitor server performance, you can use one of the following:
   [kadira-compose](https://github.com/edemaine/kadira-compose).
 
 After creating an application on one of the servers above,
-edit `settings.json` to look like the following
+edit `settings.json` to include the following
 (omit `endpoint` if you're using Monti):
 
 ```json

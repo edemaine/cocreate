@@ -32,4 +32,4 @@ Meteor.methods
       #checkRoom remote.room
       #checkPage remote.page
       remote.updated = new Date
-    Remotes.upsert remote._id, remote
+    Remotes.upsert remote._id, remote, channel: "rooms::#{remote.room}::remotes"

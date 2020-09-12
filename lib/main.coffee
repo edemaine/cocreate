@@ -1,3 +1,4 @@
+import './redis'
 import './objects'
 import './pages'
 import './remotes'
