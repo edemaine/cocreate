@@ -31,7 +31,8 @@ Installation instructions:
    [`mup-redis`](https://github.com/zodern/mup-redis)
    via `npm install -g mup mup-redis`
    (after installing [Node](https://nodejs.org/en/) and thus NPM).
-3. Copy `settings.json` to `.deploy/settings.json` and edit if desired.
+3. Copy `settings.json` to `.deploy/settings.json` and edit if desired
+   (see configuration choices mentioned below).
 4. Edit `.deploy/mup.js` to point to your SSH key (for accessing the server).
 5. `cd .deploy`
 6. `mup setup` to install all necessary software on the server.
@@ -50,7 +51,7 @@ To monitor server performance, you can use one of the following:
   [kadira-compose](https://github.com/edemaine/kadira-compose).
 
 After creating an application on one of the servers above,
-edit `settings.json` to include the following
+edit your `.deploy/settings.json` to include the following
 (omit `endpoint` if you're using Monti):
 
 ```json
@@ -61,12 +62,6 @@ edit `settings.json` to include the following
     "endpoint": "https://your-kadira-server:22022"
   }
 }
-```
-
-To ensure Git doesn't accidentally commit your secrets in this file, use
-
-```
-git update-index --assume-unchanged settings.json
 ```
 
 ## MongoDB
@@ -106,7 +101,7 @@ to render LaTeX math.
 For sake of performance, we recommend serving this rather large WebWorker
 script via CDN, and the [provided `settings.json`](settings.json)
 does so via [JSDelivr](https://www.jsdelivr.com/).
-You can configure `settings.json` to use a different CDN as follows:
+You can configure your `.deploy/settings.json` to use a different CDN as follows:
 
 ```json
 {
