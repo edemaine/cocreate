@@ -94,19 +94,22 @@ tools =
         Meteor.call 'objectsEdit', (diff for id, diff of diffs)
       , (older = {}, newer) ->
         Object.assign older, newer
+      ## Check for clicking on a selected object, to ensure dragging selection
+      ## works even when another object is more topmost.
+      if (sel = h.eventSelected e).length
+        h.highlight sel[0]
+      ## Deselect existing selection unless requesting multiselect
+      toggle = e.shiftKey or e.ctrlKey or e.metaKey
+      unless toggle or selection.has h.id
+        selection.clear()
       ## Refresh previously selected objects, in particular so tx/ty up-to-date
       pointers.objects = {}
       for id in selection.ids()
         pointers.objects[id] = Objects.findOne id
       unless h.id?  # see if we pressed on something
-        target = h.findGroup e
+        target = h.eventTop e
         if target?
           h.highlight target
-      toggle = e.shiftKey or e.ctrlKey or e.metaKey
-      unless toggle or selection.has h.id
-        ## Deselect existing selection unless requesting multiselect
-        selection.clear()
-        pointers.objects = {}
       if h.id?  # have something highlighted, possibly just now
         h.start = snapPoint h.start  # don't snap selection rectangle
         unless selection.has h.id
@@ -190,7 +193,7 @@ tools =
             h.moved[id] = {tx, ty}
           h.edit diffs if (id for id of diffs).length
       else
-        target = h.findGroup e
+        target = h.eventTop e
         if target?
           h.highlight target
         else
@@ -368,7 +371,7 @@ tools =
         Meteor.call 'objectDel', h.id
         h.clear()
       else  # see if we pressed on something
-        target = h.findGroup e
+        target = h.eventTop e
         if target?
           h.deleted.push Objects.findOne target.dataset.id
           Meteor.call 'objectDel', target.dataset.id
@@ -387,7 +390,7 @@ tools =
     move: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      target = h.findGroup e
+      target = h.eventTop e
       if target?
         if distanceThreshold h.down, e, eraseDist
           h.down = true
@@ -466,7 +469,7 @@ tools =
       ## but maybe only after SVG 2's <text> flow support...
       h = pointers.highlight
       unless h.id?
-        if (target = h.findGroup e)?
+        if (target = h.eventTop e)?
           h.highlight target
       if h.id?
         pointers.text = h.id
@@ -495,7 +498,7 @@ tools =
       input.focus()
     move: (e) ->
       h = pointers.highlight
-      target = h.findGroup e
+      target = h.eventTop e
       if target? and Objects.findOne(target.dataset.id).type == 'text'
         h.highlight target
       else
@@ -949,12 +952,20 @@ class Highlighter
     @target = null       # <g/polyline/rect/ellipse/text>
     @highlighted = null  # <g/polyline/rect/ellipse/text class="highlight">
     @id = null           # highlighted object ID
-  findGroup: (e) ->
+  eventTop: (e) ->
     ## Pen and touch devices don't always seem to set `e.target` correctly;
     ## use `document.elementFromPoint` instead.
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
-    target = document.elementFromPoint e.clientX, e.clientY
+    @findGroup document.elementFromPoint e.clientX, e.clientY
+  eventAll: (e) ->
+    for elt in document.elementsFromPoint e.clientX, e.clientY
+      elt = @findGroup elt
+      continue unless elt?
+      elt
+  eventSelected: (e) ->
+    target for target in @eventAll e when selection.has target.dataset.id
+  findGroup: (target) ->
     while target? and not target.dataset?.id?
       return if target.classList?.contains 'board'
       target = target.parentNode
@@ -969,7 +980,7 @@ class Highlighter
       return unless Objects.findOne(target.dataset.id)?.type == @type
     target
   highlight: (target) ->
-    ## `target` should be the result of `findGroup`,
+    ## `target` should be the result of `findGroup` (or `eventTop`/`eventall`),
     ## so satisfies all above conditions.
     @clear()
     @target = target
