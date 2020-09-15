@@ -384,11 +384,23 @@ again, or by selecting another mode from the left palette.
 
 ### <img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG
 
-This button exports the entire current page to
+This button exports either the current selection or the entire current page to
 [SVG format](https://en.wikipedia.org/wiki/Scalable_Vector_Graphics)
 and downloads it as an `.svg` file.
 SVG should perfectly reproduce the page in full vector quality, including
 the text and mathematics, though the text may require a font download.
+
+If you're using the
+[<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool)
+(or beware, the
+[<img src="icons/text.svg" width="18" alt="Text Icon"> Text Tool](#-text-tool)),
+and have one or more objects selected, then the SVG file will include just
+those objects.
+This is useful for exporting one subfigure from a sprawling whiteboard:
+just drag a rectangle to span the part you want, and fine-tune by
+shift-clicking individual objects you want or don't want.
+If no objects are selected (e.g. you're using any other tool),
+you get the entire page.
 
 The downloaded file is named `cocreate-gLoBaLlYuNiQuEiD7.svg`
 where the second part is the unique ID of your room.

@@ -624,7 +624,7 @@ tools =
       historyBoard.retransform()
   downloadSVG:
     icon: 'download-svg'
-    help: 'Download/export entire drawing as an SVG file'
+    help: 'Download/export selection or entire drawing as an SVG file'
     once: ->
       ## Temporarily remove transform for export
       root = currentBoard().root # <g>
