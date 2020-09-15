@@ -1417,20 +1417,22 @@ class Render
             else
               out.push text[math.end..]
             if job = @tex[[math.formula, math.display]]
-              job.texts[id] = true
-              if job.svg? # already computed
-                do (job) =>
-                  setTimeout (=> @texRender job, id), 0
+              unless job.texts[id]?
+                job.texts[id] = true
+                jobs.push job
+                if job.svg? # already computed
+                  do (job) =>
+                    setTimeout (=> @texRender job, id), 0
             else
               job = @tex[[math.formula, math.display]] =
                 formula: math.formula
                 display: math.display
                 texts: "#{id}": true
               @texQueue.push job
-            jobs.push job
-            if @texQueue.length == 1  # added job while idle
-              @texInit()
-              @texJob()
+              jobs.push job
+              if @texQueue.length == 1  # added job while idle
+                @texInit()
+                @texJob()
           out.join ''
         else
           text
@@ -1522,26 +1524,53 @@ class Render
         @texRender job, id
       @texJob()
   texRender: (job, id) ->
+    ###
+    Render all instances of `job` within text object with ID `id`.
+    Precondition: `job.texts[id]` should exist.
+
+    `job.texts[id]` can be one of two values:
+      * `true` means "needs to be rendered"
+      * array of rendered <g> elements, one for each instance of `job`
+        (in the order they appear in the text)
+    This method only does work in the first case.
+    ###
+    return unless job.texts[id] == true
+    object = Objects.findOne id
+    return unless object
+    fontSize = object.fontSize
     g = @dom[id].firstChild
-    for tspan in g.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
-      object = Objects.findOne id
-      continue unless object
-      fontSize = object.fontSize
-      dom.attr tspan, dx: dx = job.width * fontSize
-      tspanBBox = tspan.getBBox()
-      g.appendChild svgG = dom.create 'g'
-      svgG.innerHTML = job.svg
-      .replace /currentColor/g, object.color
-      x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
-      ## Roboto Slab in https://opentype.js.org/font-inspector.html:
-      unitsPerEm = 1000 # Font Header table
-      descender = 271   # Horizontal Header table
-      ascender = 1048   # Horizontal Header table
-      y = tspanBBox.y + tspanBBox.height * (1 - descender/(descender+ascender))\
-        - job.height * fontSize + job.depth * fontSize / 2
-        # not sure where the /2 comes from... exFactor?
-      dom.attr svgG,
-        transform: "translate(#{x} #{y}) scale(#{fontSize})"
+    text = g.firstChild
+    dx = job.width * fontSize
+    ## Roboto Slab in https://opentype.js.org/font-inspector.html:
+    unitsPerEm = 1000 # Font Header table
+    descender = 271   # Horizontal Header table
+    ascender = 1048   # Horizontal Header table
+    job.texts[id] =
+      for tspan in text.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
+        dom.attr tspan, {dx}
+        tspanBBox = tspan.getBBox()
+        g.appendChild svgG = dom.create 'g'
+        svgG.innerHTML = job.svg
+        .replace /currentColor/g, object.color
+        x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
+        y = tspanBBox.y \
+          + tspanBBox.height * (1 - descender/(descender+ascender)) \
+          - job.height * fontSize + job.depth * fontSize / 2
+          # not sure where the /2 comes from... exFactor?
+        dom.attr svgG,
+          transform: "translate(#{x} #{y}) scale(#{fontSize})"
+        svgG
+    ## The `dx` attributes set above may mean that previously rendered LaTeX
+    ## <g>s need to shift horizontally.  Update their x translation.
+    for job2 in @texById[id]
+      continue if job == job2  # don't need to update job we just rendered
+      continue if job2.texts[id] == true  # only update already rendered jobs
+      for tspan, i in text.querySelectorAll """tspan[data-tex="#{CSS.escape job2.formula}"][data-display="#{job2.display}"]"""
+        tspanBBox = tspan.getBBox()
+        x = tspanBBox.x - tspan.getAttribute('dx') + tspanBBox.width/2  # divvy up &VeryThinSpace;
+        svgG = job2.texts[id][i]
+        svgG.setAttribute 'transform', svgG.getAttribute('transform').replace \
+          /translate\([\-\.\d]+/, "translate(#{x}"
     selection.redraw id, @dom[id] if selection.has id
     pointers.cursorUpdate?() if id == pointers.text
   texJob: ->
