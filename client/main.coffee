@@ -404,7 +404,7 @@ tools =
   text:
     icon: 'text'
     hotspot: [.77, .89]
-    help: 'Type text (click location or existing text, then type at bottom), including Markdown *italic*, **bold**, `code`, ~~strike~~, and LaTeX $math$, $$displaymath$$'
+    help: 'Type text (click location or existing text, then type at bottom), including Markdown *italic*, **bold**, ***bold italic***, `code`, ~~strike~~, and LaTeX $math$, $$displaymath$$'
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
@@ -1448,7 +1448,11 @@ class Render
           (\*+|_+)(\S(?:[^]*?\S)?)\2
           (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
         ///g, (m, pre, left, inner) ->
-          "#{pre}<tspan class='#{if left.length > 1 then 'strong' else 'emph'}'>#{inner}</tspan>"
+          ## GFM supports ***bold italic***, and uses a parity rule for >3 *s
+          classes = []
+          classes.push 'strong' if left.length > 1
+          classes.push 'emph' if left.length % 2 == 1
+          "#{pre}<tspan class='#{classes.join ' '}'>#{inner}</tspan>"
         .replace ///
           (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
           (~~)(\S(?:[^]*?\S)?)\2

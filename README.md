@@ -23,7 +23,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     line segments, rectangles/squares, ellipses/circles
   * **Text** tool with **LaTeX math**<sup>★</sup> support
     (via [MathJax](https://www.mathjax.org/))
-    and basic Markdown formatting
+    and basic **Markdown formatting**<sup>★</sup>
   * Other basic tools: pan, zoom, eraser
   * Basic settings: line thickness (scaling correctly with zoom),
     color palette, fill, font size

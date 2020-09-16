@@ -290,8 +290,11 @@ You can use basic Markdown syntax to style your text:
 
 * `*italic*` renders as *italic*.
 * `**bold**` renders as **bold**.
+* `***bold***` renders as ***bold italic***
+  (Github-Flavored Markdown extension).
 * ``` `code` ``` renders as `code`.
-* `~~strike~~` renders as ~~strike~~.
+* `~~strike~~` renders as ~~strike~~
+  (Github-Flavored Markdown extension).
 * To avoid these behaviors, escape the special characters with `\`.
   For example, `\*normal\*` renders as \*normal\*.
 
