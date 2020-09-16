@@ -3,6 +3,7 @@ import './lib/polyfill'
 import icons from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
+import storage from './lib/storage'
 import throttle from './lib/throttle'
 import timesync from './lib/timesync'
 import {meteorCallPromise} from '/lib/meteorPromise'
@@ -21,7 +22,7 @@ currentGrid = null
 currentFill = 'white'
 currentFillOn = false
 gridSnap = false
-allowTouch = true
+allowTouch = new storage.Variable 'allowTouch', true, -> touchUpdate()
 spaceDown = false
 
 if navigator?.platform?.startsWith? 'Mac'
@@ -523,9 +524,9 @@ tools =
     help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
     init: touchUpdate = ->
       dom.classSet document.querySelector('.tool[data-tool="touch"]'),
-        'active', allowTouch
+        'active', allowTouch.get()
     once: ->
-      allowTouch = not allowTouch
+      allowTouch.set not allowTouch.get()
       touchUpdate()
   grid:
     icon: 'grid'
@@ -903,7 +904,7 @@ symmetricPoint = (pt, origin) ->
   y: 2*origin.y - pt.y
 
 restrictTouch = (e) ->
-  not allowTouch and \
+  not allowTouch.get() and \
   e.pointerType == 'touch' and \
   currentTool of drawingTools
 
