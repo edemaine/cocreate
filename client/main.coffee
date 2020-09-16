@@ -1370,6 +1370,7 @@ class Render
       input = document.getElementById 'textInput'
       ## Extract $math$ and $$display math$$ expressions.
       ## Based loosely on Coauthor's `replaceMathBlocks`.
+      readyJobs = []
       maths = []
       latex = (text) =>
         cursorRE = '<tspan\\s+class="cursor">[^<>]*<\\/tspan>'
@@ -1420,9 +1421,7 @@ class Render
               unless job.texts[id]?
                 job.texts[id] = true
                 jobs.push job
-                if job.svg? # already computed
-                  do (job) =>
-                    setTimeout (=> @texRender job, id), 0
+                readyJobs.push {job, id} if job.svg? # already rendered
             else
               job = @tex[[math.formula, math.display]] =
                 formula: math.formula
@@ -1496,7 +1495,8 @@ class Render
         content = dom.escape content
       content = markdown content
       text.innerHTML = content
-    text
+      for {job, id} in readyJobs
+        @texRender job, id
     wrapper
   texInit: ->
     return if @tex2svg?
