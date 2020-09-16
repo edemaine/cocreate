@@ -6,7 +6,9 @@ import {Random} from 'meteor/random'
 import * as throttle from './throttle.coffee'
 export {fade} from '../../lib/remotes.coffee'
 
-export id = Random.id()
+export id = window?.sessionStorage?.getItem? 'remoteId'
+unless id
+  window?.sessionStorage?.setItem? 'remoteId', id = Random.id()
 
 ###
 Call remoteUpdate method, but throttled to 66 ms ~ 1/15 sec i.e. 15fps.
