@@ -24,7 +24,7 @@ gridSnap = false
 allowTouch = true
 spaceDown = false
 
-if navigator?.platform.startsWith 'Mac'
+if navigator?.platform?.startsWith? 'Mac'
   Ctrl = 'Command'
   Alt = 'Option'
 else

@@ -1,5 +1,5 @@
-import {validId} from './id.coffee'
-import {checkRoom} from './rooms.coffee'
+import {validId} from './id'
+import {checkRoom} from './rooms'
 
 @Pages = new Mongo.Collection 'pages'
 

@@ -1,4 +1,4 @@
-import {checkId} from '../lib/id.coffee'
+import {checkId} from '../lib/id'
 
 Meteor.methods
   history: (room, page) ->

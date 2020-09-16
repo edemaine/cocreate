@@ -1,6 +1,6 @@
 ## Expire old 
 
-import {fade} from '../lib/remotes.coffee'
+import {fade} from '../lib/remotes'
 
 expireFrequency = 5 * 60 * 1000  # 5 minutes
 

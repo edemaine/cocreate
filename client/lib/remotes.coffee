@@ -3,11 +3,12 @@ Client support library for remotes defined in /lib/remotes.coffee
 ###
 
 import {Random} from 'meteor/random'
-import * as throttle from './throttle.coffee'
-export {fade} from '../../lib/remotes.coffee'
+import throttle from './throttle'
+import {validId} from '/lib/id'
+export {fade} from '/lib/remotes'
 
 export id = window?.sessionStorage?.getItem? 'remoteId'
-unless id
+unless validId id
   window?.sessionStorage?.setItem? 'remoteId', id = Random.id()
 
 ###

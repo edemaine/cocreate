@@ -1,4 +1,4 @@
-import {checkId} from '../lib/id.coffee'
+import {checkId} from '../lib/id'
 
 Meteor.publish 'room', (room) ->
   checkId room, 'room'

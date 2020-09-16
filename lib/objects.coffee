@@ -1,6 +1,6 @@
-import {validId} from './id.coffee'
-import {checkRoom} from './rooms.coffee'
-import {checkPage} from './pages.coffee'
+import {validId} from './id'
+import {checkRoom} from './rooms'
+import {checkPage} from './pages'
 
 @Objects = new Mongo.Collection 'objects'
 @ObjectsDiff = new Mongo.Collection 'objects.diff' if Meteor.isServer

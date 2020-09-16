@@ -1,4 +1,4 @@
-import {validId} from './id.coffee'
+import {validId} from './id'
 
 @Rooms = new Mongo.Collection 'rooms'
 
