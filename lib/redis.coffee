@@ -3,6 +3,7 @@ unless Meteor.isServer and Mongo.Collection.prototype.configureRedisOplog
   Originals =
     insert: Mongo.Collection.prototype.insert
     update: Mongo.Collection.prototype.update
+    upsert: Mongo.Collection.prototype.upsert
     remove: Mongo.Collection.prototype.remove
     find: Mongo.Collection.prototype.find
 
@@ -12,6 +13,8 @@ unless Meteor.isServer and Mongo.Collection.prototype.configureRedisOplog
     Originals.insert.call @, data, reconfig config
   Mongo.Collection.prototype.update = (selector, modifier, config) ->
     Originals.update.call @, selector, modifier, reconfig config
+  Mongo.Collection.prototype.upsert = (selector, modifier, config) ->
+    Originals.upsert.call @, selector, modifier, reconfig config
   Mongo.Collection.prototype.remove = (selector, config) ->
     Originals.remove.call @, selector, reconfig config
   Mongo.Collection.prototype.find = (selector = {}, config) ->
