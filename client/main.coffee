@@ -2018,10 +2018,11 @@ selectTool = (tool, options) ->
   {noStart, noStop} = options if options?
   if tools[tool]?.once?
     return tools[tool].once?()
-  tools[currentTool]?.stop?() unless noStop
-  document.body.classList.remove "tool-#{currentTool}" if currentTool
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool
+  return if tool == currentTool
+  tools[currentTool]?.stop?() unless noStop
+  document.body.classList.remove "tool-#{currentTool}" if currentTool
   if tool?  # tool == null means initialize already set currentTool
     lastTool = currentTool
     currentTool = tool
