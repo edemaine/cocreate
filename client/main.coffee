@@ -78,8 +78,8 @@ tools =
     hotkey: 's'
     start: ->
       pointers.objects = {}
-    stop: selectHighlightReset = ->
-      selection.clear()
+    stop: selectHighlightReset = (nextTool) ->
+      selection.clear() unless nextTool == 'text'
       for key, highlighter of pointers
         if highlighter instanceof Highlighter
           highlighter.clear()
@@ -447,12 +447,20 @@ tools =
                 pointers.undoable.ops[0].after.text = text
     start: ->
       pointers.highlight = new Highlighter 'text'
-      textStop()
-    stop: textStop = (keepHighlight) ->
+      if (ids = selection.ids()).length == 1 and
+         (obj = Objects.findOne(ids[0]))?.type == 'text'
+        pointers.text = obj._id
+        input = document.getElementById 'textInput'
+        input.value = obj.text ? ''
+        input.disabled = false
+        setTimeout (-> input.focus()), 0  # wait for input to show
+      else
+        textStop()
+    stop: textStop = (nextTool, keepHighlight) ->
       input = document.getElementById 'textInput'
       input.value = ''
       input.disabled = true
-      selection.clear()
+      selection.clear() unless nextTool == 'select'
       pointers.highlight?.clear() unless keepHighlight
       pointers.cursor?.remove()
       pointers.cursor = null
@@ -467,7 +475,7 @@ tools =
     up: (e) ->
       return unless e.type == 'pointerup' # ignore pointerleave
       ## Stop editing any previous text object.
-      textStop true
+      textStop null, true
       ## In future, may support dragging a rectangular container for text,
       ## but maybe only after SVG 2's <text> flow support...
       h = pointers.highlight
@@ -2021,7 +2029,7 @@ selectTool = (tool, options) ->
   if tool == currentTool == 'history'  # treat history as a toggle
     tool = lastTool
   return if tool == currentTool
-  tools[currentTool]?.stop?() unless noStop
+  tools[currentTool]?.stop? tool unless noStop
   document.body.classList.remove "tool-#{currentTool}" if currentTool
   if tool?  # tool == null means initialize already set currentTool
     lastTool = currentTool
