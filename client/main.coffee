@@ -116,6 +116,7 @@ tools =
         unless selection.has h.id
           pointers.objects[h.id] = Objects.findOne h.id
           selection.add h
+          selection.setAttributes() if selection.count() == 1
         else
           if toggle
             selection.remove h.id
@@ -157,6 +158,7 @@ tools =
           else
             h.highlight elt
             selection.add h
+        selection.setAttributes()
         h.selector.remove()
         h.selector = null
       else if h?.moved
@@ -475,6 +477,7 @@ tools =
       if h.id?
         pointers.text = h.id
         selection.add h
+        selection.setAttributes()
         text = Objects.findOne(pointers.text)?.text ? ''
       else
         pointers.text = Meteor.apply 'objectNew', [
@@ -1125,6 +1128,33 @@ class Selection
     else
       @rect?.remove()
       @rect = null
+  setAttributes: ->
+    ## Set user's attributes to match selected objects, if they're all same.
+    return unless @nonempty()
+    objects = (Objects.findOne id for id in @ids())
+    for object in objects
+      return unless object?  # not sure what to do if some object is missing
+    uniformAttribute = (key, nullWild = true) ->
+      values = (object[key] for object in objects)
+      example = (value for value in values when value?)[0]
+      for value in values
+        ## Special null value represents "not uniform" (or "all null"),
+        ## whereas if all values are undefined, we return undefined.
+        return null unless value == example or (nullWild and not value?)
+      example
+    if (color = uniformAttribute 'color')?  # uniform draw color
+      selectColor color, true, true
+    if (fill = uniformAttribute 'fill', false)?  # uniform actual fill color
+      currentFill = fill
+      currentFillOn = true
+      updateFill()
+    if fill == undefined  # uniform no fill
+      currentFillOn = false
+      updateFill()
+    if (width = uniformAttribute 'width')?  # uniform line width
+      selectWidth width, true, true
+    if (fontSize = uniformAttribute 'fontSize')?  # uniform font size
+      selectFontSize fontSize, true, true
 
 undoableOp = (op, now) ->
   redoStack = []
@@ -2110,11 +2140,11 @@ drawingToolIcon = (tool, color, fill) ->
     icon = icons.stackIcons [icon, icons.modIcon iconFill, fill: fill]
   icon
 
-selectColor = (color, keepTool) ->
+selectColor = (color, keepTool, skipSelection) ->
   currentColor = color if color?
   dom.select '.color', "[data-color='#{currentColor}']"
   document.documentElement.style.setProperty '--currentColor', currentColor
-  if selection.nonempty()
+  if not skipSelection and selection.nonempty()
     selection.edit 'color', currentColor
     keepTool = true
   selectDrawingTool() unless keepTool
@@ -2137,17 +2167,17 @@ selectFill = (color) ->
   else
     selectDrawingTool()
 
-selectWidth = (width, keepTool) ->
+selectWidth = (width, keepTool, skipSelection) ->
   currentWidth = parseFloat width if width?
-  if selection.nonempty()
+  if not skipSelection and selection.nonempty()
     selection.edit 'width', currentWidth
     keepTool = true
   selectDrawingTool() unless keepTool
   dom.select '.width', "[data-width='#{currentWidth}']"
 
-selectFontSize = (fontSize) ->
+selectFontSize = (fontSize, skipSelection) ->
   currentFontSize = parseFloat fontSize if fontSize?
-  if selection.nonempty()
+  if not skipSelection and selection.nonempty()
     selection.edit 'fontSize', currentFontSize
   dom.select '.fontSize', "[data-font-size='#{currentFontSize}']"
 
