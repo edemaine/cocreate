@@ -168,6 +168,20 @@ You can select more objects with multiple rectangles by holding
 <kbd>Shift</kbd>; each time an object is intersected by a selection rectangle,
 it toggles in/out of the selection.
 
+**Attributes.**
+When you select one or more objects, your current
+[attributes](#attribute-tools-bottom-palette) will update to match those
+objects, when their corresponding attributes are all the same.
+For example, if you select a filled-blue outlined-green width-5 rectangle,
+your fill color will change to blue (and fill will turn on), your outline
+color will change to green, and your line width will change to 5.
+If you select two objects with line width 3, then your line width will change
+to 3; but if you simultaneously select one object with line width 3 and
+another object with line width 5, then your line width won't change.
+This feature makes it easy to inspect an object's attributes
+(just select it to see what they are) and makes it easy to draw more objects
+in a similar style (select then draw).
+
 **Editing objects.**
 
 * To change the selected objects' **line width**,
