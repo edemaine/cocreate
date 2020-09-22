@@ -24,20 +24,55 @@ on port 3000.
 
 To deploy to a **public server**, we recommend deploying from a development
 machine via [meteor-up](http://meteor-up.com/).
-Installation instructions:
+We provide two example deployment configurations:
+
+### Single Machine
+
+We've found that one machine running everything (Meteor, MongoDB, Redis, proxy)
+to be reasonable for up to ~50 simultaneous users,
+given ~2-4GB of RAM and 1-2 cores.
+This configuration can be achieved fully automatically via `mup` as follows:
 
 1. Install Meteor and download Cocreate as above.
 2. Install [`mup`](http://meteor-up.com/) and
    [`mup-redis`](https://github.com/zodern/mup-redis)
    via `npm install -g mup mup-redis`
    (after installing [Node](https://nodejs.org/en/) and thus NPM).
-3. Copy `settings.json` to `.deploy/settings.json` and edit if desired
+3. Copy `settings.json` to `.deploy1/settings.json` and edit if desired
    (see configuration choices mentioned below).
-4. Edit `.deploy/mup.js` to point to your SSH key (for accessing the server).
-5. `cd .deploy`
+4. Edit `.deploy1/mup.js` to point to your hostname/IP and SSH key
+   (for accessing the server), and maybe adjust RAM available to Meteor.
+5. `cd .deploy1`
 6. `mup setup` to install all necessary software on the server.
 7. `mup deploy` each time you want to deploy code to server
    (initially and after each `git pull`).
+
+### Multiple Machines (Scaling)
+
+To scale beyond ~50 simultaneous users, we offer a different deployment
+configuration in the [`.deployN`](.deployN) directory.  It runs the
+following arrangement of servers:
+
+Number | Tasks | Recommended configuration
+-------|-------|--------------------------
+several (currently 4) | Meteor servers | 2GB RAM (1GB causes occasional crashes), 1 core
+one | MongoDB server | 4GB RAM, 4 cores
+one | Redis and proxy | 1GB RAM, 1 core, open to ports 80 and 443
+
+The nginx reverse proxy is the public facing web server (and should be the
+only server with publicly open ports), and automatically distributes
+requests to the Meteor servers (by IP hashing), automatically detecting
+crashed/upgrading servers and using the other servers to compensate.
+You should firewall the other servers (and the Redis server on
+the proxy machine) to protect them from outside access.
+
+`mup` handles deployment of the Meteor servers and nginx reverse proxy.
+You need to manually setup the MongoDB and Redis servers.
+
+As in the provided [`mup.js`](.deployN/mup.js), all Meteor servers except one
+should have the `COCREATE_SKIP_UPGRADE_DB` environment variable set, to avoid
+multiple servers from upgrading the Cocreate database format from older
+versions.
 
 ## Application Performance Management (APM)
 

@@ -1,13 +1,30 @@
 module.exports = {
   servers: {
-    one: {
-      host: 'cocreate.csail.mit.edu',
+    proxy: {
+      host: 'cocreate-proxy.csail.mit.edu',
       username: 'ubuntu',
       pem: "/afs/csail/u/e/edemaine/.ssh/private/id_rsa"
-      // pem:
-      // password:
-      // or leave blank for authenticate from ssh-agent
-    }
+    },
+    worker1: {
+      host: 'cocreate-worker1.csail.mit.edu',
+      username: 'ubuntu',
+      pem: "/afs/csail/u/e/edemaine/.ssh/private/id_rsa"
+    },
+    worker2: {
+      host: 'cocreate-worker2.csail.mit.edu',
+      username: 'ubuntu',
+      pem: "/afs/csail/u/e/edemaine/.ssh/private/id_rsa"
+    },
+    worker3: {
+      host: 'cocreate-worker3.csail.mit.edu',
+      username: 'ubuntu',
+      pem: "/afs/csail/u/e/edemaine/.ssh/private/id_rsa"
+    },
+    worker4: {
+      host: 'cocreate-worker4.csail.mit.edu',
+      username: 'ubuntu',
+      pem: "/afs/csail/u/e/edemaine/.ssh/private/id_rsa"
+    },
   },
 
   // Meteor server
@@ -15,11 +32,14 @@ module.exports = {
     name: 'cocreate',
     path: '/afs/csail/u/e/edemaine/Projects/cocreate',
     servers: {
-      one: {}
+      worker1: {},
+      worker2: {env: {COCREATE_SKIP_UPGRADE_DB: '1'}},
+      worker3: {env: {COCREATE_SKIP_UPGRADE_DB: '1'}},
+      worker4: {env: {COCREATE_SKIP_UPGRADE_DB: '1'}},
     },
     docker: {
       image: 'abernix/meteord:node-12-base',
-      stopAppDuringPrepareBundle: false
+      stopAppDuringPrepareBundle: true,
     },
     buildOptions: {
       serverOnly: true,
@@ -29,25 +49,19 @@ module.exports = {
       ROOT_URL: 'https://cocreate.csail.mit.edu',
       //MAIL_URL: 'smtp://cocreate.csail.mit.edu:25?ignoreTLS=true',
       //MAIL_FROM: 'cocreate@cocreate.csail.mit.edu',
-      MONGO_URL: 'mongodb://mongodb/meteor',
+      MONGO_URL: 'mongodb://cocreate-mongo.csail.mit.edu/cocreate',
       //MONGO_OPLOG_URL: 'mongodb://mongodb/local',
-      NODE_OPTIONS: '--trace-warnings --max-old-space-size=8192'
+      NODE_OPTIONS: '--trace-warnings --max-old-space-size=1024'
     },
     deployCheckWaitTime: 200,
   },
 
-  // Mongo server
-  mongo: {
-    oplog: true,
-    port: 27017,
-    servers: {
-      one: {},
-    },
-  },
-
   // Reverse proxy for SSL
   proxy: {
-    domains: 'cocreate.csail.mit.edu',
+    servers: {
+      proxy: {},
+    },
+    domains: 'cocreate.csail.mit.edu,cocreate-proxy.csail.mit.edu',
     ssl: {
       letsEncryptEmail: 'edemaine@mit.edu',
       //crt: '../../cocreate_csail_mit_edu.ssl/cocreate_csail_mit_edu.pem',
@@ -56,6 +70,7 @@ module.exports = {
     },
     clientUploadLimit: '0', // disable upload limit
     nginxServerConfig: '../.proxy.config',
+    loadBalancing: true,
   },
 
   // Run 'npm install' before deploying, to ensure packages are up-to-date
@@ -63,14 +78,5 @@ module.exports = {
     'pre.deploy': {
       localCommand: 'npm install'
     }
-  },
-
-  // Redis
-  plugins: ['mup-redis'],
-  redis: {
-    servers: {
-      one: {}
-    },
-    version: '6.0.8-alpine',
   },
 };

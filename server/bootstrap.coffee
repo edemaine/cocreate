@@ -1,3 +1,6 @@
+if process.env.COCREATE_SKIP_UPGRADE_DB
+  return console.log 'Skipping database upgrades.'
+
 ## 'push' diffs used to just list a single point, but arrays are more helpful
 ## to deal with coalesced events, so make them all arrays.
 ## This update is slow, so it's disabled by default.
