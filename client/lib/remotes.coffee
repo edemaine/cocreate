@@ -7,9 +7,15 @@ import throttle from './throttle'
 import {validId} from '/lib/id'
 export {fade} from '/lib/remotes'
 
-export id = window?.sessionStorage?.getItem? 'remoteId'
+export id = null
+try
+  id = window?.sessionStorage?.getItem? 'remoteId'
+catch
 unless validId id
-  window?.sessionStorage?.setItem? 'remoteId', id = Random.id()
+  id = Random.id()
+  try
+    window?.sessionStorage?.setItem? 'remoteId', id
+  catch
 
 ###
 Call remoteUpdate method, but throttled to 66 ms ~ 1/15 sec i.e. 15fps.
