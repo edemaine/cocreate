@@ -17,12 +17,10 @@ eraseDist = 2   # require movement by this many pixels before erasing swipe
 dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
-currentRoom = currentPage = null
-currentGrid = null
+export room = null
 currentFill = 'white'
 currentFillOn = false
-gridSnap = false
-allowTouch = new storage.Variable 'allowTouch', true, -> touchUpdate()
+allowTouch = new storage.Variable 'allowTouch', true, updateAllowTouch
 spaceDown = false
 
 if navigator?.platform?.startsWith? 'Mac'
@@ -213,8 +211,8 @@ tools =
       return if pointers[e.pointerId]
       pointers[e.pointerId] =
         id: Meteor.apply 'objectNew', [
-          room: currentRoom
-          page: currentPage
+          room: room.id
+          page: room.page
           type: 'pen'
           pts: [eventToPointW e]
           color: currentColor
@@ -253,8 +251,8 @@ tools =
       pointers[e.pointerId] =
         origin: origin
         id: Meteor.apply 'objectNew', [
-          room: currentRoom
-          page: currentPage
+          room: room.id
+          page: room.page
           type: 'poly'
           pts: [origin, origin]
           color: currentColor
@@ -294,8 +292,8 @@ tools =
       return if pointers[e.pointerId]
       origin = snapPoint eventToPoint e
       object =
-        room: currentRoom
-        page: currentPage
+        room: room.id
+        page: room.page
         type: 'rect'
         pts: [origin, origin]
         color: currentColor
@@ -338,8 +336,8 @@ tools =
       return if pointers[e.pointerId]
       origin = snapPoint eventToPoint e
       object =
-        room: currentRoom
-        page: currentPage
+        room: room.id
+        page: room.page
         type: 'ellipse'
         pts: [origin, origin]
         color: currentColor
@@ -489,8 +487,8 @@ tools =
         text = Objects.findOne(pointers.text)?.text ? ''
       else
         pointers.text = Meteor.apply 'objectNew', [
-          room: currentRoom
-          page: currentPage
+          room: room.id
+          page: room.page
           type: 'text'
           pts: [snapPoint eventToPoint e]
           text: text = ''
@@ -533,24 +531,26 @@ tools =
   touch:
     icon: 'hand-pointer'
     help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
-    init: touchUpdate = ->
+    init: updateAllowTouch = ->
       dom.classSet document.querySelector('.tool[data-tool="touch"]'),
         'active', allowTouch.get()
     once: ->
       allowTouch.set not allowTouch.get()
-      touchUpdate()
+      updateAllowTouch()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
     once: ->
-      Meteor.call 'gridToggle', currentPage
+      Meteor.call 'gridToggle', room.page
   gridSnap:
     icon: 'grid-snap'
     help: 'Toggle snapping to grid (except pen tool)'
-    once: ->
-      gridSnap = not gridSnap
+    init: updateGridSnap = ->
       dom.classSet document.querySelector('.tool[data-tool="gridSnap"]'),
-        'active', gridSnap
+        'active', room?.gridSnap.get()
+    once: ->
+      room?.gridSnap.set not room?.gridSnap.get()
+      updateGridSnap()
   linkRoom:
     icon: 'clipboard-link'
     help: 'Copy a link to this room/board to clipboard (for sharing with others)'
@@ -570,8 +570,8 @@ tools =
       range = document.getElementById 'historyRange'
       range.value = 0
       query =
-        room: currentRoom
-        page: currentPage
+        room: room.id
+        page: room.page
       lastTarget = null
       historyRender = null
       diffs = []
@@ -614,7 +614,7 @@ tools =
               delete historyObjects[diff.id]
       range.max = 0
       loadingUpdate +1
-      diffs = await meteorCallPromise 'history', currentRoom, currentPage
+      diffs = await meteorCallPromise 'history', room.id, room.page
       loadingUpdate -1
       range.max = diffs.length
     stop: ->
@@ -655,9 +655,9 @@ tools =
         elts = (elt for elt in elts when selection.has elt.dataset.id)
       ## Compute bounding box using SVG's getBBox() and getCTM()
       {min, max} = dom.unionSvgExtremes currentBoard().svg, elts
-      ## Temporarily make grid space entire drawing
+      ## Temporarily make grid span entire drawing
       if currentBoard().grid?
-        currentBoard().grid.update currentGrid, {min, max}
+        currentBoard().grid.update room.pageGrid, {min, max}
         elts.splice 0, 0, currentBoard().grid.grid
       ## Create SVG header
       svg = (elt.outerHTML for elt in elts).join '\n'
@@ -691,7 +691,7 @@ tools =
       ## Download file
       download = document.getElementById 'download'
       download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
-      download.download = "cocreate-#{currentRoom}.svg"
+      download.download = "cocreate-#{room.id}.svg"
       download.click()
   github:
     icon: 'github'
@@ -710,11 +710,11 @@ tools =
     help: 'Go to previous page'
     hotkey: 'Page Up'
     once: pageDelta = (delta = -1) ->
-      index = currentPageIndex()
+      index = room.pageIndex()
       return unless index?
       index += delta
-      return unless 0 <= index < roomData.pages.length
-      changePage roomData.pages[index]
+      return unless 0 <= index < room.data.pages.length
+      room.changePage room.data.pages[index]
   pageNext:
     icon: 'chevron-right-square'
     help: 'Go to next page'
@@ -724,28 +724,28 @@ tools =
     icon: 'plus-square'
     help: 'Add new blank page after the current page'
     once: ->
-      index = currentPageIndex()
+      index = room?.pageIndex()
       return unless index?
       Meteor.call 'pageNew',
-        room: currentRoom
+        room: room.id
         grid:
-          if pageData?
-            Boolean pageData.grid
+          if room.pageData?
+            Boolean room.pageData.grid
           else
             gridDefault
       , index+1
       , (error, page) ->
         if error?
           return console.error "Failed to create new page on server: #{error}"
-        changePage page
+        room.changePage page
   pageDup:
     icon: 'clone'
     help: 'Duplicate current page'
     once: ->
-      Meteor.call 'pageDup', currentPage, (error, page) ->
+      Meteor.call 'pageDup', room.page, (error, page) ->
         if error?
           return console.error "Failed to duplicate page on server: #{error}"
-        changePage page
+        room.changePage page
   pageZoomOut:
     icon: 'search-minus'
     help: 'Zoom out 20%, relative to center'
@@ -889,7 +889,7 @@ eventToOrthogonalPoint = (e, origin) ->
   pt
 
 snapPoint = (pt) ->
-  if gridSnap
+  if room.gridSnap.get()
     pt.x = gridSize * Math.round pt.x / gridSize
     pt.y = gridSize * Math.round pt.y / gridSize
   pt
@@ -946,13 +946,13 @@ pointerEvents = ->
       e.preventDefault()
   dom.listen board.svg,
     pointermove: (e) ->
-      return unless currentRoom?
-      return unless currentPage?
+      return unless room?
+      return unless room.page?
       return if restrictTouch e
       remote =
         name: document.getElementById('name').value.trim()
-        room: currentRoom
-        page: currentPage
+        room: room.id
+        page: room.page
         tool: currentTool
         color: currentColor
         cursor: eventToPointW e
@@ -1677,8 +1677,8 @@ observeRender = ->
   render = new Render board.root
   board.grid = new Grid board.root
   Objects.find
-    room: currentRoom
-    page: currentPage
+    room: room.id
+    page: room.page
   .observe
     added: (obj) ->
       render.shouldNotExist obj
@@ -1730,7 +1730,7 @@ class RemotesRender
     unless remote.name == oldRemote.name
       text.innerHTML = dom.escape remote.name ? ''
     elt.style.visibility =
-      if remote.page == currentPage
+      if remote.page == room.page
         'visible'
       else
         'hidden'
@@ -1814,7 +1814,7 @@ class RemotesRender
 observeRemotes = ->
   board.remotesRender = new RemotesRender
   Remotes.find
-    room: currentRoom
+    room: room.id
   .observe
     added: (remote) -> board.remotesRender.render remote
     changed: (remote, oldRemote) -> board.remotesRender.render remote, oldRemote
@@ -1829,7 +1829,7 @@ class Grid
     @svg = root.parentNode
     root.appendChild @grid = dom.create 'g', class: 'grid'
     @update()
-  update: (mode = currentGrid, bounds) ->
+  update: (mode = room?.pageGrid, bounds) ->
     @grid.innerHTML = ''
     bounds ?=
       min: dom.svgPoint @svg, board.bbox.left, board.bbox.top, @grid
@@ -1866,11 +1866,14 @@ loadingUpdate = (delta) ->
     updateBadRoom()
 
 updateBadRoom = ->
-  bad = not (currentRoom? and Rooms.findOne currentRoom)
+  bad = not (room? and
+    (data = room.data ? Rooms.findOne room.id)? and
+    data.pages?.length
+  )
   dom.classSet document.getElementById('badRoom'), 'show', bad
   if bad
-    currentRoom = null
-    changePage null
+    room?.stop()
+    room = null
 
 subscribe = (...args) ->
   delta = 1
@@ -1882,63 +1885,70 @@ subscribe = (...args) ->
     onReady: done
     onStop: done
 
-roomSub = null
-roomObserveObjects = null
-roomObserveRemotes = null
-roomAuto = null
-roomData = null
-changeRoom = (room) ->
-  return if room == currentRoom
-  roomAuto?.stop()
-  roomObserve?.stop()
-  roomSub?.stop()
-  currentRoom = room
-  changePage null
-  if room?
-    roomSub = subscribe 'room', room
-  else
-    updateBadRoom()
-  roomAuto = Tracker.autorun ->
-    roomData = Rooms.findOne currentRoom
-    unless currentPage?
-      changePage roomData?.pages?[0]
-    document.getElementById('numPages').innerHTML =
-      roomData?.pages?.length ? '?'
+class Room
+  constructor: (@id) ->
+    @changePage null
+    @sub = subscribe 'room', @id
+    @auto = Tracker.autorun =>
+      @data = Rooms.findOne @id
+      return unless @data?
+      updateBadRoom()
+      @changePage @data.pages?[0] unless @page?
+      document.getElementById('numPages').innerHTML =
+        @data.pages?.length ? '?'
+    @gridSnap = new storage.Variable "#{@id}.gridSnap", false, updateGridSnap
+  updateUI: ->
+    updateGridSnap()
+  stop: ->
+    @auto.stop()
+    @observe.stop()
+    @sub.stop()
+    @pageAuto?.stop()
+    @roomObserveObjects?.stop()
+    @roomObserveRemotes?.stop()
+  changePage: (page) ->
+    # pageAttributes should maybe be in separate Page class
+    @pageAuto?.stop()
+    @page = page if page?
+    tools[currentTool]?.stop?()
+    @roomObserveObjects?.stop()
+    roomObserveRemotes?.stop()
+    if @page?
+      @roomObserveObjects = observeRender()
+      @roomObserveRemotes = observeRemotes()
+    else
+      board.clear()
+    dom.classSet document.body, 'nopage', not @page?
+      # in particular, disable pointer events when no page
+    @updatePageNum()
+    selectTool null
+    @pageGrid = null
+    @pageAuto = Tracker.autorun =>
+      @pageData = Pages.findOne @page
+      if @pageGrid != @pageData?.grid
+        @pageGrid = @pageData?.grid
+        dom.classSet document.querySelector('.tool[data-tool="grid"]'),
+          'active', @pageGrid
+        board.grid?.update()
+  updatePageNum: ->
+    pageNumber = @pageIndex()
+    pageNumber++ if pageNumber?
+    document.getElementById('pageNum').value = pageNumber ? '?'
+  pageIndex: ->
+    return unless @data?.pages?
+    index = @data.pages.indexOf @page
+    return if index < 0
+    index
 
-pageAuto = null
-pageData = null
-changePage = (page) ->
-  pageAuto?.stop()
-  currentPage = page if page?
-  tools[currentTool]?.stop?()
-  roomObserveObjects?.stop()
-  roomObserveRemotes?.stop()
-  if currentPage?
-    roomObserveObjects = observeRender()
-    roomObserveRemotes = observeRemotes()
+changeRoom = (roomId) ->
+  return if roomId == room?.id
+  room?.stop()
+  if roomId?
+    room = new Room roomId
+    room.updateUI()
   else
-    board.clear()
-  dom.classSet document.body, 'nopage', not currentPage?
-    # in particular, disable pointer events when no page
-  updatePageNum()
-  selectTool null
-  currentGrid = null
-  pageAuto = Tracker.autorun ->
-    pageData = Pages.findOne currentPage
-    if currentGrid != pageData?.grid
-      currentGrid = pageData?.grid
-      dom.classSet document.querySelector('.tool[data-tool="grid"]'),
-        'active', currentGrid
-      board.grid?.update()
-updatePageNum = ->
-  pageNumber = currentPageIndex()
-  pageNumber++ if pageNumber?
-  document.getElementById('pageNum').value = pageNumber ? '?'
-currentPageIndex = ->
-  return unless roomData?.pages?
-  index = roomData.pages.indexOf currentPage
-  return if index < 0
-  index
+    room = null
+    updateBadRoom()
 
 urlChange = ->
   if document.location.pathname == '/'
@@ -2273,13 +2283,13 @@ Meteor.startup ->
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey
     change: (e) ->
-      return unless roomData?.pages?.length
+      return unless room?.data?.pages?.length
       page = parseInt pageNum.value
       if isNaN page
-        updatePageNum()
+        room.updatePageNum()
       else
-        page = Math.min roomData.pages.length, Math.max 1, page
-        changePage roomData.pages[page-1]
+        page = Math.min room?.data.pages.length, Math.max 1, page
+        room.changePage room?.data.pages[page-1]
 
   dom.listen name = document.getElementById('name'),
     keydown: (e) ->
