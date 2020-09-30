@@ -545,6 +545,7 @@ tools =
   gridSnap:
     icon: 'grid-snap'
     help: 'Toggle snapping to grid (except pen tool)'
+    hotkey: '#'
     init: updateGridSnap = ->
       dom.classSet document.querySelector('.tool[data-tool="gridSnap"]'),
         'active', room?.gridSnap.get()
