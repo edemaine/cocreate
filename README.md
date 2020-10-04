@@ -14,7 +14,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   **No accounts required**<sup>★</sup>.
 * Works on computers, tablets, and phones **without any software installation**
   (use any modern web browser, such as Chrome)
-* **See everyone's cursors**, updated live
+* **See everyone's cursors**, with their names, updated live
 * See everyone's drawing **while they draw**<sup>★</sup>
   * **Freehand pen** drawing, with **pressure sensitivity**<sup>★</sup>
     for supporting devices (e.g., Wacom, Surface, iPad Pencil)
