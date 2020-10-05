@@ -164,7 +164,7 @@ tools =
         undoableOp
           type: 'multi'
           ops:
-            for id, obj of pointers.objects
+            for id, obj of pointers.objects when obj?
               type: 'edit'
               id: id
               before:
@@ -185,7 +185,7 @@ tools =
           here = snapPoint eventToOrthogonalPoint e, h.start
           ## Don't set h.moved out here in case no objects selected
           diffs = {}
-          for id, obj of pointers.objects
+          for id, obj of pointers.objects when obj?
             h.moved ?= {}
             tx = (obj.tx ? 0) + (here.x - h.start.x)
             ty = (obj.ty ? 0) + (here.y - h.start.y)
