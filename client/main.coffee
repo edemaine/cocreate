@@ -7,6 +7,7 @@ import storage from './lib/storage'
 import throttle from './lib/throttle'
 import timesync from './lib/timesync'
 import {meteorCallPromise} from '/lib/meteorPromise'
+import QRious from 'qrious'
 
 board = historyBoard = null # Board objects
 gridDefault = true
@@ -1958,6 +1959,7 @@ changeRoom = (roomId) ->
     updateBadRoom()
 
 urlChange = ->
+  updateQRCode()
   if document.location.pathname == '/'
     Meteor.call 'roomNew',
       grid: gridDefault
@@ -1971,6 +1973,14 @@ urlChange = ->
     changeRoom match[1]
   else
     changeRoom null
+
+updateQRCode = ->
+  new QRious({
+    element: document.getElementById('qrcode'),
+    value: document.URL,
+    level: 'M',
+    size:  128
+  })
 
 paletteTools = ->
   tooltip = null  # currently open tooltip
