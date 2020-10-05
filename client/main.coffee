@@ -557,6 +557,12 @@ tools =
     help: 'Copy a link to this room/board to clipboard (for sharing with others)'
     once: ->
       navigator.clipboard.writeText document.URL
+  qrToggle:
+    icon: 'qrcode'
+    help: 'Show this room\'s QR code (for sharing with others)'
+    once: ->
+      dom.classToggle document.getElementById('qrPane'), 'show'
+      dom.classToggle document.querySelector('.tool[data-tool="qrToggle"]'), 'active'
   newRoom:
     icon: 'door-plus-circle'
     help: 'Create a new room/board (with new URL) in a new browser tab/window'
