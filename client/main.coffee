@@ -968,6 +968,18 @@ pointerEvents = ->
       ## Prevent right click from bringing up context menu, as it interferes
       ## with e.g. drawing.
       e.preventDefault()
+    wheel: (e) ->
+      e.preventDefault()
+      if e.ctrlKey
+        # Ideally this should zoom while keeping the point under the cursor centered.
+        # Instead, we zoom on the center of the window
+        newScale = currentBoard().transform.scale * (1.0 - e.deltaY * 0.01)
+        currentBoard().setScale(newScale)
+      else
+        scale = currentBoard().transform.scale
+        currentBoard().transform.x -= e.deltaX / scale
+        currentBoard().transform.y -= e.deltaY / scale
+        currentBoard().retransform()
   dom.listen board.svg,
     pointermove: (e) ->
       return unless room?
