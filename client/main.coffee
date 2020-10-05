@@ -1019,6 +1019,9 @@ trackTouchPointersMove = (e) ->
     board.transform.y = initialY + mid.y / newScale - initialMidY / initialScale
     board.retransform()
 
+  # Report that we acted on this
+  return doingPanZoom
+
 pointerEvents = ->
   dom.listen [board.svg, historyBoard.svg],
     pointerdown: (e) ->
@@ -1040,7 +1043,8 @@ pointerEvents = ->
     pointerleave: stop
     pointermove: (e) ->
       e.preventDefault()
-      trackTouchPointersMove e
+      # Don't apply tool if trackTouchPointersMove says it acted
+      return if trackTouchPointersMove e
       return if restrictTouchDraw e
       tools[currentTool].move? e
     contextmenu: (e) ->
