@@ -968,65 +968,66 @@ midpoint = (p, q) ->
   x: 0.5*(p.clientX + q.clientX)
   y: 0.5*(p.clientY + q.clientY)
 
-touchPointers = []
-doingPanZoom = false
-initialScale = null
-initialDist = null
-initialX = null
-initialY = null
-initialMidX = null
-initialMidY = null
+touchStateMachine =
+  touchPointers: []
+  doingPanZoom: false
+  initialScale: null
+  initialDist: null
+  initialX: null
+  initialY: null
+  initialMidX: null
+  initialMidY: null
 
-maybeStartStopPanZoom = ->
-  if touchPointers.length == 2
-    doingPanZoom = true
-    initialScale = board.transform.scale
-    initialDist = distance(touchPointers[0], touchPointers[1])
-    initialX = board.transform.x
-    initialY = board.transform.y
-    mid = midpoint(touchPointers[0], touchPointers[1])
-    initialMidX = mid.x
-    initialMidY = mid.y
-  else
-    doingPanZoom = false
+  maybeStartStopPanZoom: ->
+    if @touchPointers.length == 2
+      @doingPanZoom = true
+      @initialScale = board.transform.scale
+      @initialDist = distance(@touchPointers[0], @touchPointers[1])
+      @initialX = board.transform.x
+      @initialY = board.transform.y
+      mid = midpoint(@touchPointers[0], @touchPointers[1])
+      @initialMidX = mid.x
+      @initialMidY = mid.y
+    else
+      @doingPanZoom = false
 
-trackTouchPointersDown = (e) ->
-  if e.pointerType == 'touch'
-    touchPointers.push e
-    maybeStartStopPanZoom()
+  trackTouchPointersDown: (e) ->
+    if e.pointerType == 'touch'
+      @touchPointers.push e
+      @maybeStartStopPanZoom()
 
-trackTouchPointersUp = (e) ->
-  if e.pointerType == 'touch'
-    # Remove the lifted touch pointer
-    touchPointers = touchPointers.filter (evs) -> evs.pointerId isnt e.pointerId
-    maybeStartStopPanZoom()
+  trackTouchPointersUp: (e) ->
+    if e.pointerType == 'touch'
+      # Remove the lifted touch pointer
+      @touchPointers = @touchPointers.filter (evs) -> evs.pointerId isnt e.pointerId
+      @maybeStartStopPanZoom()
 
-trackTouchPointersMove = (e) ->
-  # Update the moved pointer
-  touchPointers.forEach((evs, i, arr) ->
-    if evs.pointerId is e.pointerId
-      arr[i] = e
-  )
+  trackTouchPointersMove: (e) ->
+    # Update the moved pointer
+    @touchPointers.forEach((evs, i, arr) ->
+      if evs.pointerId is e.pointerId
+        arr[i] = e
+    )
 
-  # Now handle pan/zooms
-  if doingPanZoom
-    mid = midpoint(touchPointers[0], touchPointers[1])
-    curDist = distance(touchPointers[0], touchPointers[1])
-    newScale = initialScale * curDist / initialDist
-    # Is this the right transformation?
-    board.transform.scale = newScale
-    board.transform.x = initialX + mid.x / newScale - initialMidX / initialScale
-    board.transform.y = initialY + mid.y / newScale - initialMidY / initialScale
-    board.retransform()
+    # Now handle pan/zooms
+    if @doingPanZoom
+      mid = midpoint(@touchPointers[0], @touchPointers[1])
+      curDist = distance(@touchPointers[0], @touchPointers[1])
+      newScale = @initialScale * curDist / @initialDist
+      # Is this the right transformation?
+      board.transform.scale = newScale
+      board.transform.x = @initialX + mid.x / newScale - @initialMidX / @initialScale
+      board.transform.y = @initialY + mid.y / newScale - @initialMidY / @initialScale
+      board.retransform()
 
-  # Report that we acted on this
-  return doingPanZoom
+    # Report that we acted on this
+    return @doingPanZoom
 
 pointerEvents = ->
   dom.listen [board.svg, historyBoard.svg],
     pointerdown: (e) ->
       e.preventDefault()
-      trackTouchPointersDown e
+      touchStateMachine.trackTouchPointersDown e
       return if restrictTouchDraw e
       text.blur() for text in document.querySelectorAll 'input'
       window.focus()  # for getting keyboard focus when <iframe>d
@@ -1037,14 +1038,14 @@ pointerEvents = ->
       tools[currentTool].down? e if e.buttons
     pointerup: stop = (e) ->
       e.preventDefault()
-      trackTouchPointersUp e
+      touchStateMachine.trackTouchPointersUp e
       return if restrictTouchDraw e
       tools[currentTool].up? e
     pointerleave: stop
     pointermove: (e) ->
       e.preventDefault()
       # Don't apply tool if trackTouchPointersMove says it acted
-      return if trackTouchPointersMove e
+      return if touchStateMachine.trackTouchPointersMove e
       return if restrictTouchDraw e
       tools[currentTool].move? e
     contextmenu: (e) ->
