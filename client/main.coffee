@@ -1012,14 +1012,12 @@ trackTouchPointersMove = (e) ->
   if doingPanZoom
     mid = midpoint(touchPointers[0], touchPointers[1])
     curDist = distance(touchPointers[0], touchPointers[1])
-    scaleRatio = curDist / initialDist
-    newScale = initialScale * scaleRatio
-    # TODO FIX THIS MATH
+    newScale = initialScale * curDist / initialDist
+    # Is this the right transformation?
     board.transform.scale = newScale
-    board.transform.x = initialX + (mid.x - initialMidX) / newScale
-    board.transform.y = initialY + (mid.y - initialMidY) / newScale
+    board.transform.x = initialX + mid.x / newScale - initialMidX / initialScale
+    board.transform.y = initialY + mid.y / newScale - initialMidY / initialScale
     board.retransform()
-    #board.setScale( initialScale * curDist / initialDist )
 
 pointerEvents = ->
   dom.listen [board.svg, historyBoard.svg],
