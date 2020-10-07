@@ -490,6 +490,10 @@ to put it in the center of your view, and then
 This button resets the zoom level to 100%, the same as when you first load
 Cocreate.  This is helpful if you get lost zooming in or out.
 
+### <img src="icons/expand-arrows-alt.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
+
+This button will set the zoom and pan so that all elements fit inside the display.
+
 ### Your Name
 
 If you type your name into the box in the top right, then your name
