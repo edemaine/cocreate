@@ -768,6 +768,21 @@ tools =
     hotkey: '0'
     once: ->
       currentBoard().setScale 1
+  pageZoomFit:
+    icon: 'expand-arrows-alt'
+    help: 'Zoom to fit'
+    hotkey: '1'
+    once: ->
+      elts =
+        for elt in board.root.childNodes
+          continue if elt.classList.contains 'highlight'
+          continue if elt.classList.contains 'selected'
+          continue if elt.classList.contains 'outline'
+          continue if elt.classList.contains 'grid'
+          continue unless elt.dataset.id
+          elt
+      {min, max} = dom.unionSvgExtremes board.svg, elts, board.root
+      board.zoomToFit min, max
   pageSpacer: {}
   fill:
     palette: 'colors'
@@ -1273,6 +1288,24 @@ class Board
     ###
     @transform.x += @bbox.width/2 * (1/newScale - 1/@transform.scale)
     @transform.y += @bbox.height/2 * (1/newScale - 1/@transform.scale)
+    @transform.scale = newScale
+    @retransform()
+  zoomToFit: (min, max) ->
+    # Change the bounds so as to fit the rect from (min, max) on screen
+    width = max.x - min.x
+    height = max.y - min.y
+    midx = 0.5 * (min.x + max.x)
+    midy = 0.5 * (min.y + max.y)
+    @bbox = @svg.getBoundingClientRect()
+    hScale = @bbox.width / width
+    vScale = @bbox.height / height
+    newScale = Math.min hScale, vScale
+    newScale = newScale / 1.05 # Leave a bit of border
+    # Center the content
+    targetx = midx - 0.5*@bbox.width/newScale
+    targety = midy - 0.5*@bbox.height/newScale
+    @transform.x = -targetx
+    @transform.y = -targety
     @transform.scale = newScale
     @retransform()
   retransform: ->
