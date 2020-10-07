@@ -32,10 +32,10 @@ module.exports = {
     name: 'cocreate',
     path: '/afs/csail/u/e/edemaine/Projects/cocreate',
     servers: {
-      worker1: {},
-      worker2: {env: {COCREATE_SKIP_UPGRADE_DB: '1'}},
-      worker3: {env: {COCREATE_SKIP_UPGRADE_DB: '1'}},
-      worker4: {env: {COCREATE_SKIP_UPGRADE_DB: '1'}},
+      worker1: {env: {COCREATE_WORKER: '1'}},
+      worker2: {env: {COCREATE_WORKER: '2', COCREATE_SKIP_UPGRADE_DB: '1'}},
+      worker3: {env: {COCREATE_WORKER: '3', COCREATE_SKIP_UPGRADE_DB: '1'}},
+      worker4: {env: {COCREATE_WORKER: '4', COCREATE_SKIP_UPGRADE_DB: '1'}},
     },
     docker: {
       image: 'abernix/meteord:node-12-base',
