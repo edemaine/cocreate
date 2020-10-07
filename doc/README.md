@@ -369,6 +369,12 @@ This button copies a link to this Cocreate room/board to your clipboard.
 You can then share the link with others by pasting the link into your
 favorite messaging platform (e.g., email).
 
+### <img src="icons/qrcode.svg" width="18" alt="QR Code Icon"> QR Code
+
+This button displays a QR code for the current room.
+You can then navigate to the link from a device with a camera and QR code reader,
+for example most mobile phones or tablets.
+
 ### <img src="icons/door-plus-circle.svg" width="18" alt="New Room Icon"> New Room
 
 This button creates a new Cocreate room/board, with a new URL,
