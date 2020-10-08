@@ -981,10 +981,10 @@ touchStateMachine =
   maybeStartStopPanZoom: ->
     if @touchPointers.length == 2
       @doingPanZoom = true
-      @initialScale = board.transform.scale
+      @initialScale = currentBoard().transform.scale
       @initialDist = distance(@touchPointers[0], @touchPointers[1])
-      @initialX = board.transform.x
-      @initialY = board.transform.y
+      @initialX = currentBoard().transform.x
+      @initialY = currentBoard().transform.y
       mid = midpoint(@touchPointers[0], @touchPointers[1])
       @initialMidX = mid.x
       @initialMidY = mid.y
@@ -1015,10 +1015,10 @@ touchStateMachine =
       curDist = distance(@touchPointers[0], @touchPointers[1])
       newScale = @initialScale * curDist / @initialDist
       # Is this the right transformation?
-      board.transform.scale = newScale
-      board.transform.x = @initialX + mid.x / newScale - @initialMidX / @initialScale
-      board.transform.y = @initialY + mid.y / newScale - @initialMidY / @initialScale
-      board.retransform()
+      currentBoard().transform.scale = newScale
+      currentBoard().transform.x = @initialX + mid.x / newScale - @initialMidX / @initialScale
+      currentBoard().transform.y = @initialY + mid.y / newScale - @initialMidY / @initialScale
+      currentBoard().retransform()
 
     # Report that we acted on this
     return @doingPanZoom
