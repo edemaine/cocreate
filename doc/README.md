@@ -388,6 +388,7 @@ While in Time Travel mode, you can drag on the page to pan around
 (like the
 [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
 [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in),
+[<img src="icons/expand-arrows-alt.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit),
 [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
 Also, the
 [<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)

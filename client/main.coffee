@@ -771,18 +771,18 @@ tools =
   pageZoomFit:
     icon: 'expand-arrows-alt'
     help: 'Zoom to fit'
-    hotkey: '1'
+    hotkey: [')', 'Shift-0']
     once: ->
       elts =
-        for elt in board.root.childNodes
+        for elt in currentBoard().root.childNodes
           continue if elt.classList.contains 'highlight'
           continue if elt.classList.contains 'selected'
           continue if elt.classList.contains 'outline'
           continue if elt.classList.contains 'grid'
           continue unless elt.dataset.id
           elt
-      {min, max} = dom.unionSvgExtremes board.svg, elts, board.root
-      board.zoomToFit min, max
+      {min, max} = dom.unionSvgExtremes currentBoard().svg, elts, currentBoard().root
+      currentBoard().zoomToFit min, max
   pageSpacer: {}
   fill:
     palette: 'colors'
