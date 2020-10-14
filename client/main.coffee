@@ -21,6 +21,7 @@ export room = null
 currentFill = 'white'
 currentFillOn = false
 allowTouch = new storage.Variable 'allowTouch', true, updateAllowTouch
+fancyCursor = new storage.Variable 'fancyCursor', true, updateFancyCursor
 spaceDown = false
 
 if navigator?.platform?.startsWith? 'Mac'
@@ -537,6 +538,16 @@ tools =
     once: ->
       allowTouch.set not allowTouch.get()
       updateAllowTouch()
+  crosshair:
+    icon: 'plus'
+    help: 'Use crosshair mouse cursor instead of tool-specific mouse cursor. Easier to aim precisely, and works around a Chrome bug.'
+    init: updateFancyCursor = ->
+      dom.classSet document.querySelector('.tool[data-tool="crosshair"]'),
+        'active', not fancyCursor.get()
+      selectTool()
+    once: ->
+      fancyCursor.set not fancyCursor.get()
+      updateFancyCursor()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -2032,6 +2043,12 @@ paletteTools = ->
   ## Move name entry to end
   document.getElementById('pages').appendChild document.getElementById 'name'
 
+setCursor = (target, ...args) ->
+  if fancyCursor.get()
+    icons.setCursor target, ...args
+  else
+    target.style.cursor = null
+
 lastTool = null
 selectTool = (tool, options) ->
   {noStart, noStop} = options if options?
@@ -2049,15 +2066,15 @@ selectTool = (tool, options) ->
   if currentTool of drawingTools
     selectColor() # set color-specific icon
   else if currentTool == 'history'
-    icons.setCursor document.getElementById('historyRange'),
+    setCursor document.getElementById('historyRange'),
       tools['history'].icon, ...tools['history'].hotspot
-    icons.setCursor document.getElementById('historyBoard'),
+    setCursor document.getElementById('historyBoard'),
       tools['pan'].icon, ...tools['pan'].hotspot
   else
     # Deselect color and width if not in pen mode
     #dom.select '.color'
     #dom.select '.width'
-    icons.setCursor board.svg, tools[currentTool].icon,
+    setCursor board.svg, tools[currentTool].icon,
       ...tools[currentTool].hotspot
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?() unless noStart
@@ -2173,7 +2190,7 @@ selectColor = (color, keepTool, skipSelection) ->
 colorIcon = ->
   ## Drawing tools' cursors depend on the current color
   if currentTool of drawingTools
-    icons.setCursor board.svg,
+    setCursor board.svg,
       drawingToolIcon(currentTool, currentColor,
         if currentFillOn then currentFill),
       ...tools[currentTool].hotspot
