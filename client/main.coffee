@@ -21,7 +21,12 @@ export room = null
 currentFill = 'white'
 currentFillOn = false
 allowTouch = new storage.Variable 'allowTouch', true, updateAllowTouch
-fancyCursor = new storage.Variable 'fancyCursor', true, updateFancyCursor
+fancyCursor = new storage.Variable 'fancyCursor',
+  #true,
+  ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
+  ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488
+  not /Chrom(e|ium)\/86\./.test(navigator.userAgent),
+  updateFancyCursor
 spaceDown = false
 
 if navigator?.platform?.startsWith? 'Mac'
