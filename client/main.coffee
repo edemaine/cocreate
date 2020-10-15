@@ -1418,7 +1418,7 @@ class Render
     dom.attr text,
       fill: obj.color
       style: "font-size:#{obj.fontSize}px"
-    if options?.text != false or options?.fontSize != false
+    if options?.text != false or options?.fontSize != false or options?.color != false
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
       @texDelete id if @texById[id]?
