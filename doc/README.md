@@ -494,6 +494,9 @@ Cocreate.  This is helpful if you get lost zooming in or out.
 ### <img src="icons/expand-arrows-alt.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
 
 This button will set the zoom and pan so that all elements fit inside the display.
+This can be useful to get an overall picture of the page, and then
+zoom into a part of interest. In particular, it can help you find
+parts of the page that are previously off-screen.
 
 ### Your Name
 
