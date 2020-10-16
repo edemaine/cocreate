@@ -971,10 +971,8 @@ pointerEvents = ->
     wheel: (e) ->
       e.preventDefault()
       if e.ctrlKey
-        # Ideally this should zoom while keeping the point under the cursor centered.
-        # Instead, we zoom on the center of the window
         newScale = currentBoard().transform.scale * (1.0 - e.deltaY * 0.01)
-        currentBoard().setScale(newScale)
+        currentBoard().setScaleHoldingOffsetCoordFixed(newScale, e)
       else
         scale = currentBoard().transform.scale
         currentBoard().transform.x -= e.deltaX / scale
@@ -1302,18 +1300,18 @@ class Board
     @bbox = currentBoard().svg.getBoundingClientRect()
     @remotesRender?.resize()
     @grid?.update()
-  setScale: (newScale) ->
+  setScaleHoldingOffsetCoordFixed: (newScale, point) ->
     ###
-    Maintain center point (x,y):
-      bbox.width/2 = (x + transform.x) * transform.scale
-        => x = bbox.width/2 / transform.scale - transform.x
-      bbox.width/2 = (x + newX) * newScale
-        => newX = bbox.width/2 / newScale - x
-         = bbox.width/2 / newScale - bbox.width/2 / transform.scale + transform.x
-         = bbox.width/2 * (1 / newScale - 1 / transform.scale) + transform.x
+    Maintain point (x,y):
+      point.offsetX = (x + transform.x) * transform.scale
+        => x = point.offsetX / transform.scale - transform.x
+      point.offsetX = (x + newX) * newScale
+        => newX = point.offsetX / newScale - x
+         = point.offsetX / newScale - point.offsetX / transform.scale + transform.x
+         = point.offsetX * (1 / newScale - 1 / transform.scale) + transform.x
     ###
-    @transform.x += @bbox.width/2 * (1/newScale - 1/@transform.scale)
-    @transform.y += @bbox.height/2 * (1/newScale - 1/@transform.scale)
+    @transform.x += point.offsetX * (1/newScale - 1/@transform.scale)
+    @transform.y += point.offsetY * (1/newScale - 1/@transform.scale)
     @transform.scale = newScale
     @retransform()
   zoomToFit: ({min, max}, extra = 0.05) ->
@@ -1335,6 +1333,14 @@ class Board
     @transform.y = -targety
     @transform.scale = newScale
     @retransform()
+  setScale: (newScale) ->
+    ###
+    Maintain center point (bbox.width/2, bbox.height/2)
+    ###
+    centerPoint =
+      offsetX: @bbox.width/2
+      offsetY: @bbox.height/2
+    @setScaleHoldingOffsetCoordFixed(newScale, centerPoint)
   retransform: ->
     @root.setAttribute 'transform',
       "scale(#{@transform.scale}) translate(#{@transform.x} #{@transform.y})"
