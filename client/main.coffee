@@ -773,15 +773,7 @@ tools =
     help: 'Zoom to fit'
     hotkey: [')', 'Shift-0']
     once: ->
-      elts =
-        for elt in currentBoard().root.childNodes
-          continue if elt.classList.contains 'highlight'
-          continue if elt.classList.contains 'selected'
-          continue if elt.classList.contains 'outline'
-          continue if elt.classList.contains 'grid'
-          continue unless elt.dataset.id
-          elt
-      {min, max} = dom.unionSvgExtremes currentBoard().svg, elts, currentBoard().root
+      {min, max} = currentBoard().drawnBBox()
       currentBoard().zoomToFit min, max
   pageSpacer: {}
   fill:
@@ -1316,6 +1308,18 @@ class Board
     Meteor.setTimeout =>
       @grid?.update()
     , 0
+  filterChildren: (predicate) ->
+    for el in @root.childNodes
+      continue if not predicate el
+      el
+  childrenExcludingClasses: (excludeList) ->
+    excludeFilter = (el) ->
+      0 == (c for c in el.classList when c in excludeList).length
+    @filterChildren excludeFilter
+  drawnChildren: ->
+    @childrenExcludingClasses ['highlight', 'selected', 'outline', 'grid']
+  drawnBBox: ->
+    dom.unionSvgExtremes @svg, @drawnChildren(), @root
   clear: ->
     @root.innerHTML = ''
 
