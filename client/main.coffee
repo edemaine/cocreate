@@ -763,7 +763,7 @@ tools =
     once: ->
       currentBoard().setScale 1
   pageZoomFit:
-    icon: 'expand-arrows-alt'
+    icon: 'zoom-fit'
     help: 'Zoom to fit'
     hotkey: '9'
     once: ->
