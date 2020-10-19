@@ -388,7 +388,7 @@ While in Time Travel mode, you can drag on the page to pan around
 (like the
 [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
 [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in),
-[<img src="icons/expand-arrows-alt.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit),
+[<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit),
 [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
 Also, the
 [<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
@@ -491,7 +491,7 @@ to put it in the center of your view, and then
 This button resets the zoom level to 100%, the same as when you first load
 Cocreate.  This is helpful if you get lost zooming in or out.
 
-### <img src="icons/expand-arrows-alt.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
+### <img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
 
 This button sets the zoom and pan so that all objects fit inside the display.
 This can be useful to get an overall picture of the page, and then
@@ -501,7 +501,7 @@ parts of the page that are previously off-screen.
 You can also
 <img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select
 a subset of objects and then
-<img src="icons/expand-arrows-alt.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
+<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
 the selection to the screen.
 
 ### Your Name
