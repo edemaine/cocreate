@@ -815,6 +815,7 @@ drawingTools =
   segment: true
   rect: true
   ellipse: true
+  text: true
 lastDrawingTool = 'pen'
 hotkeys = {}
 
