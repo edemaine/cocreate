@@ -644,21 +644,15 @@ tools =
       oldTransform = root.getAttribute 'transform'
       root.removeAttribute 'transform'
       ## Choose elements to export
-      elts =
-        for elt in root.childNodes
-          continue if elt.classList.contains 'highlight'
-          continue if elt.classList.contains 'selected'
-          continue if elt.classList.contains 'outline'
-          continue if elt.classList.contains 'grid'
-          continue unless elt.dataset.id
-          elt
       if selection.nonempty() and currentBoard() == board
-        elts = (elt for elt in elts when selection.has elt.dataset.id)
+        elts = currentBoard().selectedRenderedChildren()
+      else
+        elts = currentBoard().renderedChildren()
       ## Compute bounding box using SVG's getBBox() and getCTM()
-      {min, max} = dom.unionSvgExtremes currentBoard().svg, elts
+      bbox = currentBoard().renderedBBox elts
       ## Temporarily make grid span entire drawing
       if currentBoard().grid?
-        currentBoard().grid.update room.pageGrid, {min, max}
+        currentBoard().grid.update room.pageGrid, bbox
         elts.splice 0, 0, currentBoard().grid.grid
       ## Create SVG header
       svg = (elt.outerHTML for elt in elts).join '\n'
@@ -679,7 +673,7 @@ tools =
         '''
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
-        <svg xmlns="#{dom.SVGNS}" viewBox="#{min.x} #{min.y} #{max.x - min.x} #{max.y - min.y}">
+        <svg xmlns="#{dom.SVGNS}" viewBox="#{bbox.min.x} #{bbox.min.y} #{bbox.max.x - bbox.min.x} #{bbox.max.y - bbox.min.y}">
         <style>
         .grid { stroke-width: 0.96; stroke: #c4e3f4 }
         #{fonts}</style>
@@ -771,10 +765,15 @@ tools =
   pageZoomFit:
     icon: 'expand-arrows-alt'
     help: 'Zoom to fit'
-    hotkey: [')', 'Shift-0']
+    hotkey: '9'
     once: ->
-      {min, max} = currentBoard().drawnBBox()
-      currentBoard().zoomToFit min, max
+      ## Choose elements to contain
+      if selection.nonempty() and currentBoard() == board
+        elts = currentBoard().selectedRenderedChildren()
+      else
+        elts = currentBoard().renderedChildren()
+      return unless elts.length
+      currentBoard().zoomToFit currentBoard().renderedBBox elts
   pageSpacer: {}
   fill:
     palette: 'colors'
@@ -1254,6 +1253,12 @@ historyAdvance = (delta) ->
   event.initEvent 'change', false, true
   range.dispatchEvent event
 
+nonrenderedClasses =
+  highlight: true
+  selected: true
+  outline: true
+  grid: true
+
 class Board
   constructor: (domId) ->
     @svg = document.getElementById domId
@@ -1262,10 +1267,10 @@ class Board
       x: 0
       y: 0
       scale: 1
-    @resize()
   resize: ->
-    ## @bbox maintains client bounding box (top/left/bottom/right) of board
-    @bbox = @svg.getBoundingClientRect()
+    ## @bbox maintains client bounding box (top/left/bottom/right) of board,
+    ## computed from the currently visible board (maybe not this one).
+    @bbox = currentBoard().svg.getBoundingClientRect()
     @remotesRender?.resize()
     @grid?.update()
   setScale: (newScale) ->
@@ -1282,17 +1287,18 @@ class Board
     @transform.y += @bbox.height/2 * (1/newScale - 1/@transform.scale)
     @transform.scale = newScale
     @retransform()
-  zoomToFit: (min, max) ->
-    # Change the bounds so as to fit the rect from (min, max) on screen
+  zoomToFit: ({min, max}, extra = 0.05) ->
+    ## Change transform to fit on screen the rectangle bounded by (min, max),
+    ## as output by renderedBBox() or dom.unionSvgExtremes(), plus 5%.
     width = max.x - min.x
     height = max.y - min.y
+    return unless width and height
     midx = 0.5 * (min.x + max.x)
     midy = 0.5 * (min.y + max.y)
-    @bbox = @svg.getBoundingClientRect()
     hScale = @bbox.width / width
     vScale = @bbox.height / height
     newScale = Math.min hScale, vScale
-    newScale = newScale / 1.05 # Leave a bit of border
+    newScale /= 1 + extra
     # Center the content
     targetx = midx - 0.5*@bbox.width/newScale
     targety = midy - 0.5*@bbox.height/newScale
@@ -1308,18 +1314,19 @@ class Board
     Meteor.setTimeout =>
       @grid?.update()
     , 0
-  filterChildren: (predicate) ->
-    for el in @root.childNodes
-      continue if not predicate el
-      el
-  childrenExcludingClasses: (excludeList) ->
-    excludeFilter = (el) ->
-      0 == (c for c in el.classList when c in excludeList).length
-    @filterChildren excludeFilter
-  drawnChildren: ->
-    @childrenExcludingClasses ['highlight', 'selected', 'outline', 'grid']
-  drawnBBox: ->
-    dom.unionSvgExtremes @svg, @drawnChildren(), @root
+  renderedChildren: ->
+    for child in @root.childNodes
+      skip = false
+      for className in child.classList
+        if className of nonrenderedClasses
+          skip = true
+          break
+      continue if skip
+      child
+  selectedRenderedChildren: ->
+    child for child in @renderedChildren() when selection.has child.dataset.id
+  renderedBBox: (children) ->
+    dom.unionSvgExtremes @svg, children, @root
   clear: ->
     @root.innerHTML = ''
 
@@ -2257,12 +2264,14 @@ resize = (reps = 1) ->
     document.documentElement.style.setProperty attrib,
       "#{scrollbar + paletteSize()}px"
   board.resize()
+  historyBoard.resize()
   setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
   document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
   board = new Board 'board'
   historyBoard = new Board 'historyBoard'
+  resize()
   selection = new Selection board
   paletteTools()
   paletteWidths()
