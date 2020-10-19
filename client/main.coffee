@@ -764,7 +764,7 @@ tools =
       currentBoard().setScale 1
   pageZoomFit:
     icon: 'zoom-fit'
-    help: 'Zoom to fit'
+    help: 'Zoom to fit screen to all objects or selection'
     hotkey: '9'
     once: ->
       ## Choose elements to contain
