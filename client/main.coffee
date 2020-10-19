@@ -1955,7 +1955,11 @@ class Room
       @data = Rooms.findOne @id
       return unless @data?
       updateBadRoom()
-      @changePage @data.pages?[0] unless @page?
+      if @page?
+        @updatePageNum()  # update page number if set of pages changes
+      else
+        Tracker.nonreactive =>  # don't make this computation depend on page
+          @changePage @data.pages?[0]  # start on first page if not on a page
       document.getElementById('numPages').innerHTML =
         @data.pages?.length ? '?'
     @gridSnap = new storage.Variable "#{@id}.gridSnap", false, updateGridSnap
@@ -1971,10 +1975,10 @@ class Room
   changePage: (page) ->
     # pageAttributes should maybe be in separate Page class
     @pageAuto?.stop()
-    @page = page if page?
+    @page = page
     tools[currentTool]?.stop?()
     @roomObserveObjects?.stop()
-    roomObserveRemotes?.stop()
+    @roomObserveRemotes?.stop()
     if @page?
       @roomObserveObjects = observeRender()
       @roomObserveRemotes = observeRemotes()
