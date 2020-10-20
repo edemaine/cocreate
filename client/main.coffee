@@ -1954,14 +1954,14 @@ class Room
     @auto = Tracker.autorun =>
       @data = Rooms.findOne @id
       return unless @data?
-      updateBadRoom()
-      if @page?
-        @updatePageNum()  # update page number if set of pages changes
-      else
-        Tracker.nonreactive =>  # don't make this computation depend on page
+      Tracker.nonreactive =>  # depend only on room data
+        updateBadRoom()
+        if @page?
+          @updatePageNum()  # update page number if set of pages changes
+        else
           @changePage @data.pages?[0]  # start on first page if not on a page
-      document.getElementById('numPages').innerHTML =
-        @data.pages?.length ? '?'
+        document.getElementById('numPages').innerHTML =
+          @data.pages?.length ? '?'
     @gridSnap = new storage.Variable "#{@id}.gridSnap", false, updateGridSnap
   updateUI: ->
     updateGridSnap()
@@ -1991,11 +1991,12 @@ class Room
     @pageGrid = null
     @pageAuto = Tracker.autorun =>
       @pageData = Pages.findOne @page
-      if @pageGrid != @pageData?.grid
-        @pageGrid = @pageData?.grid
-        dom.classSet document.querySelector('.tool[data-tool="grid"]'),
-          'active', @pageGrid
-        board.grid?.update()
+      Tracker.nonreactive =>  # depend only on page data
+        if @pageGrid != @pageData?.grid
+          @pageGrid = @pageData?.grid
+          dom.classSet document.querySelector('.tool[data-tool="grid"]'),
+            'active', @pageGrid
+          board.grid?.update()
   updatePageNum: ->
     pageNumber = @pageIndex()
     pageNumber++ if pageNumber?
