@@ -27,6 +27,7 @@ fancyCursor = new storage.Variable 'fancyCursor',
   ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488
   not /Chrom(e|ium)\/86\./.test(navigator.userAgent),
   updateFancyCursor
+dark = new storage.Variable 'dark', false, updateDark
 spaceDown = false
 
 if navigator?.platform?.startsWith? 'Mac'
@@ -553,6 +554,16 @@ tools =
     once: ->
       fancyCursor.set not fancyCursor.get()
       updateFancyCursor()
+  dark:
+    icon: 'moon'
+    help: 'Toggle dark mode (just for you), which flips dark and light colors.'
+    init: updateDark = ->
+      dom.classSet document.querySelector('.tool[data-tool="dark"]'),
+        'active', dark.get()
+      dom.classSet document.body, 'dark', dark.get()
+    once: ->
+      dark.set not dark.get()
+      updateDark()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -2061,7 +2072,8 @@ paletteTools = ->
       container.appendChild div = dom.create 'div', null,
         className: 'tool'
         dataset: tool: tool
-        innerHTML: if icon then icons.svgIcon icon
+        innerHTML: if icon then icons.svgIcon \
+          icons.modIcon icon, fill: 'currentColor'
       ,
         click: (e) ->
           removeTooltip()
