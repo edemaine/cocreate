@@ -39,6 +39,10 @@ body
   font-family: 'Roboto Slab', serif
   touch-action: none  // Prevent mobile zooming
   margin: 0
+  background: #fff
+  &.dark
+    color: #aaa
+    background: #000
 input
   font-family: 'Roboto Slab', serif
   font-size: 16px
@@ -54,6 +58,8 @@ input
   left: var(--palette-left-width)
   width: calc(100% - var(--palette-left-width))
   height: calc(100% - var(--palette-top-height) - var(--palette-bottom-height))
+  /.dark &
+    filter: invert(1) hue-rotate(180deg)
 .board
   cursor: crosshair
   touch-action: none  // PointerEvents only
@@ -67,8 +73,6 @@ input
   display: flex
   z-index: 1
   user-select: none  // prevent selection e.g. of line thickness numbers
-  /.dark &
-    color: #aaa
 .vertical.palette
   flex-direction: column
   overflow-x: hidden
@@ -136,6 +140,9 @@ input
     border: var(--palette-border) inset rgba(0,0,0,0.4)
     /.dark &
       border: var(--palette-border) inset rgba(0,0,0,1)
+
+.dark .color
+  filter: invert(1) hue-rotate(180deg)
 
 .tooltip
   cursor: help
@@ -213,10 +220,10 @@ input
     stroke: var(--currentColor)
   text
     fill: black
-    /.dark &
-      fill: #aaa
     text-anchor: middle
     font-size: 10px
+  /.dark & svg
+    filter: invert(1) hue-rotate(180deg)
 
 .tool
   padding: 2px
