@@ -1628,6 +1628,7 @@ class Render
       exScale = 0.523
       exScaler = (match, dimen, value) ->
         "#{dimen}=\"#{job[dimen] = exScale * parseFloat value}\""
+      job.depth = 0  # default if no vertical-align specification
       svg = svg
       .replace /\b(width)="([\-\.\d]+)ex"/, exScaler
       .replace /\b(height)="([\-\.\d]+)ex"/, exScaler
