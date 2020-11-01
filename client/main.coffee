@@ -20,6 +20,10 @@ remoteIconOutside = 0.2  # fraction to render icons outside view
 export room = null
 currentFill = 'white'
 currentFillOn = false
+name = new storage.StringVariable 'name', '', updateName = ->
+  nameInput = document.getElementById 'name'
+  nameInput.value = name.get() unless nameInput.value == name.get()
+updateName()
 allowTouch = new storage.Variable 'allowTouch', true, updateAllowTouch
 fancyCursor = new storage.Variable 'fancyCursor',
   #true,
@@ -985,7 +989,7 @@ pointerEvents = ->
       return unless room.page?
       return if restrictTouch e
       remote =
-        name: document.getElementById('name').value.trim()
+        name: name.get().trim()
         room: room.id
         page: room.page
         tool: currentTool
@@ -2379,22 +2383,18 @@ Meteor.startup ->
         page = Math.min room?.data.pages.length, Math.max 1, page
         room.changePage room?.data.pages[page-1]
 
-  dom.listen name = document.getElementById('name'),
+  dom.listen nameInput = document.getElementById('name'),
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey
     input: (e) ->
-      localStorage.setItem 'name', name.value
-  name.value = localStorage.getItem 'name'
+      name.set nameInput.value
   dom.listen window,
-    storage: (e) ->
-      switch e.key
-        when 'name'
-          name.value = e.newValue
     ## Coop protocol
     message: (e) ->
       return unless e.data?.coop
-      return unless typeof e.data.user?.fullName == 'string'
-      name.value = e.data.user.fullName
+      if typeof e.data.user?.fullName == 'string'
+        name.setTemp e.data.user.fullName
+        updateName()
   (window.parent ? window.opener).postMessage
     coop: 1
     status: 'ready'
