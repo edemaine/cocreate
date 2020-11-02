@@ -24,14 +24,14 @@ name = new storage.StringVariable 'name', '', updateName = ->
   nameInput = document.getElementById 'name'
   nameInput.value = name.get() unless nameInput.value == name.get()
 updateName()
-allowTouch = new storage.Variable 'allowTouch', true, updateAllowTouch
+allowTouch = new storage.Variable 'allowTouch', true, -> updateAllowTouch()
 fancyCursor = new storage.Variable 'fancyCursor',
   #true,
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
   ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488
   not /Chrom(e|ium)\/86\./.test(navigator.userAgent),
   updateFancyCursor
-dark = new storage.Variable 'dark', false, updateDark
+dark = new storage.Variable 'dark', false, -> updateDark()
 spaceDown = false
 
 if navigator?.platform?.startsWith? 'Mac'
@@ -2394,7 +2394,10 @@ Meteor.startup ->
       return unless e.data?.coop
       if typeof e.data.user?.fullName == 'string'
         name.setTemp e.data.user.fullName
-        updateName()
+        name.update()
+      if typeof e.data.theme?.dark == 'boolean'
+        dark.setTemp e.data.theme.dark
+        dark.update()
   (window.parent ? window.opener).postMessage
     coop: 1
     status: 'ready'
