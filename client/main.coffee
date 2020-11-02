@@ -2388,8 +2388,8 @@ Meteor.startup ->
       e.stopPropagation() # avoid width setting hotkey
     input: (e) ->
       name.set nameInput.value
+  ## Coop protocol
   dom.listen window,
-    ## Coop protocol
     message: (e) ->
       return unless e.data?.coop
       if typeof e.data.user?.fullName == 'string'
@@ -2398,10 +2398,13 @@ Meteor.startup ->
       if typeof e.data.theme?.dark == 'boolean'
         dark.setTemp e.data.theme.dark
         dark.update()
-  (window.parent ? window.opener).postMessage
-    coop: 1
-    status: 'ready'
-  , '*'
+  ## window.opener can be null, but window.parent defaults to window
+  parent = window.opener ? window.parent
+  if parent? and parent != window
+    parent.postMessage
+      coop: 1
+      status: 'ready'
+    , '*'
 
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'
