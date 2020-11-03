@@ -2313,7 +2313,8 @@ resize = (reps = 1) ->
   setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
-  document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
+  document.getElementById('loading').innerHTML = icons.svgIcon \
+    icons.modIcon 'spinner', fill: 'currentColor'
   board = new Board 'board'
   historyBoard = new Board 'historyBoard'
   resize()
