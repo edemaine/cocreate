@@ -402,7 +402,7 @@ tools =
     move: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      target = h.eventTop e
+      target = h.eventCoalescedTop e
       if target?
         if distanceThreshold h.down, e, eraseDist
           h.down = true
@@ -1009,6 +1009,12 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     @findGroup document.elementFromPoint e.clientX, e.clientY
+  eventCoalescedTop: (e) ->
+    ## Find first event in the coalesced sequence that hits an object
+    for c in e.getCoalescedEvents?() ? [e]
+      if top = @eventTop c
+        return top
+    undefined
   eventAll: (e) ->
     for elt in document.elementsFromPoint e.clientX, e.clientY
       elt = @findGroup elt
