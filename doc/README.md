@@ -419,7 +419,8 @@ As a result, you'll see a blank screen.
 By dragging the slider to different points in the timeline,
 you'll see the evolution of the page.
 
-While in Time Travel mode, you can:
+While in Time Travel mode, you can do the following:
+
 * Use the
 [<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
 buttons to take single steps backward or forward in the timeline.
