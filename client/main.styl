@@ -264,11 +264,11 @@ body:not(.tool-history)
   .historyShow
     display: none
 body.tool-history
-  --palette-color: #d6bc9f  // sepia-like
+  --palette-color: hsl(32,40%,73%)  // sepia-like
+  &.dark
+    --palette-color: hsl(32,40%,20%)
   .historyHide
     display: none
-.dark body.tool-history
-  --palette-color: #634d27
 body:not(.tool-text)
   .textShow
     display: none
