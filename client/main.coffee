@@ -20,13 +20,18 @@ remoteIconOutside = 0.2  # fraction to render icons outside view
 export room = null
 currentFill = 'white'
 currentFillOn = false
-allowTouch = new storage.Variable 'allowTouch', true, updateAllowTouch
+name = new storage.StringVariable 'name', '', updateName = ->
+  nameInput = document.getElementById 'name'
+  nameInput.value = name.get() unless nameInput.value == name.get()
+updateName()
+allowTouch = new storage.Variable 'allowTouch', true, -> updateAllowTouch()
 fancyCursor = new storage.Variable 'fancyCursor',
   #true,
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
   ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488
   not /Chrom(e|ium)\/86\./.test(navigator.userAgent),
   updateFancyCursor
+dark = new storage.Variable 'dark', false, -> updateDark()
 spaceDown = false
 
 if navigator?.platform?.startsWith? 'Mac'
@@ -397,7 +402,7 @@ tools =
     move: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      target = h.eventTop e
+      target = h.eventCoalescedTop e
       if target?
         if distanceThreshold h.down, e, eraseDist
           h.down = true
@@ -553,6 +558,16 @@ tools =
     once: ->
       fancyCursor.set not fancyCursor.get()
       updateFancyCursor()
+  dark:
+    icon: 'moon'
+    help: 'Toggle dark mode (just for you), which flips dark and light colors.'
+    init: updateDark = ->
+      dom.classSet document.querySelector('.tool[data-tool="dark"]'),
+        'active', dark.get()
+      dom.classSet document.body, 'dark', dark.get()
+    once: ->
+      dark.set not dark.get()
+      updateDark()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -984,7 +999,7 @@ pointerEvents = ->
       return unless room.page?
       return if restrictTouch e
       remote =
-        name: document.getElementById('name').value.trim()
+        name: name.get().trim()
         room: room.id
         page: room.page
         tool: currentTool
@@ -1004,6 +1019,12 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     @findGroup document.elementFromPoint e.clientX, e.clientY
+  eventCoalescedTop: (e) ->
+    ## Find first event in the coalesced sequence that hits an object
+    for c in e.getCoalescedEvents?() ? [e]
+      if top = @eventTop c
+        return top
+    undefined
   eventAll: (e) ->
     for elt in document.elementsFromPoint e.clientX, e.clientY
       elt = @findGroup elt
@@ -1635,6 +1656,7 @@ class Render
       exScale = 0.523
       exScaler = (match, dimen, value) ->
         "#{dimen}=\"#{job[dimen] = exScale * parseFloat value}\""
+      job.depth = 0  # default if no vertical-align specification
       svg = svg
       .replace /\b(width)="([\-\.\d]+)ex"/, exScaler
       .replace /\b(height)="([\-\.\d]+)ex"/, exScaler
@@ -1972,10 +1994,14 @@ class Room
     @auto = Tracker.autorun =>
       @data = Rooms.findOne @id
       return unless @data?
-      updateBadRoom()
-      @changePage @data.pages?[0] unless @page?
-      document.getElementById('numPages').innerHTML =
-        @data.pages?.length ? '?'
+      Tracker.nonreactive =>  # depend only on room data
+        updateBadRoom()
+        if @page?
+          @updatePageNum()  # update page number if set of pages changes
+        else
+          @changePage @data.pages?[0]  # start on first page if not on a page
+        document.getElementById('numPages').innerHTML =
+          @data.pages?.length ? '?'
     @gridSnap = new storage.Variable "#{@id}.gridSnap", false, updateGridSnap
   updateUI: ->
     updateGridSnap()
@@ -1989,10 +2015,10 @@ class Room
   changePage: (page) ->
     # pageAttributes should maybe be in separate Page class
     @pageAuto?.stop()
-    @page = page if page?
+    @page = page
     tools[currentTool]?.stop?()
     @roomObserveObjects?.stop()
-    roomObserveRemotes?.stop()
+    @roomObserveRemotes?.stop()
     if @page?
       @roomObserveObjects = observeRender()
       @roomObserveRemotes = observeRemotes()
@@ -2005,11 +2031,12 @@ class Room
     @pageGrid = null
     @pageAuto = Tracker.autorun =>
       @pageData = Pages.findOne @page
-      if @pageGrid != @pageData?.grid
-        @pageGrid = @pageData?.grid
-        dom.classSet document.querySelector('.tool[data-tool="grid"]'),
-          'active', @pageGrid
-        board.grid?.update()
+      Tracker.nonreactive =>  # depend only on page data
+        if @pageGrid != @pageData?.grid
+          @pageGrid = @pageData?.grid
+          dom.classSet document.querySelector('.tool[data-tool="grid"]'),
+            'active', @pageGrid
+          board.grid?.update()
   updatePageNum: ->
     pageNumber = @pageIndex()
     pageNumber++ if pageNumber?
@@ -2074,7 +2101,8 @@ paletteTools = ->
       container.appendChild div = dom.create 'div', null,
         className: 'tool'
         dataset: tool: tool
-        innerHTML: if icon then icons.svgIcon icon
+        innerHTML: if icon then icons.svgIcon \
+          icons.modIcon icon, fill: 'currentColor'
       ,
         click: (e) ->
           removeTooltip()
@@ -2309,7 +2337,8 @@ resize = (reps = 1) ->
   setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
-  document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
+  document.getElementById('loading').innerHTML = icons.svgIcon \
+    icons.modIcon 'spinner', fill: 'currentColor'
   board = new Board 'board'
   historyBoard = new Board 'historyBoard'
   resize()
@@ -2379,26 +2408,28 @@ Meteor.startup ->
         page = Math.min room?.data.pages.length, Math.max 1, page
         room.changePage room?.data.pages[page-1]
 
-  dom.listen name = document.getElementById('name'),
+  dom.listen nameInput = document.getElementById('name'),
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey
     input: (e) ->
-      localStorage.setItem 'name', name.value
-  name.value = localStorage.getItem 'name'
+      name.set nameInput.value
+  ## Coop protocol
   dom.listen window,
-    storage: (e) ->
-      switch e.key
-        when 'name'
-          name.value = e.newValue
-    ## Coop protocol
     message: (e) ->
       return unless e.data?.coop
-      return unless typeof e.data.user?.fullName == 'string'
-      name.value = e.data.user.fullName
-  (window.parent ? window.opener).postMessage
-    coop: 1
-    status: 'ready'
-  , '*'
+      if typeof e.data.user?.fullName == 'string'
+        name.setTemp e.data.user.fullName
+        name.update()
+      if typeof e.data.theme?.dark == 'boolean'
+        dark.setTemp e.data.theme.dark
+        dark.update()
+  ## window.opener can be null, but window.parent defaults to window
+  parent = window.opener ? window.parent
+  if parent? and parent != window
+    parent.postMessage
+      coop: 1
+      status: 'ready'
+    , '*'
 
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'

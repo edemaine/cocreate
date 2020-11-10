@@ -339,6 +339,35 @@ touch will work only for clicking buttons and in nondrawing modes:
 and
 [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select](#-select-tool).
 
+### <img src="icons/plus.svg" width="18" alt="Crosshair Icon"> Crosshair Toggle
+
+This button toggles whether to use a simple crosshair for the mouse cursor,
+instead of the default behavior of using an icon in the shape of the tool
+itself.  The crosshair might be preferable for aiming the mouse precisely.
+
+But mostly this feature is a workaround for
+[a bug in Chrome 86](https://bugs.chromium.org/p/chromium/issues/detail?id=1138488#c4)
+that will cause drawing to be in the wrong place relative to an SVG cursor
+(if your display is scaled),
+meaning that Chrome 86 will draw correctly with the crosshair cursor
+but not with the fancy tool-specific cursors.
+Cocreate therefore turns on the crosshair option automatically
+if you're using Chrome 86, unless you've turned it off explicitly
+(e.g., because you're not using a scaled display).
+
+### <img src="icons/moon.svg" width="18" alt="Dark Icon"> Dark Mode Toggle
+
+This button toggles "dark mode", which uses a dark background and flips dark
+and light colors, roughly preserving hue and contrast.
+Dark mode is useful if you have light sensitivity or are in a dark room.
+
+This toggle affects only your view, not others' views, so one user can be in
+(default) light mode while another user is in dark mode,
+and they see roughly the same diagram.
+Dark mode approximately preserves the hue of colors, but the brightness is
+inverted, so one user's "bright blue" is another user's "dark blue".
+As a warning, reds and purples currently look somewhat similar in dark mode.
+
 ### <img src="icons/grid.svg" width="18" alt="Grid Icon"> Grid Toggle
 
 This button toggles whether the current page has a square grid like graph paper.
