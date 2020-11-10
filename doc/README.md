@@ -137,13 +137,13 @@ by holding down the <kbd>Space</kbd> key and then dragging the page.
 (This behavior matches Adobe Creative Suite.)
 
 A scroll wheel or a touchpad's scroll gesture (typically
-two-finger dragging) will also pan the canvas.
+two-finger dragging) also pans the canvas.
 
 Related, if you want to zoom into or out of the page, check out the
 [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out /
 <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In buttons](#-zoom-out---zoom-in).
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
-or by a touchpad's zoom gesture (typically two-finger pinching).
+or using a touchpad's zoom gesture (typically two-finger pinching).
 
 ### <img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool
 
@@ -411,24 +411,25 @@ last part of the URL (`r/gLoBaLlYuNiQuEiD7`), but this button saves that work.
 
 ### <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
 
-Time Travel is a toggling mode that lets you look at past versions of the
-current page.  It replaces the attribute palette at the bottom of the window
+Time Travel is a toggling mode that lets you look at the history of past
+versions of the current page.
+It replaces the attribute palette at the bottom of the window
 with a slider which starts at the far left (the beginning of time).
 As a result, you'll see a blank screen.
 By dragging the slider to different points in the timeline,
 you'll see the evolution of the page.
 
 While in Time Travel mode, you can:
-* use the
+* Use the
 [<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
-buttons to take single steps backward or forward in the timeline,
-* drag on the page to pan around (like the
+buttons to take single steps backward or forward in the timeline.
+* Drag on the page to pan around (like the
 [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
-or pan using a scroll wheel or touchpad pan gesture,
-* [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit),
+or pan using a scroll wheel or touchpad pan gesture.
 * [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
 using the buttons, using a scroll wheel while holding
-<kbd>Ctrl</kbd>, or using a touchpad zoom gesture, and
+<kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
+* [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit)
 * [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
 
 The tool palettes switch to a sepia tone to indicate you're time traveling.
@@ -523,9 +524,8 @@ So if you want to zoom on something specific,
 to put it in the center of your view, and then
 <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In.
 
-You can also zoom by using a scroll wheel while holding
-<kbd>Ctrl</kbd>, or by a touchpad's zoom gesture (typically
-two-finger pinching).
+You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
+or using a touchpad's zoom gesture (typically two-finger pinching).
 
 ### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
 
