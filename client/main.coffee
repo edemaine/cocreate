@@ -781,7 +781,7 @@ tools =
       transform = currentBoard().transform
       log = Math.round(Math.log(transform.scale) / Math.log(factor))
       log += delta
-      currentBoard().setScale factor ** log
+      currentBoard().setScaleFixingCenter factor ** log
   pageZoomIn:
     icon: 'search-plus'
     help: 'Zoom in 20%, relative to center'
@@ -792,7 +792,7 @@ tools =
     help: 'Reset zoom to 100%'
     hotkey: '0'
     once: ->
-      currentBoard().setScale 1
+      currentBoard().setScaleFixingCenter 1
   pageZoomFit:
     icon: 'zoom-fit'
     help: 'Zoom to fit screen to all objects or selection'
@@ -983,6 +983,18 @@ pointerEvents = ->
       ## Prevent right click from bringing up context menu, as it interferes
       ## with e.g. drawing.
       e.preventDefault()
+    wheel: (e) ->
+      e.preventDefault()
+      transform = currentBoard().transform
+      if e.ctrlKey
+        newScale = transform.scale * (1.0 - e.deltaY * 0.01)
+        currentBoard().setScaleFixingPoint newScale,
+          x: e.offsetX
+          y: e.offsetY
+      else
+        transform.x -= e.deltaX / transform.scale
+        transform.y -= e.deltaY / transform.scale
+        currentBoard().retransform()
   dom.listen board.svg,
     pointermove: (e) ->
       return unless room?
@@ -1311,18 +1323,18 @@ class Board
     @bbox = currentBoard().svg.getBoundingClientRect()
     @remotesRender?.resize()
     @grid?.update()
-  setScale: (newScale) ->
+  setScaleFixingPoint: (newScale, fixed) ->
     ###
-    Maintain center point (x,y):
-      bbox.width/2 = (x + transform.x) * transform.scale
-        => x = bbox.width/2 / transform.scale - transform.x
-      bbox.width/2 = (x + newX) * newScale
-        => newX = bbox.width/2 / newScale - x
-         = bbox.width/2 / newScale - bbox.width/2 / transform.scale + transform.x
-         = bbox.width/2 * (1 / newScale - 1 / transform.scale) + transform.x
+    Transform point (x,y) while preserving (fixed.x, fixed.y):
+      fixed.x = (x + transform.x) * transform.scale
+        => x = fixed.x / transform.scale - transform.x
+      fixed.x = (x + newX) * newScale
+        => newX = fixed.x / newScale - x
+         = fixed.x / newScale - fixed.x / transform.scale + transform.x
+         = fixed.x * (1 / newScale - 1 / transform.scale) + transform.x
     ###
-    @transform.x += @bbox.width/2 * (1/newScale - 1/@transform.scale)
-    @transform.y += @bbox.height/2 * (1/newScale - 1/@transform.scale)
+    @transform.x += fixed.x * (1/newScale - 1/@transform.scale)
+    @transform.y += fixed.y * (1/newScale - 1/@transform.scale)
     @transform.scale = newScale
     @retransform()
   zoomToFit: ({min, max}, extra = 0.05) ->
@@ -1344,6 +1356,13 @@ class Board
     @transform.y = -targety
     @transform.scale = newScale
     @retransform()
+  setScaleFixingCenter: (newScale) ->
+    ###
+    Maintain center point (bbox.width/2, bbox.height/2)
+    ###
+    @setScaleFixingPoint newScale,
+      x: @bbox.width/2
+      y: @bbox.height/2
   retransform: ->
     @root.setAttribute 'transform',
       "scale(#{@transform.scale}) translate(#{@transform.x} #{@transform.y})"
