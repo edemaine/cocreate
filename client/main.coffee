@@ -420,7 +420,7 @@ tools =
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
-      updateCursor = (e) ->
+      updateTextCursor = (e) ->
         setTimeout ->
           return unless pointers.text?
           render.render Objects.findOne(pointers.text), text: true
@@ -429,9 +429,9 @@ tools =
         keydown: (e) ->
           e.stopPropagation() # avoid hotkeys
           e.target.blur() if e.key == 'Escape'
-          updateCursor e
-        click: updateCursor
-        paste: updateCursor
+          updateTextCursor e
+        click: updateTextCursor
+        paste: updateTextCursor
         input: (e) ->
           return unless pointers.text?
           text = input.value
@@ -565,6 +565,7 @@ tools =
       dom.classSet document.querySelector('.tool[data-tool="dark"]'),
         'active', dark.get()
       dom.classSet document.body, 'dark', dark.get()
+      updateCursor()
     once: ->
       dark.set not dark.get()
       updateDark()
@@ -2140,11 +2141,31 @@ paletteTools = ->
   ## Move name entry to end
   document.getElementById('pages').appendChild document.getElementById 'name'
 
-setCursor = (target, ...args) ->
+setCursor = (target, icon, xFrac, yFrac) ->
   if fancyCursor.get()
-    icons.setCursor target, ...args
+    options = {}
+    if dark.get()
+      options.style = 'filter:invert(1) hue-rotate(180deg)'
+    icons.setCursor target, icon, xFrac, yFrac, options
   else
     target.style.cursor = null
+
+updateCursor = ->
+  if currentTool of drawingTools
+    ## Drawing tools' cursors depend on the current color
+    if currentTool of drawingTools
+      setCursor board.svg,
+        drawingToolIcon(currentTool, currentColor,
+          if currentFillOn then currentFill),
+        ...tools[currentTool].hotspot
+  else if currentTool == 'history'
+    setCursor document.getElementById('historyRange'),
+      tools['history'].icon, ...tools['history'].hotspot
+    setCursor document.getElementById('historyBoard'),
+      tools['pan'].icon, ...tools['pan'].hotspot
+  else
+    setCursor board.svg, tools[currentTool].icon,
+      ...tools[currentTool].hotspot
 
 lastTool = null
 selectTool = (tool, options) ->
@@ -2160,19 +2181,7 @@ selectTool = (tool, options) ->
     lastTool = currentTool
     currentTool = tool
   dom.select '.tool', "[data-tool='#{currentTool}']"
-  if currentTool of drawingTools
-    selectColor() # set color-specific icon
-  else if currentTool == 'history'
-    setCursor document.getElementById('historyRange'),
-      tools['history'].icon, ...tools['history'].hotspot
-    setCursor document.getElementById('historyBoard'),
-      tools['pan'].icon, ...tools['pan'].hotspot
-  else
-    # Deselect color and width if not in pen mode
-    #dom.select '.color'
-    #dom.select '.width'
-    setCursor board.svg, tools[currentTool].icon,
-      ...tools[currentTool].hotspot
+  updateCursor()
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?() unless noStart
   document.body.classList.add "tool-#{currentTool}" if currentTool
@@ -2185,7 +2194,7 @@ updateFill = ->
   fillTool = document.querySelector('.tool[data-tool="fill"]')
   dom.classSet fillTool, 'active', currentFillOn
   fillTool.style.color = currentFill
-  colorIcon()
+  updateCursor()
 
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
@@ -2282,15 +2291,7 @@ selectColor = (color, keepTool, skipSelection) ->
     selection.edit 'color', currentColor
     keepTool = true
   selectDrawingTool() unless keepTool
-  colorIcon()
-
-colorIcon = ->
-  ## Drawing tools' cursors depend on the current color
-  if currentTool of drawingTools
-    setCursor board.svg,
-      drawingToolIcon(currentTool, currentColor,
-        if currentFillOn then currentFill),
-      ...tools[currentTool].hotspot
+  updateCursor()
 
 selectFill = (color) ->
   currentFill = color

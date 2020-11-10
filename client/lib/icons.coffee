@@ -140,15 +140,16 @@ viewScale = viewSize / cursorSize
 round = (frac) ->
   Math.round frac * (cursorSize-1)
 
-export cursorIcon = (icon, xFrac, yFrac) ->
+export cursorIcon = (icon, xFrac, yFrac, options) ->
   icon = getIcon icon
-  svgIcon icon,
+  svgIcon icon, Object.assign
     width: cursorSize
     height: cursorSize
+  , options
   .replace ///</svg>///, """
     <circle fill="red" cx="#{round(xFrac) * viewScale}" cy="#{round(yFrac) * viewScale}" r="#{viewScale * 2}"/>
     $&"""
 
-export setCursor = (dom, icon, xFrac, yFrac) ->
-  svg = encodeURIComponent cursorIcon icon, xFrac, yFrac
+export setCursor = (dom, icon, xFrac, yFrac, options) ->
+  svg = encodeURIComponent cursorIcon icon, xFrac, yFrac, options
   dom.style.cursor = "url('data:image/svg+xml,#{svg}') #{round xFrac} #{round yFrac}, crosshair"
