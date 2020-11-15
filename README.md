@@ -33,7 +33,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   * Export as **SVG**<sup>★</sup>
 * **Multiple pages**<sup>★</sup>
   * **Page duplication**<sup>★</sup> (for animation or exploring alternatives)
-  * Basic **grid**
+  * Basic **grid** and **grid snapping**<sup>★</sup>
 * **Undo/redo** (of your own operations)
 * **Time travel**<sup>★</sup> to see entire past history of the board
 * **Keyboard shortcuts**<sup>★</sup>
