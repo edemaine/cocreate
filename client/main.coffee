@@ -988,7 +988,7 @@ pointerEvents = ->
       e.preventDefault()
       transform = currentBoard().transform
       if e.ctrlKey
-        newScale = transform.scale * (1.0 - e.deltaY * 0.01)
+        newScale = transform.scale * Math.exp(- e.deltaY * 0.01)
         currentBoard().setScaleFixingPoint newScale,
           x: e.offsetX
           y: e.offsetY
