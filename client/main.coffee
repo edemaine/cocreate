@@ -988,8 +988,10 @@ pointerEvents = ->
       e.preventDefault()
       transform = currentBoard().transform
       if e.ctrlKey
-        newScale = transform.scale * (1.0 - e.deltaY * 0.01)
-        currentBoard().setScaleFixingPoint newScale,
+        ## Ensure zoom-out motion is inverse of equivalent zoom-in
+        factor = 1 + 0.01 * Math.abs e.deltaY
+        factor = 1/factor if e.deltaY > 0
+        currentBoard().setScaleFixingPoint transform.scale * factor,
           x: e.offsetX
           y: e.offsetY
       else
