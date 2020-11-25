@@ -24,7 +24,8 @@ name = new storage.StringVariable 'name', '', updateName = ->
   nameInput = document.getElementById 'name'
   nameInput.value = name.get() unless nameInput.value == name.get()
 updateName()
-allowTouchDraw = new storage.Variable 'allowTouchDraw', true, -> updateAllowTouch()
+storage.upgradeKey 'allowTouch', 'touchDraw'  # backward compatibility
+touchDraw = new storage.Variable 'touchDraw', true, -> updateTouchDraw()
 fancyCursor = new storage.Variable 'fancyCursor',
   #true,
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
@@ -542,12 +543,12 @@ tools =
   touch:
     icon: 'hand-pointer'
     help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
-    init: updateAllowTouch = ->
+    init: updateTouchDraw = ->
       dom.classSet document.querySelector('.tool[data-tool="touch"]'),
-        'active', allowTouchDraw.get()
+        'active', touchDraw.get()
     once: ->
-      allowTouchDraw.set not allowTouchDraw.get()
-      updateAllowTouch()
+      touchDraw.set not touchDraw.get()
+      updateTouchDraw()
   crosshair:
     icon: 'plus'
     help: 'Use crosshair mouse cursor instead of tool-specific mouse cursor. Easier to aim precisely, and works around a Chrome bug.'
@@ -955,7 +956,7 @@ symmetricPoint = (pt, origin) ->
   y: 2*origin.y - pt.y
 
 restrictTouchDraw = (e) ->
-  not allowTouchDraw.get() and \
+  not touchDraw.get() and \
   e.pointerType == 'touch' and \
   currentTool of drawingTools
 

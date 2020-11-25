@@ -39,3 +39,13 @@ export class Variable
 export class StringVariable extends Variable
   @parse: (x) -> x
   @stringify: (x) -> x
+
+export upgradeKey = (oldKey, newKey) ->
+  return unless window?.localStorage?
+  try
+    data = window.localStorage.getItem oldKey
+    return unless data
+    window.localStorage.setItem newKey, data
+    window.localStorage.removeItem oldKey
+  catch e
+    # ignore any permission errors
