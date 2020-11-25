@@ -532,8 +532,8 @@ to put it in the center of your view, and then
 
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
-On a multitouch surface (like a tablet with touchscreen), two-finger
-dragging will also activate pan and zoom.
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging also activates pan and zoom.
 
 ### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
 
