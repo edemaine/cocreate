@@ -970,59 +970,54 @@ midpoint = (p, q) ->
   y: 0.5*(p.clientY + q.clientY)
 
 touchStateMachine =
-  touchPointers: []
-  doingPanZoom: false
-  initialScale: null
-  initialDist: null
-  initialX: null
-  initialY: null
-  initialMidX: null
-  initialMidY: null
+  reset: ->
+    @touchPointers = []
+    @doingPanZoom = false
 
-  maybeStartStopPanZoom: ->
+  changedPointerCount: ->
+    ## Called when `touchPointers.length` changes, triggering a check of
+    ## whether to start/stop pan/zoom.
     if @touchPointers.length == 2
       @doingPanZoom = true
-      @initialScale = currentBoard().transform.scale
-      @initialDist = distance(@touchPointers[0], @touchPointers[1])
-      @initialX = currentBoard().transform.x
-      @initialY = currentBoard().transform.y
-      mid = midpoint(@touchPointers[0], @touchPointers[1])
-      @initialMidX = mid.x
-      @initialMidY = mid.y
+      @initialDist = distance @touchPointers[0], @touchPointers[1]
+      @initialTransform = Object.assign {}, currentBoard().transform
+      @initialMid = midpoint @touchPointers[0], @touchPointers[1]
     else
       @doingPanZoom = false
 
   trackTouchPointersDown: (e) ->
     if e.pointerType == 'touch'
       @touchPointers.push e
-      @maybeStartStopPanZoom()
+      @changedPointerCount()
 
   trackTouchPointersUp: (e) ->
     if e.pointerType == 'touch'
-      # Remove the lifted touch pointer
-      @touchPointers = @touchPointers.filter (evs) -> evs.pointerId isnt e.pointerId
-      @maybeStartStopPanZoom()
+      ## Remove the lifted touch pointer.
+      @touchPointers = (pointer for pointer in @touchPointers \
+                        when pointer.pointerId != e.pointerId)
+      @changedPointerCount()
 
   trackTouchPointersMove: (e) ->
-    # Update the moved pointer
-    @touchPointers.forEach((evs, i, arr) ->
-      if evs.pointerId is e.pointerId
-        arr[i] = e
-    )
+    ## Update the moved pointer.
+    for pointer, i in @touchPointers
+      if pointer.pointerId == e.pointerId
+        @touchPointers[i] = e
 
-    # Now handle pan/zooms
+    ## Handle pan/zoom.
     if @doingPanZoom
-      mid = midpoint(@touchPointers[0], @touchPointers[1])
-      curDist = distance(@touchPointers[0], @touchPointers[1])
-      newScale = @initialScale * curDist / @initialDist
-      # Is this the right transformation?
-      currentBoard().transform.scale = newScale
-      currentBoard().transform.x = @initialX + mid.x / newScale - @initialMidX / @initialScale
-      currentBoard().transform.y = @initialY + mid.y / newScale - @initialMidY / @initialScale
+      mid = midpoint @touchPointers[0], @touchPointers[1]
+      curDist = distance @touchPointers[0], @touchPointers[1]
+      newScale = @initialTransform.scale * curDist / @initialDist
+      transform = currentBoard().transform
+      transform.scale = newScale
+      transform.x = @initialTransform.x + mid.x / newScale - @initialMid.x / @initialTransform.scale
+      transform.y = @initialTransform.y + mid.y / newScale - @initialMid.y / @initialTransform.scale
       currentBoard().retransform()
 
-    # Report that we acted on this
-    return @doingPanZoom
+    ## Report whether we acted on this event.
+    @doingPanZoom
+
+touchStateMachine.reset()
 
 pointerEvents = ->
   dom.listen [board.svg, historyBoard.svg],
