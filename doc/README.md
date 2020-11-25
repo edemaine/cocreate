@@ -145,8 +145,8 @@ Related, if you want to zoom into or out of the page, check out the
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
 
-On a multitouch surface (like a tablet with touchscreen), two-finger
-dragging will also activate pan and zoom.
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging also activates pan and zoom.
 
 ### <img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool
 
@@ -430,8 +430,8 @@ buttons to take single steps backward or forward in the timeline.
 * Drag on the page to pan around (like the
 [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
 or pan using a scroll wheel or touchpad pan gesture.
-On a multitouch surface (like a tablet with touchscreen), two-finger
-dragging will also activate pan and zoom during Time Travel.
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging will also activate pan and zoom during Time Travel.
 * [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
 using the buttons, using a scroll wheel while holding
 <kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
