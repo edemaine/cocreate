@@ -331,7 +331,7 @@ Cocreate does its best to handle multiple editing the same text object, but
 it won't be perfect: if two people type changes at exactly the same time,
 one of their changes will get lost.
 
-### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
+### <img src="icons/touch-draw.svg" width="18" alt="Touch Draw Icon"> Touch Draw Toggle
 
 This button toggles whether Cocreate will allow drawing via touchscreen.
 By default, this toggle is on (the button is down) and it will.
