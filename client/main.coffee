@@ -987,16 +987,25 @@ pointerEvents = ->
     wheel: (e) ->
       e.preventDefault()
       transform = currentBoard().transform
+      {deltaX, deltaY} = e
+      switch e.deltaMode
+        #when WheelEvent.DOM_DELTA_PIXEL
+        when WheelEvent.DOM_DELTA_LINE
+          deltaX *= 50
+          deltaY *= 50
+        when WheelEvent.DOM_DELTA_PAGE
+          deltaX *= board.bbox.width
+          deltaY *= board.bbox.height
       if e.ctrlKey
         ## Ensure zoom-out motion is inverse of equivalent zoom-in
-        factor = 1 + 0.01 * Math.abs e.deltaY
-        factor = 1/factor if e.deltaY > 0
+        factor = 1 + 0.01 * Math.abs deltaY
+        factor = 1/factor if deltaY > 0
         currentBoard().setScaleFixingPoint transform.scale * factor,
           x: e.offsetX
           y: e.offsetY
       else
-        transform.x -= e.deltaX / transform.scale
-        transform.y -= e.deltaY / transform.scale
+        transform.x -= deltaX / transform.scale
+        transform.y -= deltaY / transform.scale
         currentBoard().retransform()
   dom.listen board.svg,
     pointermove: (e) ->
