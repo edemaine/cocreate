@@ -988,6 +988,10 @@ pointerEvents = ->
       e.preventDefault()
       transform = currentBoard().transform
       {deltaX, deltaY} = e
+      ## Convert Shift + 1D wheel into horizontal scroll.  MacOS seems to do
+      ## this automatically (hence the deltaX check) but Windows doesn't.
+      if not e.ctrlKey and e.shiftKey and e.deltaX == 0
+        [deltaX, deltaY] = [deltaY, deltaX]
       switch e.deltaMode
         #when WheelEvent.DOM_DELTA_PIXEL
         when WheelEvent.DOM_DELTA_LINE
