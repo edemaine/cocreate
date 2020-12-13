@@ -32,7 +32,7 @@ body
   #history.bottom.horizontal.palette.historyShow
     input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
   #text.nextBottom.horizontal.palette.textShow
-    input#textInput(type="text")
+    input#textInput(type="text", placeholder='(type text here)')
   // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
   svg#board.board.historyHide(touch-action="none")
   svg#historyBoard.board.historyShow(touch-action="none")
