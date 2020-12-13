@@ -1618,6 +1618,31 @@ class Render
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
         .replace /\$MATH(\d+)\$/g, (match, i) ->
           maths[i].out
+        ## Multiline support: if text has newlines, split into multiple <tspan>s
+        ## that duplicate font changes as necessary.
+        if 0 <= text.indexOf '\n'
+          tspans = []  # currently unclosed font-changing <tspan>s
+          text = (
+            for line, i in text.split '\n'
+              resume = tspans.join ''
+              ## Find newly opened <tspan>s, and closing </tspan>s,
+              ## by first removing all <tspan>s closed within the line.
+              unmatched = line
+              loop
+                oldUnmatched = unmatched
+                unmatched = unmatched.replace ///<tspan[^<>]*>.*?</tspan>///, ''
+                break if unmatched == oldUnmatched
+              unmatched.replace ///</tspan>///g, ->
+                tspans.pop()
+                ''
+              unmatched.replace ///<tspan[^<>]*>///g, (match) ->
+                tspans.push match
+                ''
+              line = resume + line + ("</tspan>" for tspan in tspans).join ''
+              line = """<tspan x="0" dy="1.25em">#{line}</tspan>""" unless i == 0
+              line
+          ).join '\n'
+        text
       if id == pointers.text
         input = document.getElementById 'textInput'
         cursor = input.selectionStart

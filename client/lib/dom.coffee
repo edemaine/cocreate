@@ -149,7 +149,9 @@ export escapeQuote = (text) ->
   text
   .replace /&/g, '&amp;'
   .replace /"/g, '&quot;'
+  .replace /\n/g, '&#10;'
 export unescapeQuote = (text) ->
   text
+  .replace /&#10;/g, '\n'
   .replace /&quot;/g, '"'
   .replace /&amp;/g, '&'
