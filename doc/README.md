@@ -320,11 +320,16 @@ You can use basic Markdown syntax to style your text:
 You can use LaTeX syntax `$...$` or `$$...$$` to write formulas.
 For example: `$e^{i \pi} + 1 = 0$` or `$$\int_0^1 {dx \over x}$$`.
 
+To write multiple lines of text, add manual line breaks via the
+<kbd>Enter</kbd> key.  As an exception, line breaks are ignored
+within math mode: any math within `$`s renders on a single line,
+even if it contains newlines.
+
 When you're done typing in a text object, press the <kbd>Escape</kbd> key.
 This won't deselect the object, but it will defocus the text entry field,
 allowing you to press other keyboard shortcuts to use other tools.
 
-Cocreate does its best to handle multiple editing the same text object, but
+Cocreate does its best to handle multiple people editing the same text object, but
 it won't be perfect: if two people type changes at exactly the same time,
 one of their changes will get lost.
 
