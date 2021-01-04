@@ -10,6 +10,7 @@ import {meteorCallPromise} from '/lib/meteorPromise'
 
 board = historyBoard = null # Board objects
 gridDefault = true
+bgDefault = false
 selection = null # Selection object representing selected objects
 undoStack = []
 redoStack = []
@@ -569,6 +570,11 @@ tools =
     once: ->
       dark.set not dark.get()
       updateDark()
+  background:
+    icon: 'background'
+    help: 'Toggle background image'
+    once: ->
+      Meteor.call 'bgToggle', room.page
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -760,6 +766,11 @@ tools =
             Boolean room.pageData.grid
           else
             gridDefault
+        bg:
+          if room.pageData?
+            Boolean room.pageData.bg
+          else
+            bgDefault
       , index+1
       , (error, page) ->
         if error?
@@ -1339,6 +1350,7 @@ class Board
     @bbox = currentBoard().svg.getBoundingClientRect()
     @remotesRender?.resize()
     @grid?.update()
+    @bg?.update()
   setScaleFixingPoint: (newScale, fixed) ->
     ###
     Transform point (x,y) while preserving (fixed.x, fixed.y):
@@ -1386,6 +1398,9 @@ class Board
     ## Update grid after `transform` attribute gets rendered.
     Meteor.setTimeout =>
       @grid?.update()
+    , 0
+    Meteor.setTimeout =>
+      @bg?.update()
     , 0
   renderedChildren: ->
     for child in @root.childNodes
@@ -1819,6 +1834,7 @@ render = null
 observeRender = ->
   board.clear()
   render = new Render board.root
+  board.bg = new Background board.root
   board.grid = new Grid board.root
   Objects.find
     room: room.id
@@ -2001,6 +2017,25 @@ class Grid
             x2: bounds.max.x + margin
       #else
 
+class Background
+  constructor: (root) ->
+    dom.classSet document.querySelector('.tool[data-tool="background"]'),
+      'present', room.data?.bgimg
+    @svg = root.parentNode
+    root.appendChild @bg = dom.create 'g', 
+      class: 'bg'
+    @update()
+  update: (mode = room?.pageBg, bounds) ->
+    @bg.innerHTML = ''
+    bounds ?=
+      min: dom.svgPoint @svg, board.bbox.left, board.bbox.top, @grid
+      max: dom.svgPoint @svg, board.bbox.right, board.bbox.bottom, @grid
+    switch mode
+      when true
+        @bg.appendChild dom.create 'image',
+          href: room.data.bgimg
+      #else
+
 loadingCount = 0
 loadingUpdate = (delta) ->
   loadingCount += delta
@@ -2079,6 +2114,11 @@ class Room
           dom.classSet document.querySelector('.tool[data-tool="grid"]'),
             'active', @pageGrid
           board.grid?.update()
+        if @pageBg != @pageData?.bg
+          @pageBg = @pageData?.bg
+          dom.classSet document.querySelector('.tool[data-tool="background"]'),
+            'active', @pageBg
+          board.bg?.update()
   updatePageNum: ->
     pageNumber = @pageIndex()
     pageNumber++ if pageNumber?
@@ -2103,6 +2143,7 @@ urlChange = ->
   if document.location.pathname == '/'
     Meteor.call 'roomNew',
       grid: gridDefault
+      bg: bgDefault
     , (error, data) ->
       if error?
         updateBadRoom() # should display visible error message

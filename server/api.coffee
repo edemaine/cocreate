@@ -1,8 +1,12 @@
+import bodyParser from 'body-parser';
+
 apiMethods =
-  '/roomNew': (options) ->
+  '/roomNew': (options, req) ->
     try
-      ids = Meteor.call 'roomNew',
-        grid: Boolean JSON.parse options.get 'grid'
+      body = req.body
+      body.grid = Boolean JSON.parse body.grid or Boolean JSON.parse options.get 'grid'
+      body.bg = Boolean JSON.parse body.bg or Boolean JSON.parse options.get 'bg'
+      ids = Meteor.call 'roomNew', body
       status: 200
       json:
         ok: true
@@ -20,6 +24,8 @@ WebApp.rawConnectHandlers.use '/api', (req, res, next) ->
   res.setHeader 'Access-Control-Allow-Methods', '*'
   res.setHeader 'Access-Control-Allow-Headers', '*'
   next()
+
+WebApp.connectHandlers.use '/api', bodyParser.json({limit: '16mb'})
 
 WebApp.connectHandlers.use '/api', (req, res, next) ->
   return unless req.method in ['GET', 'POST', 'OPTIONS']

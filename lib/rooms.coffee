@@ -12,9 +12,11 @@ Meteor.methods
   roomNew: (room = {}) ->
     check room,
       grid: Match.Optional Boolean
+      bg: Match.Optional Boolean
+      bgimg: Match.Optional String
     ## Move room-level data to initial page
     page = {}
-    for key in ['grid'] when key of room
+    for key in ['grid', 'bg'] when key of room
       page[key] = room[key]
       delete room[key]
     unless @isSimulation
