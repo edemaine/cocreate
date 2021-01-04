@@ -19,8 +19,12 @@ dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 export room = null
-currentFill = 'white'
+currentFill = '#ffffff'
 currentFillOn = false
+hilite = ''
+hiliteWidth = 1
+currentColor = '#000000'
+currentWidth = 5
 name = new storage.StringVariable 'name', '', updateName = ->
   nameInput = document.getElementById 'name'
   nameInput.value = name.get() unless nameInput.value == name.get()
@@ -835,7 +839,26 @@ tools =
         selection.edit 'fill', if currentFillOn then currentFill else null
       else
         selectDrawingTool()
-
+  hiliter:
+    palette: 'colors'
+    icon: 'highlighter'
+    help: 'Turn current tool into highlight (wider and translucent)'
+    hotkey: 'h'
+    once: ->
+      if not hilite
+        hilite = '20'
+        hiliteWidth = 4
+        currentColor += hilite
+        currentFill += hilite
+        currentWidth *= hiliteWidth
+      else
+        currentColor = currentColor?.slice(0, -hilite.length)
+        currentFill = currentColor?.slice(0, -hilite.length)
+        currentWidth = currentWidth / hiliteWidth
+        hilite = ''
+        hiliteWidth = 1
+      tool = document.querySelector('.tool[data-tool="hiliter"]')
+      dom.classSet tool, 'active', hilite
 currentTool = 'pan'
 drawingTools =
   pen: true
@@ -853,11 +876,11 @@ currentBoard = ->
     board
 
 colors = [
-  'black'   # Windows Journal black
+  '#000000'   # Windows Journal black
   '#666666' # Windows Journal grey
   '#989898' # medium grey
   '#bbbbbb' # lighter grey
-  'white'
+  '#ffffff'
   '#333399' # Windows Journal dark blue
   '#3366ff' # Windows Journal light blue
   '#00c7c7' # custom light cyan
@@ -872,7 +895,7 @@ colors = [
   '#ed8e00' # custom orange
   '#eced00' # custom yellow
 ]
-currentColor = 'black'
+currentColor = '#000000'
 
 widths = [
   1
@@ -1237,7 +1260,7 @@ class Selection
     if (color = uniformAttribute 'color')?  # uniform draw color
       selectColor color, true, true
     if (fill = uniformAttribute 'fill', false)?  # uniform actual fill color
-      currentFill = fill
+      currentFill = fill + hilite
       currentFillOn = true
       updateFill()
     if fill == undefined  # uniform no fill
@@ -2365,7 +2388,7 @@ drawingToolIcon = (tool, color, fill) ->
   icon
 
 selectColor = (color, keepTool, skipSelection) ->
-  currentColor = color if color?
+  currentColor = (color + hilite) if color?
   dom.select '.color', "[data-color='#{currentColor}']"
   document.documentElement.style.setProperty '--currentColor', currentColor
   if not skipSelection and selection.nonempty()
@@ -2375,7 +2398,7 @@ selectColor = (color, keepTool, skipSelection) ->
   updateCursor()
 
 selectFill = (color) ->
-  currentFill = color
+  currentFill = color + hilite
   currentFillOn = true
   updateFill()
   if selection.nonempty()
@@ -2384,7 +2407,7 @@ selectFill = (color) ->
     selectDrawingTool()
 
 selectWidth = (width, keepTool, skipSelection) ->
-  currentWidth = parseFloat width if width?
+  currentWidth = (parseFloat width * hiliteWidth) if width?
   if not skipSelection and selection.nonempty()
     selection.edit 'width', currentWidth
     keepTool = true
