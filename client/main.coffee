@@ -622,7 +622,7 @@ tools =
         lastTarget = target
         for diff in apply
           switch diff.type
-            when 'pen', 'poly', 'rect', 'ellipse', 'text'
+            when 'pen', 'poly', 'rect', 'ellipse', 'text', 'image'
               obj = diff
               historyObjects[obj.id] = obj
               historyRender.render obj
@@ -1011,6 +1011,52 @@ pointerEvents = ->
         transform.x -= deltaX / transform.scale
         transform.y -= deltaY / transform.scale
         currentBoard().retransform()
+  dom.listen window,
+    paste: (e) ->
+      return unless room?
+      return unless room.page?
+      {x, y} = dom.svgPoint board.svg, 150, 150, board.root
+      # Modified from : https://github.com/cracker0dks/whiteboard/blob/master/src/js/main.js
+      # console.log("pasted!")
+      for item in e.clipboardData?.items
+        if item.type.indexOf("text") != -1
+          text = item
+        if item.type.indexOf("image") != -1
+          blob = item.getAsFile()
+          reader = new window.FileReader()
+          reader.readAsDataURL(blob)
+          reader.onloadend = () ->
+            # console.log("Uploading image!");
+            base64data = reader.result;
+            # console.log(base64data);
+            id = Meteor.apply 'objectNew', [
+              room: room.id
+              page: room.page
+              type: 'image'
+              image: base64data
+              pts: [{x,y}]
+            ], returnStubValue: true
+            undoableOp
+              type: 'new'
+              obj: Objects.findOne id
+          return
+      if text?
+        item.getAsString (s) ->
+          # console.log("Inner Text found:", s)
+          id = Meteor.apply 'objectNew', [
+              room: room.id
+              page: room.page
+              type: 'text'
+              text: s
+              pts: [{x, y}]
+              color: currentColor
+              fontSize: currentFontSize
+            ], returnStubValue: true
+          undoableOp
+            type: 'new'
+            obj: Objects.findOne id
+      else
+        console.log("No image or text found!")
   dom.listen board.svg,
     pointermove: (e) ->
       return unless room?
@@ -1503,6 +1549,20 @@ class Render
       'stroke-width': obj.width
       fill: obj.fill or 'none'
     ellipse
+  renderImage: (obj) ->
+    id = @id obj
+    unless (wrapper = @dom[id])?
+      @root.appendChild @dom[id] = wrapper =
+        dom.create 'g', null,
+          dataset: id: id
+      wrapper.appendChild g = dom.create 'g'
+      g.appendChild image = dom.create 'image', href: obj.image
+    else
+      g = wrapper.firstChild
+      text = g.firstChild
+    dom.attr g,
+      transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
+    wrapper
   renderText: (obj, options) ->
     id = @id obj
     unless (wrapper = @dom[id])?
@@ -1776,6 +1836,8 @@ class Render
           @renderEllipse obj, options
         when 'text'
           @renderText obj, options
+        when 'image'
+          @renderImage obj, options
         else
           console.warn "No renderer for object of type #{obj.type}"
     if options.translate != false and elt?

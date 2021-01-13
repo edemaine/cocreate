@@ -61,6 +61,12 @@ Meteor.methods
           color: String
           text: String
           fontSize: Number
+      when 'image'
+        Object.assign pattern,
+          pts: Match.Where (pts) ->
+            check pts, [xyType]
+            pts.length == 1
+          image: String
       else
         throw new Error "Invalid type #{obj?.type} for object"
     check obj, pattern
