@@ -145,6 +145,9 @@ Related, if you want to zoom into or out of the page, check out the
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
 
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging also activates pan and zoom.
+
 ### <img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool
 
 The Select Tool is the second "mode": you can be in only one mode at once.
@@ -333,7 +336,7 @@ Cocreate does its best to handle multiple people editing the same text object, b
 it won't be perfect: if two people type changes at exactly the same time,
 one of their changes will get lost.
 
-### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
+### <img src="icons/touch-draw.svg" width="18" alt="Touch Draw Icon"> Touch Draw Toggle
 
 This button toggles whether Cocreate will allow drawing via touchscreen.
 By default, this toggle is on (the button is down) and it will.
@@ -432,6 +435,8 @@ buttons to take single steps backward or forward in the timeline.
 * Drag on the page to pan around (like the
 [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
 or pan using a scroll wheel or touchpad pan gesture.
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging will also activate pan and zoom during Time Travel.
 * [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
 using the buttons, using a scroll wheel while holding
 <kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
@@ -532,6 +537,8 @@ to put it in the center of your view, and then
 
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging also activates pan and zoom.
 
 ### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
 

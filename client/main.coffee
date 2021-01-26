@@ -24,7 +24,8 @@ name = new storage.StringVariable 'name', '', updateName = ->
   nameInput = document.getElementById 'name'
   nameInput.value = name.get() unless nameInput.value == name.get()
 updateName()
-allowTouch = new storage.Variable 'allowTouch', true, -> updateAllowTouch()
+storage.upgradeKey 'allowTouch', 'touchDraw'  # backward compatibility
+touchDraw = new storage.Variable 'touchDraw', true, -> updateTouchDraw()
 fancyCursor = new storage.Variable 'fancyCursor',
   #true,
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
@@ -541,14 +542,14 @@ tools =
       #input.focus()
   spacer: {}
   touch:
-    icon: 'hand-pointer'
+    icon: 'touch-draw'
     help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
-    init: updateAllowTouch = ->
+    init: updateTouchDraw = ->
       dom.classSet document.querySelector('.tool[data-tool="touch"]'),
-        'active', allowTouch.get()
+        'active', touchDraw.get()
     once: ->
-      allowTouch.set not allowTouch.get()
-      updateAllowTouch()
+      touchDraw.set not touchDraw.get()
+      updateTouchDraw()
   crosshair:
     icon: 'plus'
     help: 'Use crosshair mouse cursor instead of tool-specific mouse cursor. Easier to aim precisely, and works around a Chrome bug.'
@@ -955,31 +956,94 @@ symmetricPoint = (pt, origin) ->
   x: 2*origin.x - pt.x
   y: 2*origin.y - pt.y
 
-restrictTouch = (e) ->
-  not allowTouch.get() and \
+restrictTouchDraw = (e) ->
+  not touchDraw.get() and \
   e.pointerType == 'touch' and \
   currentTool of drawingTools
+
+distance = (p, q) ->
+  dx = p.clientX - q.clientX
+  dy = p.clientY - q.clientY
+  Math.sqrt(dx * dx + dy * dy)
+
+midpoint = (p, q) ->
+  x: 0.5*(p.clientX + q.clientX)
+  y: 0.5*(p.clientY + q.clientY)
+
+touchStateMachine =
+  reset: ->
+    @touchPointers = []
+    @doingPanZoom = false
+
+  changedPointerCount: ->
+    ## Called when `touchPointers.length` changes, triggering a check of
+    ## whether to start/stop pan/zoom.
+    if @touchPointers.length == 2
+      @doingPanZoom = true
+      @initialDist = distance @touchPointers[0], @touchPointers[1]
+      @initialTransform = Object.assign {}, currentBoard().transform
+      @initialMid = midpoint @touchPointers[0], @touchPointers[1]
+    else
+      @doingPanZoom = false
+
+  trackTouchPointersDown: (e) ->
+    if e.pointerType == 'touch'
+      @touchPointers.push e
+      @changedPointerCount()
+
+  trackTouchPointersUp: (e) ->
+    if e.pointerType == 'touch'
+      ## Remove the lifted touch pointer.
+      @touchPointers = (pointer for pointer in @touchPointers \
+                        when pointer.pointerId != e.pointerId)
+      @changedPointerCount()
+
+  trackTouchPointersMove: (e) ->
+    ## Update the moved pointer.
+    for pointer, i in @touchPointers
+      if pointer.pointerId == e.pointerId
+        @touchPointers[i] = e
+
+    ## Handle pan/zoom.
+    if @doingPanZoom
+      mid = midpoint @touchPointers[0], @touchPointers[1]
+      curDist = distance @touchPointers[0], @touchPointers[1]
+      newScale = @initialTransform.scale * curDist / @initialDist
+      transform = currentBoard().transform
+      transform.scale = newScale
+      transform.x = @initialTransform.x + mid.x / newScale - @initialMid.x / @initialTransform.scale
+      transform.y = @initialTransform.y + mid.y / newScale - @initialMid.y / @initialTransform.scale
+      currentBoard().retransform()
+
+    ## Report whether we acted on this event.
+    @doingPanZoom
+
+touchStateMachine.reset()
 
 pointerEvents = ->
   dom.listen [board.svg, historyBoard.svg],
     pointerdown: (e) ->
       e.preventDefault()
-      return if restrictTouch e
+      touchStateMachine.trackTouchPointersDown e
+      return if restrictTouchDraw e
       text.blur() for text in document.querySelectorAll 'input'
       window.focus()  # for getting keyboard focus when <iframe>d
       tools[currentTool].down? e
     pointerenter: (e) ->
       e.preventDefault()
-      return if restrictTouch e
+      return if restrictTouchDraw e
       tools[currentTool].down? e if e.buttons
     pointerup: stop = (e) ->
       e.preventDefault()
-      return if restrictTouch e
+      touchStateMachine.trackTouchPointersUp e
+      return if restrictTouchDraw e
       tools[currentTool].up? e
     pointerleave: stop
     pointermove: (e) ->
       e.preventDefault()
-      return if restrictTouch e
+      # Don't apply tool if trackTouchPointersMove says it acted
+      return if touchStateMachine.trackTouchPointersMove e
+      return if restrictTouchDraw e
       tools[currentTool].move? e
     contextmenu: (e) ->
       ## Prevent right click from bringing up context menu, as it interferes
@@ -1016,7 +1080,7 @@ pointerEvents = ->
     pointermove: (e) ->
       return unless room?
       return unless room.page?
-      return if restrictTouch e
+      return if restrictTouchDraw e
       remote =
         name: name.get().trim()
         room: room.id
