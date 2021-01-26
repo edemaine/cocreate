@@ -33,6 +33,7 @@ fancyCursor = new storage.Variable 'fancyCursor',
   updateFancyCursor
 dark = new storage.Variable 'dark', false, -> updateDark()
 spaceDown = false
+firefox = /Firefox\//.test navigator.userAgent
 
 if navigator?.platform?.startsWith? 'Mac'
   Ctrl = 'Command'
@@ -83,7 +84,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: "Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), duplicate via <kbd>#{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them."
+    help: "Select objects by dragging rectangle#{if firefox then ' (<i>not currently supported on Firefox</i>)' else ''} or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), duplicate via <kbd>#{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them."
     hotkey: 's'
     start: ->
       pointers.objects = {}
@@ -155,7 +156,7 @@ tools =
             if part.tagName == 'g'
               for subpart in part.childNodes
                 return true if recurse subpart
-            else if board.svg.checkIntersection part, rect
+            else if board.svg.checkIntersection? part, rect
               return true
             false
           if recurse elt  # hit
