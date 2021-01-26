@@ -10,6 +10,7 @@ import {meteorCallPromise} from '/lib/meteorPromise'
 
 board = historyBoard = null # Board objects
 gridDefault = true
+bgDefault = false
 selection = null # Selection object representing selected objects
 undoStack = []
 redoStack = []
@@ -18,8 +19,12 @@ dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 export room = null
-currentFill = 'white'
+currentFill = '#ffffff'
 currentFillOn = false
+hilite = ''
+hiliteWidth = 1
+currentColor = '#000000'
+currentWidth = 5
 name = new storage.StringVariable 'name', '', updateName = ->
   nameInput = document.getElementById 'name'
   nameInput.value = name.get() unless nameInput.value == name.get()
@@ -570,6 +575,11 @@ tools =
     once: ->
       dark.set not dark.get()
       updateDark()
+  background:
+    icon: 'background'
+    help: 'Toggle background image'
+    once: ->
+      Meteor.call 'bgToggle', room.page
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -761,6 +771,11 @@ tools =
             Boolean room.pageData.grid
           else
             gridDefault
+        bg:
+          if room.pageData?
+            Boolean room.pageData.bg
+          else
+            bgDefault
       , index+1
       , (error, page) ->
         if error?
@@ -825,7 +840,26 @@ tools =
         selection.edit 'fill', if currentFillOn then currentFill else null
       else
         selectDrawingTool()
-
+  hiliter:
+    palette: 'colors'
+    icon: 'highlighter'
+    help: 'Turn current tool into highlight (wider and translucent)'
+    hotkey: 'h'
+    once: ->
+      if not hilite
+        hilite = '20'
+        hiliteWidth = 4
+        currentColor += hilite
+        currentFill += hilite
+        currentWidth *= hiliteWidth
+      else
+        currentColor = currentColor?.slice(0, -hilite.length)
+        currentFill = currentColor?.slice(0, -hilite.length)
+        currentWidth = currentWidth / hiliteWidth
+        hilite = ''
+        hiliteWidth = 1
+      tool = document.querySelector('.tool[data-tool="hiliter"]')
+      dom.classSet tool, 'active', hilite
 currentTool = 'pan'
 drawingTools =
   pen: true
@@ -843,11 +877,11 @@ currentBoard = ->
     board
 
 colors = [
-  'black'   # Windows Journal black
+  '#000000'   # Windows Journal black
   '#666666' # Windows Journal grey
   '#989898' # medium grey
   '#bbbbbb' # lighter grey
-  'white'
+  '#ffffff'
   '#333399' # Windows Journal dark blue
   '#3366ff' # Windows Journal light blue
   '#00c7c7' # custom light cyan
@@ -862,7 +896,7 @@ colors = [
   '#ed8e00' # custom orange
   '#eced00' # custom yellow
 ]
-currentColor = 'black'
+currentColor = '#000000'
 
 widths = [
   1
@@ -1227,7 +1261,7 @@ class Selection
     if (color = uniformAttribute 'color')?  # uniform draw color
       selectColor color, true, true
     if (fill = uniformAttribute 'fill', false)?  # uniform actual fill color
-      currentFill = fill
+      currentFill = fill + hilite
       currentFillOn = true
       updateFill()
     if fill == undefined  # uniform no fill
@@ -1340,6 +1374,7 @@ class Board
     @bbox = currentBoard().svg.getBoundingClientRect()
     @remotesRender?.resize()
     @grid?.update()
+    @bg?.update()
   setScaleFixingPoint: (newScale, fixed) ->
     ###
     Transform point (x,y) while preserving (fixed.x, fixed.y):
@@ -1387,6 +1422,9 @@ class Board
     ## Update grid after `transform` attribute gets rendered.
     Meteor.setTimeout =>
       @grid?.update()
+    , 0
+    Meteor.setTimeout =>
+      @bg?.update()
     , 0
   renderedChildren: ->
     for child in @root.childNodes
@@ -1820,6 +1858,7 @@ render = null
 observeRender = ->
   board.clear()
   render = new Render board.root
+  board.bg = new Background board.root
   board.grid = new Grid board.root
   Objects.find
     room: room.id
@@ -2002,6 +2041,25 @@ class Grid
             x2: bounds.max.x + margin
       #else
 
+class Background
+  constructor: (root) ->
+    dom.classSet document.querySelector('.tool[data-tool="background"]'),
+      'present', room.data?.bgimg
+    @svg = root.parentNode
+    root.appendChild @bg = dom.create 'g', 
+      class: 'bg'
+    @update()
+  update: (mode = room?.pageBg, bounds) ->
+    @bg.innerHTML = ''
+    bounds ?=
+      min: dom.svgPoint @svg, board.bbox.left, board.bbox.top, @grid
+      max: dom.svgPoint @svg, board.bbox.right, board.bbox.bottom, @grid
+    switch mode
+      when true
+        @bg.appendChild dom.create 'image',
+          href: room.data.bgimg
+      #else
+
 loadingCount = 0
 loadingUpdate = (delta) ->
   loadingCount += delta
@@ -2080,6 +2138,11 @@ class Room
           dom.classSet document.querySelector('.tool[data-tool="grid"]'),
             'active', @pageGrid
           board.grid?.update()
+        if @pageBg != @pageData?.bg
+          @pageBg = @pageData?.bg
+          dom.classSet document.querySelector('.tool[data-tool="background"]'),
+            'active', @pageBg
+          board.bg?.update()
   updatePageNum: ->
     pageNumber = @pageIndex()
     pageNumber++ if pageNumber?
@@ -2104,6 +2167,7 @@ urlChange = ->
   if document.location.pathname == '/'
     Meteor.call 'roomNew',
       grid: gridDefault
+      bg: bgDefault
     , (error, data) ->
       if error?
         updateBadRoom() # should display visible error message
@@ -2325,7 +2389,7 @@ drawingToolIcon = (tool, color, fill) ->
   icon
 
 selectColor = (color, keepTool, skipSelection) ->
-  currentColor = color if color?
+  currentColor = (color + hilite) if color?
   dom.select '.color', "[data-color='#{currentColor}']"
   document.documentElement.style.setProperty '--currentColor', currentColor
   if not skipSelection and selection.nonempty()
@@ -2335,7 +2399,7 @@ selectColor = (color, keepTool, skipSelection) ->
   updateCursor()
 
 selectFill = (color) ->
-  currentFill = color
+  currentFill = color + hilite
   currentFillOn = true
   updateFill()
   if selection.nonempty()
@@ -2344,7 +2408,7 @@ selectFill = (color) ->
     selectDrawingTool()
 
 selectWidth = (width, keepTool, skipSelection) ->
-  currentWidth = parseFloat width if width?
+  currentWidth = (parseFloat width * hiliteWidth) if width?
   if not skipSelection and selection.nonempty()
     selection.edit 'width', currentWidth
     keepTool = true

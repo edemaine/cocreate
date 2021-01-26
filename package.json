@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.11.2",
+    "bcrypt": "^5.0.0",
+    "body-parser": "^1.19.0",
     "markdownlint-rule-github-internal-links": "^0.0.1",
     "meteor-node-stubs": "^1.0.1",
     "pepjs": "^0.5.2",

@@ -9,6 +9,7 @@ export svgTags =
   circle: true
   ellipse: true
   text: true
+  image: true
 
 export create = (tag, attrs, props, events, children) ->
   if tag of svgTags

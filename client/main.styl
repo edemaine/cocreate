@@ -199,6 +199,11 @@ input, textarea
       margin-top: 1px
       margin-left: 3px
 
+.tool[data-tool="background"]
+  display: none
+  &.present
+    display: block
+
 .tool[data-tool="fill"]
   #fillOn
     display: block
@@ -318,6 +323,10 @@ body.nopage
 #download
   display: none
 
+.bg
+  pointer-events: none
+
 .grid
+  pointer-events: none
   stroke-width: 0.96
   stroke: #c4e3f4

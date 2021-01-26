@@ -14,6 +14,7 @@ Meteor.methods
     check page,
       room: String
       grid: Match.Optional Boolean
+      bg: Match.Optional Boolean
     check index, Match.Optional Number
     unless @isSimulation
       now = new Date
@@ -53,4 +54,11 @@ Meteor.methods
     data = checkPage page
     Pages.update page,
       $set: grid: not data.grid
+    , channel: "rooms::#{data.room}::pages"
+
+  bgToggle: (page) ->
+    check page, String
+    data = checkPage page
+    Pages.update page,
+      $set: bg: not data.bg
     , channel: "rooms::#{data.room}::pages"
