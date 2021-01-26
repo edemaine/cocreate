@@ -2426,6 +2426,9 @@ Meteor.startup ->
           if currentTool == 'history'
             selectTool 'history'  # escape history view by toggling
         else
+          ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
+          ## triggering width 1 hotkey.
+          return if e.ctrlKey or e.metaKey
           if e.key of hotkeys
             hotkeys[e.key]()
           else
