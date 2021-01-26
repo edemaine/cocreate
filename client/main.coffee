@@ -20,8 +20,6 @@ remoteIconOutside = 0.2  # fraction to render icons outside view
 export room = null
 currentFill = 'white'
 currentFillOn = false
-customColor = null
-customColorPicker = null
 name = new storage.StringVariable 'name', '', updateName = ->
   nameInput = document.getElementById 'name'
   nameInput.value = name.get() unless nameInput.value == name.get()
@@ -865,6 +863,8 @@ colors = [
   '#eced00' # custom yellow
 ]
 currentColor = 'black'
+colorMap = {}
+colorMap[color] = true for color in colors
 
 widths = [
   1
@@ -2247,32 +2247,30 @@ paletteColors = ->
       style: backgroundColor: color
       dataset: color: color
     ,
-      click: (e) ->
+      click: onColor = (e) ->
         (if e.shiftKey then selectFill else selectColor) \
           e.currentTarget.dataset.color
-  # custom color thing
-  customColor = dom.create 'div', null,
-      id: 'customColor'
-      type: 'color'
-      className: 'color attrib'
-      dataset: color: 'black'
-      style: backgroundColor: 'black'
+  colorsDiv.appendChild dom.create 'div', null,
+    id: 'customColor'
+    className: 'custom color attrib'
+    dataset: color: '#808080'
+    style: backgroundColor: '#808080'
+  ,
+    click: onColor
+  , [
+    dom.create 'div', null,
+      className: 'set'
     ,
       click: (e) ->
-        if (customColor.classList.contains 'selected') || customColor.dataset.color == 'black'
-          customColorPicker.focus()
-          customColorPicker.click()
-        else
-          selectColor customColor.dataset.color
-  customColorPicker = dom.create 'input', null,
-      id: 'customColorPicker'
+        e.stopPropagation()
+        customColorInput.click()
+    customColorInput = dom.create 'input', null,
       type: 'color'
-      style: display: 'none'
+      id: 'customColorInput'
     ,
-      change: (e) ->
-        selectColor customColorPicker.value, true
-  colorsDiv.appendChild customColor
-  colorsDiv.appendChild customColorPicker
+      input: (e) ->
+        selectColor customColorInput.value
+  ]
 
 widthSize = 22
 paletteWidths = ->
@@ -2351,13 +2349,14 @@ drawingToolIcon = (tool, color, fill) ->
 
 selectColor = (color, keepTool, skipSelection) ->
   currentColor = color if color?
-  if currentColor in colors
+  if currentColor of colorMap
     dom.select '.color', "[data-color='#{currentColor}']"
   else
     dom.select '.color', '#customColor'
+    customColor = document.getElementById 'customColor'
     customColor.style.backgroundColor = currentColor
     customColor.dataset.color = currentColor
-    customColorPicker.value = currentColor
+    document.getElementById('customColorInput').value = currentColor
   document.documentElement.style.setProperty '--currentColor', currentColor
   if not skipSelection and selection.nonempty()
     selection.edit 'color', currentColor

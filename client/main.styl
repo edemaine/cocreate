@@ -146,6 +146,16 @@ input, textarea
 .dark .color
   filter: invert(1) hue-rotate(180deg)
 
+.custom.color
+  input[type="color"], .set
+    width: calc(100% - 2 * 5px)
+    height: calc(100% - 2 * 5px)
+    margin: 5px
+  input[type="color"]
+    opacity: 0
+  .set
+    background: linear-gradient(to bottom right, red,orange,yellow,green,blue,indigo,violet)
+
 .tooltip
   cursor: help
   display: block
