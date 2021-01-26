@@ -622,8 +622,9 @@ and
 When you choose a fill color, you automatically turn on
 [<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill](#-fill---no-fill-toggle).
 
-The last color button has a rainbow on it, indicating that it can take on
-any color.  Selecting the rainbow subicon brings up a color selection widget
+The last color button <img width="18" src="icons/rainbow.svg">
+has a rainbow on it, indicating that it can take on any color.
+Selecting the rainbow subicon brings up a color selection widget
 (dependent on your browser), letting you change the custom color
 which is indicated by the colored border around the rainbow.
 Selecting the colored border directly lets you choose the same color again

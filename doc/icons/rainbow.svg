@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-43 -43 598 598">
+<defs>
+  <linearGradient id="rainbow" gradientTransform="rotate(45)">
+    <stop offset="0%" stop-color="red"/>
+    <stop offset="16.666%" stop-color="orange"/>
+    <stop offset="33.333%" stop-color="yellow"/>
+    <stop offset="50%" stop-color="green"/>
+    <stop offset="66.666%" stop-color="blue"/>
+    <stop offset="83.333%" stop-color="indigo"/>
+    <stop offset="100%" stop-color="violet"/>
+  </linearGradient>
+</defs>
+<rect x="-43" y="-43" width="598" height="598" fill="#ccc"/>
+<rect x="0" y="0" width="512" height="512" fill="#808080"/>
+<rect x="112" y="112" width="288" height="288" fill="url(#rainbow)"/>
+</svg>

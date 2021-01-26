@@ -2252,7 +2252,7 @@ paletteColors = ->
           e.currentTarget.dataset.color
   colorsDiv.appendChild dom.create 'div', null,
     id: 'customColor'
-    className: 'custom color attrib'
+    className: 'color attrib'
     dataset: color: '#808080'
     style: backgroundColor: '#808080'
   ,
