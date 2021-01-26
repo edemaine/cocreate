@@ -21,8 +21,20 @@ remoteIconOutside = 0.2  # fraction to render icons outside view
 export room = null
 currentFill = 'white'
 currentFillOn = false
-allowTouch = new storage.Variable 'allowTouch', true, updateAllowTouch
+name = new storage.StringVariable 'name', '', updateName = ->
+  nameInput = document.getElementById 'name'
+  nameInput.value = name.get() unless nameInput.value == name.get()
+updateName()
+allowTouch = new storage.Variable 'allowTouch', true, -> updateAllowTouch()
+fancyCursor = new storage.Variable 'fancyCursor',
+  #true,
+  ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
+  ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488
+  not /Chrom(e|ium)\/86\./.test(navigator.userAgent),
+  updateFancyCursor
+dark = new storage.Variable 'dark', false, -> updateDark()
 spaceDown = false
+firefox = /Firefox\//.test navigator.userAgent
 
 if navigator?.platform?.startsWith? 'Mac'
   Ctrl = 'Command'
@@ -73,7 +85,7 @@ tools =
   select:
     icon: 'mouse-pointer'
     hotspot: [0.21875, 0.03515625]
-    help: "Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), duplicate via <kbd>#{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them."
+    help: "Select objects by dragging rectangle#{if firefox then ' (<i>not currently supported on Firefox</i>)' else ''} or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), duplicate via <kbd>#{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them."
     hotkey: 's'
     start: ->
       pointers.objects = {}
@@ -145,7 +157,7 @@ tools =
             if part.tagName == 'g'
               for subpart in part.childNodes
                 return true if recurse subpart
-            else if board.svg.checkIntersection part, rect
+            else if board.svg.checkIntersection? part, rect
               return true
             false
           if recurse elt  # hit
@@ -165,7 +177,7 @@ tools =
         undoableOp
           type: 'multi'
           ops:
-            for id, obj of pointers.objects
+            for id, obj of pointers.objects when obj?
               type: 'edit'
               id: id
               before:
@@ -186,7 +198,7 @@ tools =
           here = snapPoint eventToOrthogonalPoint e, h.start
           ## Don't set h.moved out here in case no objects selected
           diffs = {}
-          for id, obj of pointers.objects
+          for id, obj of pointers.objects when obj?
             h.moved ?= {}
             tx = (obj.tx ? 0) + (here.x - h.start.x)
             ty = (obj.ty ? 0) + (here.y - h.start.y)
@@ -392,7 +404,7 @@ tools =
     move: (e) ->
       pointers[e.pointerId] ?= new Highlighter
       h = pointers[e.pointerId]
-      target = h.eventTop e
+      target = h.eventCoalescedTop e
       if target?
         if distanceThreshold h.down, e, eraseDist
           h.down = true
@@ -410,7 +422,7 @@ tools =
     hotkey: 't'
     init: ->
       input = document.getElementById 'textInput'
-      updateCursor = (e) ->
+      updateTextCursor = (e) ->
         setTimeout ->
           return unless pointers.text?
           render.render Objects.findOne(pointers.text), text: true
@@ -419,9 +431,9 @@ tools =
         keydown: (e) ->
           e.stopPropagation() # avoid hotkeys
           e.target.blur() if e.key == 'Escape'
-          updateCursor e
-        click: updateCursor
-        paste: updateCursor
+          updateTextCursor e
+        click: updateTextCursor
+        paste: updateTextCursor
         input: (e) ->
           return unless pointers.text?
           text = input.value
@@ -538,6 +550,27 @@ tools =
     once: ->
       allowTouch.set not allowTouch.get()
       updateAllowTouch()
+  crosshair:
+    icon: 'plus'
+    help: 'Use crosshair mouse cursor instead of tool-specific mouse cursor. Easier to aim precisely, and works around a Chrome bug.'
+    init: updateFancyCursor = ->
+      dom.classSet document.querySelector('.tool[data-tool="crosshair"]'),
+        'active', not fancyCursor.get()
+      selectTool()
+    once: ->
+      fancyCursor.set not fancyCursor.get()
+      updateFancyCursor()
+  dark:
+    icon: 'moon'
+    help: 'Toggle dark mode (just for you), which flips dark and light colors.'
+    init: updateDark = ->
+      dom.classSet document.querySelector('.tool[data-tool="dark"]'),
+        'active', dark.get()
+      dom.classSet document.body, 'dark', dark.get()
+      updateCursor()
+    once: ->
+      dark.set not dark.get()
+      updateDark()
   grid:
     icon: 'grid'
     help: 'Toggle grid/graph paper'
@@ -651,21 +684,15 @@ tools =
       oldTransform = root.getAttribute 'transform'
       root.removeAttribute 'transform'
       ## Choose elements to export
-      elts =
-        for elt in root.childNodes
-          continue if elt.classList.contains 'highlight'
-          continue if elt.classList.contains 'selected'
-          continue if elt.classList.contains 'outline'
-          continue if elt.classList.contains 'grid'
-          continue unless elt.dataset.id
-          elt
       if selection.nonempty() and currentBoard() == board
-        elts = (elt for elt in elts when selection.has elt.dataset.id)
+        elts = currentBoard().selectedRenderedChildren()
+      else
+        elts = currentBoard().renderedChildren()
       ## Compute bounding box using SVG's getBBox() and getCTM()
-      {min, max} = dom.unionSvgExtremes currentBoard().svg, elts
+      bbox = currentBoard().renderedBBox elts
       ## Temporarily make grid span entire drawing
       if currentBoard().grid?
-        currentBoard().grid.update room.pageGrid, {min, max}
+        currentBoard().grid.update room.pageGrid, bbox
         elts.splice 0, 0, currentBoard().grid.grid
       ## Create SVG header
       svg = (elt.outerHTML for elt in elts).join '\n'
@@ -686,7 +713,7 @@ tools =
         '''
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
-        <svg xmlns="#{dom.SVGNS}" viewBox="#{min.x} #{min.y} #{max.x - min.x} #{max.y - min.y}">
+        <svg xmlns="#{dom.SVGNS}" viewBox="#{bbox.min.x} #{bbox.min.y} #{bbox.max.x - bbox.min.x} #{bbox.max.y - bbox.min.y}">
         <style>
         .grid { stroke-width: 0.96; stroke: #c4e3f4 }
         #{fonts}</style>
@@ -763,7 +790,7 @@ tools =
       transform = currentBoard().transform
       log = Math.round(Math.log(transform.scale) / Math.log(factor))
       log += delta
-      currentBoard().setScale factor ** log
+      currentBoard().setScaleFixingCenter factor ** log
   pageZoomIn:
     icon: 'search-plus'
     help: 'Zoom in 20%, relative to center'
@@ -774,7 +801,19 @@ tools =
     help: 'Reset zoom to 100%'
     hotkey: '0'
     once: ->
-      currentBoard().setScale 1
+      currentBoard().setScaleFixingCenter 1
+  pageZoomFit:
+    icon: 'zoom-fit'
+    help: 'Zoom to fit screen to all objects or selection'
+    hotkey: '9'
+    once: ->
+      ## Choose elements to contain
+      if selection.nonempty() and currentBoard() == board
+        elts = currentBoard().selectedRenderedChildren()
+      else
+        elts = currentBoard().renderedChildren()
+      return unless elts.length
+      currentBoard().zoomToFit currentBoard().renderedBBox elts
   pageSpacer: {}
   fill:
     palette: 'colors'
@@ -800,6 +839,7 @@ drawingTools =
   segment: true
   rect: true
   ellipse: true
+  text: true
 lastDrawingTool = 'pen'
 hotkeys = {}
 
@@ -830,6 +870,8 @@ colors = [
   '#eced00' # custom yellow
 ]
 currentColor = 'black'
+colorMap = {}
+colorMap[color] = true for color in colors
 
 widths = [
   1
@@ -952,13 +994,40 @@ pointerEvents = ->
       ## Prevent right click from bringing up context menu, as it interferes
       ## with e.g. drawing.
       e.preventDefault()
+    wheel: (e) ->
+      e.preventDefault()
+      transform = currentBoard().transform
+      {deltaX, deltaY} = e
+      ## Convert Shift + 1D wheel into horizontal scroll.  MacOS seems to do
+      ## this automatically (hence the deltaX check) but Windows doesn't.
+      if not e.ctrlKey and e.shiftKey and e.deltaX == 0
+        [deltaX, deltaY] = [deltaY, deltaX]
+      switch e.deltaMode
+        #when WheelEvent.DOM_DELTA_PIXEL
+        when WheelEvent.DOM_DELTA_LINE
+          deltaX *= 50
+          deltaY *= 50
+        when WheelEvent.DOM_DELTA_PAGE
+          deltaX *= board.bbox.width
+          deltaY *= board.bbox.height
+      if e.ctrlKey
+        ## Ensure zoom-out motion is inverse of equivalent zoom-in
+        factor = 1 + 0.01 * Math.abs deltaY
+        factor = 1/factor if deltaY > 0
+        currentBoard().setScaleFixingPoint transform.scale * factor,
+          x: e.offsetX
+          y: e.offsetY
+      else
+        transform.x -= deltaX / transform.scale
+        transform.y -= deltaY / transform.scale
+        currentBoard().retransform()
   dom.listen board.svg,
     pointermove: (e) ->
       return unless room?
       return unless room.page?
       return if restrictTouch e
       remote =
-        name: document.getElementById('name').value.trim()
+        name: name.get().trim()
         room: room.id
         page: room.page
         tool: currentTool
@@ -978,6 +1047,12 @@ class Highlighter
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
     @findGroup document.elementFromPoint e.clientX, e.clientY
+  eventCoalescedTop: (e) ->
+    ## Find first event in the coalesced sequence that hits an object
+    for c in e.getCoalescedEvents?() ? [e]
+      if top = @eventTop c
+        return top
+    undefined
   eventAll: (e) ->
     for elt in document.elementsFromPoint e.clientX, e.clientY
       elt = @findGroup elt
@@ -1254,6 +1329,12 @@ historyAdvance = (delta) ->
   event.initEvent 'change', false, true
   range.dispatchEvent event
 
+nonrenderedClasses =
+  highlight: true
+  selected: true
+  outline: true
+  grid: true
+
 class Board
   constructor: (domId) ->
     @svg = document.getElementById domId
@@ -1262,26 +1343,52 @@ class Board
       x: 0
       y: 0
       scale: 1
-    @resize()
   resize: ->
-    ## @bbox maintains client bounding box (top/left/bottom/right) of board
-    @bbox = @svg.getBoundingClientRect()
+    ## @bbox maintains client bounding box (top/left/bottom/right) of board,
+    ## computed from the currently visible board (maybe not this one).
+    @bbox = currentBoard().svg.getBoundingClientRect()
     @remotesRender?.resize()
     @grid?.update()
-  setScale: (newScale) ->
+  setScaleFixingPoint: (newScale, fixed) ->
     ###
-    Maintain center point (x,y):
-      bbox.width/2 = (x + transform.x) * transform.scale
-        => x = bbox.width/2 / transform.scale - transform.x
-      bbox.width/2 = (x + newX) * newScale
-        => newX = bbox.width/2 / newScale - x
-         = bbox.width/2 / newScale - bbox.width/2 / transform.scale + transform.x
-         = bbox.width/2 * (1 / newScale - 1 / transform.scale) + transform.x
+    Transform point (x,y) while preserving (fixed.x, fixed.y):
+      fixed.x = (x + transform.x) * transform.scale
+        => x = fixed.x / transform.scale - transform.x
+      fixed.x = (x + newX) * newScale
+        => newX = fixed.x / newScale - x
+         = fixed.x / newScale - fixed.x / transform.scale + transform.x
+         = fixed.x * (1 / newScale - 1 / transform.scale) + transform.x
     ###
-    @transform.x += @bbox.width/2 * (1/newScale - 1/@transform.scale)
-    @transform.y += @bbox.height/2 * (1/newScale - 1/@transform.scale)
+    @transform.x += fixed.x * (1/newScale - 1/@transform.scale)
+    @transform.y += fixed.y * (1/newScale - 1/@transform.scale)
     @transform.scale = newScale
     @retransform()
+  zoomToFit: ({min, max}, extra = 0.05) ->
+    ## Change transform to fit on screen the rectangle bounded by (min, max),
+    ## as output by renderedBBox() or dom.unionSvgExtremes(), plus 5%.
+    width = max.x - min.x
+    height = max.y - min.y
+    return unless width and height
+    midx = 0.5 * (min.x + max.x)
+    midy = 0.5 * (min.y + max.y)
+    hScale = @bbox.width / width
+    vScale = @bbox.height / height
+    newScale = Math.min hScale, vScale
+    newScale /= 1 + extra
+    # Center the content
+    targetx = midx - 0.5*@bbox.width/newScale
+    targety = midy - 0.5*@bbox.height/newScale
+    @transform.x = -targetx
+    @transform.y = -targety
+    @transform.scale = newScale
+    @retransform()
+  setScaleFixingCenter: (newScale) ->
+    ###
+    Maintain center point (bbox.width/2, bbox.height/2)
+    ###
+    @setScaleFixingPoint newScale,
+      x: @bbox.width/2
+      y: @bbox.height/2
   retransform: ->
     @root.setAttribute 'transform',
       "scale(#{@transform.scale}) translate(#{@transform.x} #{@transform.y})"
@@ -1290,6 +1397,19 @@ class Board
     Meteor.setTimeout =>
       @grid?.update()
     , 0
+  renderedChildren: ->
+    for child in @root.childNodes
+      skip = false
+      for className in child.classList
+        if className of nonrenderedClasses
+          skip = true
+          break
+      continue if skip
+      child
+  selectedRenderedChildren: ->
+    child for child in @renderedChildren() when selection.has child.dataset.id
+  renderedBBox: (children) ->
+    dom.unionSvgExtremes @svg, children, @root
   clear: ->
     @root.innerHTML = ''
 
@@ -1409,7 +1529,7 @@ class Render
     dom.attr text,
       fill: obj.color
       style: "font-size:#{obj.fontSize}px"
-    if options?.text != false or options?.fontSize != false
+    if options?.text != false or options?.fontSize != false or options?.color != false
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
       @texDelete id if @texById[id]?
@@ -1508,6 +1628,31 @@ class Render
         .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
         .replace /\$MATH(\d+)\$/g, (match, i) ->
           maths[i].out
+        ## Multiline support: if text has newlines, split into multiple <tspan>s
+        ## that duplicate font changes as necessary.
+        if 0 <= text.indexOf '\n'
+          tspans = []  # currently unclosed font-changing <tspan>s
+          text = (
+            for line, i in text.split '\n'
+              resume = tspans.join ''
+              ## Find newly opened <tspan>s, and closing </tspan>s,
+              ## by first removing all <tspan>s closed within the line.
+              unmatched = line
+              loop
+                oldUnmatched = unmatched
+                unmatched = unmatched.replace ///<tspan[^<>]*>.*?</tspan>///, ''
+                break if unmatched == oldUnmatched
+              unmatched.replace ///</tspan>///g, ->
+                tspans.pop()
+                ''
+              unmatched.replace ///<tspan[^<>]*>///g, (match) ->
+                tspans.push match
+                ''
+              line = resume + line + ("</tspan>" for tspan in tspans).join ''
+              line = """<tspan x="0" dy="1.25em">#{line}</tspan>""" unless i == 0
+              line
+          ).join '\n'
+        text
       if id == pointers.text
         input = document.getElementById 'textInput'
         cursor = input.selectionStart
@@ -1563,6 +1708,7 @@ class Render
       exScale = 0.523
       exScaler = (match, dimen, value) ->
         "#{dimen}=\"#{job[dimen] = exScale * parseFloat value}\""
+      job.depth = 0  # default if no vertical-align specification
       svg = svg
       .replace /\b(width)="([\-\.\d]+)ex"/, exScaler
       .replace /\b(height)="([\-\.\d]+)ex"/, exScaler
@@ -1900,10 +2046,14 @@ class Room
     @auto = Tracker.autorun =>
       @data = Rooms.findOne @id
       return unless @data?
-      updateBadRoom()
-      @changePage @data.pages?[0] unless @page?
-      document.getElementById('numPages').innerHTML =
-        @data.pages?.length ? '?'
+      Tracker.nonreactive =>  # depend only on room data
+        updateBadRoom()
+        if @page?
+          @updatePageNum()  # update page number if set of pages changes
+        else
+          @changePage @data.pages?[0]  # start on first page if not on a page
+        document.getElementById('numPages').innerHTML =
+          @data.pages?.length ? '?'
     @gridSnap = new storage.Variable "#{@id}.gridSnap", false, updateGridSnap
   updateUI: ->
     updateGridSnap()
@@ -1917,10 +2067,10 @@ class Room
   changePage: (page) ->
     # pageAttributes should maybe be in separate Page class
     @pageAuto?.stop()
-    @page = page if page?
+    @page = page
     tools[currentTool]?.stop?()
     @roomObserveObjects?.stop()
-    roomObserveRemotes?.stop()
+    @roomObserveRemotes?.stop()
     if @page?
       @roomObserveObjects = observeRender()
       @roomObserveRemotes = observeRemotes()
@@ -1933,11 +2083,12 @@ class Room
     @pageGrid = null
     @pageAuto = Tracker.autorun =>
       @pageData = Pages.findOne @page
-      if @pageGrid != @pageData?.grid
-        @pageGrid = @pageData?.grid
-        dom.classSet document.querySelector('.tool[data-tool="grid"]'),
-          'active', @pageGrid
-        board.grid?.update()
+      Tracker.nonreactive =>  # depend only on page data
+        if @pageGrid != @pageData?.grid
+          @pageGrid = @pageData?.grid
+          dom.classSet document.querySelector('.tool[data-tool="grid"]'),
+            'active', @pageGrid
+          board.grid?.update()
   updatePageNum: ->
     pageNumber = @pageIndex()
     pageNumber++ if pageNumber?
@@ -2011,7 +2162,8 @@ paletteTools = ->
       container.appendChild div = dom.create 'div', null,
         className: 'tool'
         dataset: tool: tool
-        innerHTML: if icon then icons.svgIcon icon
+        innerHTML: if icon then icons.svgIcon \
+          icons.modIcon icon, fill: 'currentColor'
       ,
         click: (e) ->
           removeTooltip()
@@ -2048,6 +2200,32 @@ paletteTools = ->
   ## Move name entry to end
   document.getElementById('pages').appendChild document.getElementById 'name'
 
+setCursor = (target, icon, xFrac, yFrac) ->
+  if fancyCursor.get()
+    options = {}
+    if dark.get()
+      options.style = 'filter:invert(1) hue-rotate(180deg)'
+    icons.setCursor target, icon, xFrac, yFrac, options
+  else
+    target.style.cursor = null
+
+updateCursor = ->
+  if currentTool of drawingTools
+    ## Drawing tools' cursors depend on the current color
+    if currentTool of drawingTools
+      setCursor board.svg,
+        drawingToolIcon(currentTool, currentColor,
+          if currentFillOn then currentFill),
+        ...tools[currentTool].hotspot
+  else if currentTool == 'history'
+    setCursor document.getElementById('historyRange'),
+      tools['history'].icon, ...tools['history'].hotspot
+    setCursor document.getElementById('historyBoard'),
+      tools['pan'].icon, ...tools['pan'].hotspot
+  else
+    setCursor board.svg, tools[currentTool].icon,
+      ...tools[currentTool].hotspot
+
 lastTool = null
 selectTool = (tool, options) ->
   {noStart, noStop} = options if options?
@@ -2062,19 +2240,7 @@ selectTool = (tool, options) ->
     lastTool = currentTool
     currentTool = tool
   dom.select '.tool', "[data-tool='#{currentTool}']"
-  if currentTool of drawingTools
-    selectColor() # set color-specific icon
-  else if currentTool == 'history'
-    icons.setCursor document.getElementById('historyRange'),
-      tools['history'].icon, ...tools['history'].hotspot
-    icons.setCursor document.getElementById('historyBoard'),
-      tools['pan'].icon, ...tools['pan'].hotspot
-  else
-    # Deselect color and width if not in pen mode
-    #dom.select '.color'
-    #dom.select '.width'
-    icons.setCursor board.svg, tools[currentTool].icon,
-      ...tools[currentTool].hotspot
+  updateCursor()
   pointers = {}  # tool-specific data
   tools[currentTool]?.start?() unless noStart
   document.body.classList.add "tool-#{currentTool}" if currentTool
@@ -2087,7 +2253,7 @@ updateFill = ->
   fillTool = document.querySelector('.tool[data-tool="fill"]')
   dom.classSet fillTool, 'active', currentFillOn
   fillTool.style.color = currentFill
-  colorIcon()
+  updateCursor()
 
 paletteColors = ->
   colorsDiv = document.getElementById 'colors'
@@ -2097,9 +2263,30 @@ paletteColors = ->
       style: backgroundColor: color
       dataset: color: color
     ,
-      click: (e) ->
+      click: onColor = (e) ->
         (if e.shiftKey then selectFill else selectColor) \
           e.currentTarget.dataset.color
+  colorsDiv.appendChild dom.create 'div', null,
+    id: 'customColor'
+    className: 'color attrib'
+    dataset: color: '#808080'
+    style: backgroundColor: '#808080'
+  ,
+    click: onColor
+  , [
+    dom.create 'div', null,
+      className: 'set'
+    ,
+      click: (e) ->
+        e.stopPropagation()
+        customColorInput.click()
+    customColorInput = dom.create 'input', null,
+      type: 'color'
+      id: 'customColorInput'
+    ,
+      input: (e) ->
+        selectColor customColorInput.value
+  ]
 
 widthSize = 22
 paletteWidths = ->
@@ -2178,21 +2365,20 @@ drawingToolIcon = (tool, color, fill) ->
 
 selectColor = (color, keepTool, skipSelection) ->
   currentColor = color if color?
-  dom.select '.color', "[data-color='#{currentColor}']"
+  if currentColor of colorMap
+    dom.select '.color', "[data-color='#{currentColor}']"
+  else
+    dom.select '.color', '#customColor'
+    customColor = document.getElementById 'customColor'
+    customColor.style.backgroundColor = currentColor
+    customColor.dataset.color = currentColor
+    document.getElementById('customColorInput').value = currentColor
   document.documentElement.style.setProperty '--currentColor', currentColor
   if not skipSelection and selection.nonempty()
     selection.edit 'color', currentColor
     keepTool = true
   selectDrawingTool() unless keepTool
-  colorIcon()
-
-colorIcon = ->
-  ## Drawing tools' cursors depend on the current color
-  if currentTool of drawingTools
-    icons.setCursor board.svg,
-      drawingToolIcon(currentTool, currentColor,
-        if currentFillOn then currentFill),
-      ...tools[currentTool].hotspot
+  updateCursor()
 
 selectFill = (color) ->
   currentFill = color
@@ -2236,12 +2422,15 @@ resize = (reps = 1) ->
     document.documentElement.style.setProperty attrib,
       "#{scrollbar + paletteSize()}px"
   board.resize()
+  historyBoard.resize()
   setTimeout (-> resize reps-1), 0 if reps
 
 Meteor.startup ->
-  document.getElementById('loading').innerHTML = icons.svgIcon 'spinner'
+  document.getElementById('loading').innerHTML = icons.svgIcon \
+    icons.modIcon 'spinner', fill: 'currentColor'
   board = new Board 'board'
   historyBoard = new Board 'historyBoard'
+  resize()
   selection = new Selection board
   paletteTools()
   paletteWidths()
@@ -2284,6 +2473,9 @@ Meteor.startup ->
           if currentTool == 'history'
             selectTool 'history'  # escape history view by toggling
         else
+          ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
+          ## triggering width 1 hotkey.
+          return if e.ctrlKey or e.metaKey
           if e.key of hotkeys
             hotkeys[e.key]()
           else
@@ -2308,26 +2500,28 @@ Meteor.startup ->
         page = Math.min room?.data.pages.length, Math.max 1, page
         room.changePage room?.data.pages[page-1]
 
-  dom.listen name = document.getElementById('name'),
+  dom.listen nameInput = document.getElementById('name'),
     keydown: (e) ->
       e.stopPropagation() # avoid width setting hotkey
     input: (e) ->
-      localStorage.setItem 'name', name.value
-  name.value = localStorage.getItem 'name'
+      name.set nameInput.value
+  ## Coop protocol
   dom.listen window,
-    storage: (e) ->
-      switch e.key
-        when 'name'
-          name.value = e.newValue
-    ## Coop protocol
     message: (e) ->
       return unless e.data?.coop
-      return unless typeof e.data.user?.fullName == 'string'
-      name.value = e.data.user.fullName
-  (window.parent ? window.opener).postMessage
-    coop: 1
-    status: 'ready'
-  , '*'
+      if typeof e.data.user?.fullName == 'string'
+        name.setTemp e.data.user.fullName
+        name.update()
+      if typeof e.data.theme?.dark == 'boolean'
+        dark.setTemp e.data.theme.dark
+        dark.update()
+  ## window.opener can be null, but window.parent defaults to window
+  parent = window.opener ? window.parent
+  if parent? and parent != window
+    parent.postMessage
+      coop: 1
+      status: 'ready'
+    , '*'
 
   document.getElementById('roomLinkStyle').innerHTML =
     Meteor.absoluteUrl 'r/ABCD23456789vwxyz'

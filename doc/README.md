@@ -136,9 +136,14 @@ Panning is special because it's accessible in any mode (if you have a keyboard)
 by holding down the <kbd>Space</kbd> key and then dragging the page.
 (This behavior matches Adobe Creative Suite.)
 
+A scroll wheel or a touchpad's scroll gesture (typically
+two-finger dragging) also pans the canvas.
+
 Related, if you want to zoom into or out of the page, check out the
 [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out /
 <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In buttons](#-zoom-out---zoom-in).
+You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
+or using a touchpad's zoom gesture (typically two-finger pinching).
 
 ### <img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool
 
@@ -315,11 +320,16 @@ You can use basic Markdown syntax to style your text:
 You can use LaTeX syntax `$...$` or `$$...$$` to write formulas.
 For example: `$e^{i \pi} + 1 = 0$` or `$$\int_0^1 {dx \over x}$$`.
 
+To write multiple lines of text, add manual line breaks via the
+<kbd>Enter</kbd> key.  As an exception, line breaks are ignored
+within math mode: any math within `$`s renders on a single line,
+even if it contains newlines.
+
 When you're done typing in a text object, press the <kbd>Escape</kbd> key.
 This won't deselect the object, but it will defocus the text entry field,
 allowing you to press other keyboard shortcuts to use other tools.
 
-Cocreate does its best to handle multiple editing the same text object, but
+Cocreate does its best to handle multiple people editing the same text object, but
 it won't be perfect: if two people type changes at exactly the same time,
 one of their changes will get lost.
 
@@ -333,6 +343,35 @@ touch will work only for clicking buttons and in nondrawing modes:
 [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan](#-pan-tool)
 and
 [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select](#-select-tool).
+
+### <img src="icons/plus.svg" width="18" alt="Crosshair Icon"> Crosshair Toggle
+
+This button toggles whether to use a simple crosshair for the mouse cursor,
+instead of the default behavior of using an icon in the shape of the tool
+itself.  The crosshair might be preferable for aiming the mouse precisely.
+
+But mostly this feature is a workaround for
+[a bug in Chrome 86](https://bugs.chromium.org/p/chromium/issues/detail?id=1138488#c4)
+that will cause drawing to be in the wrong place relative to an SVG cursor
+(if your display is scaled),
+meaning that Chrome 86 will draw correctly with the crosshair cursor
+but not with the fancy tool-specific cursors.
+Cocreate therefore turns on the crosshair option automatically
+if you're using Chrome 86, unless you've turned it off explicitly
+(e.g., because you're not using a scaled display).
+
+### <img src="icons/moon.svg" width="18" alt="Dark Icon"> Dark Mode Toggle
+
+This button toggles "dark mode", which uses a dark background and flips dark
+and light colors, roughly preserving hue and contrast.
+Dark mode is useful if you have light sensitivity or are in a dark room.
+
+This toggle affects only your view, not others' views, so one user can be in
+(default) light mode while another user is in dark mode,
+and they see roughly the same diagram.
+Dark mode approximately preserves the hue of colors, but the brightness is
+inverted, so one user's "bright blue" is another user's "dark blue".
+As a warning, reds and purples currently look somewhat similar in dark mode.
 
 ### <img src="icons/grid.svg" width="18" alt="Grid Icon"> Grid Toggle
 
@@ -383,21 +422,27 @@ last part of the URL (`r/gLoBaLlYuNiQuEiD7`), but this button saves that work.
 
 ### <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
 
-Time Travel is a toggling mode that lets you look at past versions of the
-current page.  It replaces the attribute palette at the bottom of the window
+Time Travel is a toggling mode that lets you look at the history of past
+versions of the current page.
+It replaces the attribute palette at the bottom of the window
 with a slider which starts at the far left (the beginning of time).
 As a result, you'll see a blank screen.
 By dragging the slider to different points in the timeline,
 you'll see the evolution of the page.
 
-While in Time Travel mode, you can drag on the page to pan around
-(like the
-[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
-[<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in),
-[<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
-Also, the
+While in Time Travel mode, you can do the following:
+
+* Use the
 [<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
-buttons let you make single steps backward or forward in the timeline.
+buttons to take single steps backward or forward in the timeline.
+* Drag on the page to pan around (like the
+[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
+or pan using a scroll wheel or touchpad pan gesture.
+* [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
+using the buttons, using a scroll wheel while holding
+<kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
+* [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit).
+* [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
 
 The tool palettes switch to a sepia tone to indicate you're time traveling.
 You can't make any changes or see others' cursors while time traveling.
@@ -491,10 +536,26 @@ So if you want to zoom on something specific,
 to put it in the center of your view, and then
 <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In.
 
+You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
+or using a touchpad's zoom gesture (typically two-finger pinching).
+
 ### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
 
 This button resets the zoom level to 100%, the same as when you first load
 Cocreate.  This is helpful if you get lost zooming in or out.
+
+### <img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
+
+This button sets the zoom and pan so that all objects fit inside the display.
+This can be useful to get an overall picture of the page, and then
+zoom into a part of interest.  In particular, it can help you find
+parts of the page that are previously off-screen.
+
+You can also
+<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select
+a subset of objects and then
+<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
+the selection to the screen.
 
 ### Your Name
 
@@ -566,6 +627,18 @@ and
 [<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
 When you choose a fill color, you automatically turn on
 [<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill](#-fill---no-fill-toggle).
+
+The last color button <img width="18" src="icons/rainbow.svg">
+has a rainbow on it, indicating that it can take on any color.
+Selecting the rainbow subicon brings up a color selection widget
+(dependent on your browser), letting you change the custom color
+which is indicated by the colored border around the rainbow.
+Selecting the colored border directly lets you choose the same color again
+without bringing up the color selection widget.
+If you want to match the color of an existing object, use the
+[<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool)
+to select just that object, which will set the current attributes
+(including custom color) to the attributes of that object.
 
 ## Troubleshooting
 

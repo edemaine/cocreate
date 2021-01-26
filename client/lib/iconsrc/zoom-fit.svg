@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 24.3.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" focusable="false" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 x="0px" y="0px" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
+<path d="M505,476.7L476.7,505c-9.4,9.4-24.6,9.4-33.9,0L343,405.3c-4.5-4.5-7-10.6-7-17V372c-35.3,27.6-79.7,44-128,44
+	C93.1,416,0,322.9,0,208S93.1,0,208,0s208,93.1,208,208c0,48.3-16.4,92.7-44,128h16.3c6.4,0,12.5,2.5,17,7l99.7,99.7
+	C514.3,452.1,514.3,467.3,505,476.7z"/>
+<circle fill="#FFFFFF" cx="208" cy="208" r="136"/>
+<g>
+	
+		<line fill="none" stroke="#000000" stroke-width="56" stroke-linecap="round" stroke-miterlimit="10" x1="208" y1="208" x2="154.5" y2="261.5"/>
+	<polygon stroke="#000000" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		126,232.7 126,290 183.3,290 	"/>
+</g>
+<g>
+	
+		<line fill="none" stroke="#000000" stroke-width="56" stroke-linecap="round" stroke-miterlimit="10" x1="208" y1="208" x2="154.5" y2="154.5"/>
+	<polygon stroke="#000000" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		183.3,126 126,126 126,183.3 	"/>
+</g>
+<g>
+	
+		<line fill="none" stroke="#000000" stroke-width="56" stroke-linecap="round" stroke-miterlimit="10" x1="208" y1="208" x2="261.5" y2="154.5"/>
+	<polygon stroke="#000000" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		290,183.3 290,126 232.7,126 	"/>
+</g>
+<g>
+	
+		<line fill="none" stroke="#000000" stroke-width="56" stroke-linecap="round" stroke-miterlimit="10" x1="208" y1="208" x2="261.5" y2="261.5"/>
+	<polygon stroke="#000000" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		232.7,290 290,290 290,232.7 	"/>
+</g>
+</svg>
