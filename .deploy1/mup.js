@@ -27,11 +27,11 @@ module.exports = {
     },
     env: {
       ROOT_URL: 'https://cocreate.csail.mit.edu',
-      MAIL_URL: 'smtp://cocreate.csail.mit.edu:25?ignoreTLS=true',
+      //MAIL_URL: 'smtp://cocreate.csail.mit.edu:25?ignoreTLS=true',
       //MAIL_FROM: 'cocreate@cocreate.csail.mit.edu',
       MONGO_URL: 'mongodb://mongodb/meteor',
-      MONGO_OPLOG_URL: 'mongodb://mongodb/local',
-      NODE_OPTIONS: '--trace-warnings'
+      //MONGO_OPLOG_URL: 'mongodb://mongodb/local',
+      NODE_OPTIONS: '--trace-warnings --max-old-space-size=2048'
     },
     deployCheckWaitTime: 200,
   },
@@ -63,5 +63,14 @@ module.exports = {
     'pre.deploy': {
       localCommand: 'npm install'
     }
+  },
+
+  // Redis
+  plugins: ['mup-redis'],
+  redis: {
+    servers: {
+      one: {}
+    },
+    version: '6.0.8-alpine',
   },
 };

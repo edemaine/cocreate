@@ -1,8 +1,13 @@
-import {validId} from './id.coffee'
-import {checkRoom} from './rooms.coffee'
+import {validId} from './id'
+import {checkRoom} from './rooms'
+import {checkPage} from './pages'
 
 @Objects = new Mongo.Collection 'objects'
-@ObjectsDiff = new Mongo.Collection 'objects.diff'
+@ObjectsDiff = new Mongo.Collection 'objects.diff' if Meteor.isServer
+
+ObjectsDiff?.configureRedisOplog?(
+  mutation: (options) -> options.pushToRedis = false
+)
 
 xyType =
   x: Number
@@ -24,6 +29,7 @@ Meteor.methods
       _id: Match.Optional String
       type: String
       room: String
+      page: String
       created: Match.Optional Date
       updated: Match.Optional Date
       tx: Match.Optional Number
@@ -39,24 +45,34 @@ Meteor.methods
           pts: [xyType]
           color: String
           width: Number
-      when 'rect'
+      when 'rect', 'ellipse'
         Object.assign pattern,
           pts: Match.Where (pts) ->
             check pts, [xyType]
             pts.length == 2
           color: String
+          fill: Match.Optional Match.OneOf String, null
           width: Number
+      when 'text'
+        Object.assign pattern,
+          pts: Match.Where (pts) ->
+            check pts, [xyType]
+            pts.length == 1
+          color: String
+          text: String
+          fontSize: Number
       else
         throw new Error "Invalid type #{obj?.type} for object"
     check obj, pattern
     unless @isSimulation
       checkRoom obj.room
+      checkPage obj.page
       if obj._id? and Objects.findOne(obj._id)?
         throw new Error "Attempt to create duplicate object #{obj._id}"
       now = new Date
       obj.created ?= now
       obj.updated ?= now
-    id = Objects.insert obj
+    id = Objects.insert obj, channel: "rooms::#{obj.room}::objects"
     unless @isSimulation
       delete obj._id
       obj.id = id
@@ -70,6 +86,7 @@ Meteor.methods
     unless @isSimulation
       obj = checkObject id
       diff.room = obj.room
+      diff.page = obj.page
       diff.type = 'push'
       diff.updated = new Date
       ObjectsDiff.insert diff
@@ -80,11 +97,13 @@ Meteor.methods
           updated: diff.updated
         else
           {}
+    , channel: "rooms::#{diff.room}::objects"
   objectEdit: (diff) ->
-    check diff,
+    id = diff?.id
+    obj = checkObject id
+    pattern =
       id: String
       color: Match.Optional String
-      width: Match.Optional Number
       pts: Match.Optional Match.Where (pts) ->
         return false unless typeof pts == 'object'
         for key, value of pts
@@ -93,7 +112,17 @@ Meteor.methods
         true
       tx: Match.Optional Number
       ty: Match.Optional Number
-    id = diff.id
+    if obj.type in ['pen', 'poly', 'rect', 'ellipse']
+      Object.assign pattern,
+        width: Match.Optional Number
+    if obj.type in ['rect', 'ellipse']
+      Object.assign pattern,
+        fill: Match.Optional Match.OneOf String, null
+    if obj.type == 'text'
+      Object.assign pattern,
+        text: Match.Optional String
+        fontSize: Match.Optional Number
+    check diff, pattern
     set = {}
     for key, value of diff when key != 'id'
       switch key
@@ -103,13 +132,19 @@ Meteor.methods
         else
           set[key] = value
     unless @isSimulation
-      obj = checkObject id
       diff.room = obj.room
+      diff.page = obj.page
       diff.type = 'edit'
       diff.updated = set.updated = new Date
       ObjectsDiff.insert diff
     Objects.update id,
       $set: set
+    , channel: "rooms::#{obj.room}::objects"
+  objectsEdit: (diffs) ->
+    ## Combine multiple edit operations into a single RPC
+    check diffs, [Object]
+    for diff in diffs
+      Meteor.call 'objectEdit', diff
   objectDel: (id) ->
     check id, String
     unless @isSimulation
@@ -117,6 +152,7 @@ Meteor.methods
       ObjectsDiff.insert
         id: id
         room: obj.room
+        page: obj.page
         type: 'del'
         updated: new Date
-    Objects.remove id
+    Objects.remove id, channel: "rooms::#{obj?.room}::objects"

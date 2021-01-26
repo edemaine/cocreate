@@ -23,18 +23,81 @@ on port 3000.
 ## Public Server
 
 To deploy to a **public server**, we recommend deploying from a development
-machine via [meteor-up](https://github.com/kadirahq/meteor-up).
-Installation instructions:
+machine via [meteor-up](http://meteor-up.com/).
+We provide two example deployment configurations:
+
+### Single Machine
+
+We've found that one machine running everything (Meteor, MongoDB, Redis, proxy)
+to be reasonable for up to ~50 simultaneous users,
+given ~2-4GB of RAM and 1-2 cores.
+This configuration can be achieved fully automatically via `mup` as follows:
 
 1. Install Meteor and download Cocreate as above.
-2. Install `mup` via `npm install -g mup`
+2. Install [`mup`](http://meteor-up.com/) and
+   [`mup-redis`](https://github.com/zodern/mup-redis)
+   via `npm install -g mup mup-redis`
    (after installing [Node](https://nodejs.org/en/) and thus NPM).
-3. Edit `.deploy/mup.js` to point to your SSH key (for accessing the server),
-   and your SSL certificate (for an https server).
-4. `cd .deploy`
-5. `mup setup` to install all necessary software on the server
-6. `mup deploy` each time you want to deploy code to server
-   (initially and after each `git pull`)
+3. Copy `settings.json` to `.deploy1/settings.json` and edit if desired
+   (see configuration choices mentioned below).
+4. Edit `.deploy1/mup.js` to point to your hostname/IP and SSH key
+   (for accessing the server), and maybe adjust RAM available to Meteor.
+5. `cd .deploy1`
+6. `mup setup` to install all necessary software on the server.
+7. `mup deploy` each time you want to deploy code to server
+   (initially and after each `git pull`).
+
+### Multiple Machines (Scaling)
+
+To scale beyond ~50 simultaneous users, we offer a different deployment
+configuration in the [`.deployN`](.deployN) directory.  It runs the
+following arrangement of servers:
+
+Number | Tasks | Recommended configuration
+-------|-------|--------------------------
+several (currently 4) | Meteor servers | 2GB RAM (1GB causes occasional crashes), 1 core
+one | MongoDB server | 4GB RAM, 4 cores
+one | Redis and proxy | 1GB RAM, 1 core, open to ports 80 and 443
+
+The nginx reverse proxy is the public facing web server (and should be the
+only server with publicly open ports), and automatically distributes
+requests to the Meteor servers (by IP hashing), automatically detecting
+crashed/upgrading servers and using the other servers to compensate.
+You should firewall the other servers (and the Redis server on
+the proxy machine) to protect them from outside access.
+
+`mup` handles deployment of the Meteor servers and nginx reverse proxy.
+You need to manually setup the MongoDB and Redis servers.
+
+As in the provided [`mup.js`](.deployN/mup.js), all Meteor servers except one
+should have the `COCREATE_SKIP_UPGRADE_DB` environment variable set, to avoid
+multiple servers from upgrading the Cocreate database format from older
+versions.
+
+## Application Performance Management (APM)
+
+To monitor server performance, you can use one of the following:
+
+* [Monti APM](https://montiapm.com/)
+  (no setup required, free for 8-hour retention); or
+* deploy your own
+  [open-source Kadira server](https://github.com/kadira-open/kadira-server).
+  To get this running (on a different machine), I recommend
+  [kadira-compose](https://github.com/edemaine/kadira-compose).
+
+After creating an application on one of the servers above,
+edit your `.deploy/settings.json` to include the following
+(omit `endpoint` if you're using Monti):
+
+```json
+{
+  "kadira": {
+    "appId": "xxxxxxxxxxxxxxxxx",
+    "appSecret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "endpoint": "https://your-kadira-server:22022"
+  }
+}
+```
 
 ## MongoDB
 
@@ -64,6 +127,27 @@ run `mongo cocreate` (or `mongo` then `use cocreate`) and you can directly
 query or update the collections.  (Start with `show collections`, then
 e.g. `db.messages.find()`.)
 On a test server, you can run `meteor mongo` to get the same interface.
+
+## CDN
+
+Cocreate uses
+[tex2svg-webworker](https://github.com/edemaine/tex2svg-webworker/)
+to render LaTeX math.
+For sake of performance, we recommend serving this rather large WebWorker
+script via CDN, and the [provided `settings.json`](settings.json)
+does so via [JSDelivr](https://www.jsdelivr.com/).
+You can configure your `.deploy/settings.json` to use a different CDN as follows:
+
+```json
+{
+  "public": {
+    "tex2svg": "https://your.cdn/tex2svg.js"
+  }
+}
+```
+
+Without this setting, e.g. when developing via `meteor`,
+the WebWorker script will be served from the Cocreate server.
 
 ## bcrypt on Windows
 

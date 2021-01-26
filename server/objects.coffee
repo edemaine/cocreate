@@ -1,5 +1,11 @@
-import {checkId} from '../lib/id.coffee'
+import {checkId} from '../lib/id'
 
-Meteor.publish 'history', (room) ->
-  checkId room, 'room'
-  ObjectsDiff.find room: room
+Meteor.methods
+  history: (room, page) ->
+    @unblock()
+    checkId room, 'room'
+    checkId page, 'page'
+    ObjectsDiff.find
+      room: room
+      page: page
+    .fetch()

@@ -12,7 +12,7 @@ export offset = 0
 export remoteNow = -> Date.now() + offset
 
 ## Automatic updating:
-update = ->
+export update = ->
   t0 = Date.now()
   Meteor.call 'now', (error, ts) ->
     t3 = Date.now()

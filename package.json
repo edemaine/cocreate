@@ -16,15 +16,34 @@
     "url": "https://github.com/edemaine/cocreate/issues"
   },
   "homepage": "https://github.com/edemaine/cocreate",
+  "documentation": "https://github.com/edemaine/cocreate/blob/master/doc/README.md",
   "scripts": {
+    "doc:icons": "coffee --transpile doc/icons/make.coffee",
+    "doc:lint": "markdownlint **/*.md --ignore node_modules --rules markdownlint-rule-github-internal-links",
+    "prepare": "cp node_modules/tex2svg-webworker/dist/tex2svg.js public/",
     "start": "meteor run",
     "test": "meteor test --once --driver-package meteortesting:mocha",
     "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
     "visualize": "meteor --production --extra-packages bundle-visualizer"
   },
   "dependencies": {
-    "@babel/runtime": "^7.8.3",
-    "meteor-node-stubs": "^1.0.0",
-    "pug": "^3.0.0"
+    "@babel/runtime": "^7.11.2",
+    "markdownlint-rule-github-internal-links": "^0.0.1",
+    "meteor-node-stubs": "^1.0.1",
+    "pepjs": "^0.5.2",
+    "pug": "^3.0.0",
+    "tex2svg-webworker": "^0.1.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
+    "coffeescript": "^2.5.1",
+    "markdownlint-cli": "^0.23.2"
+  },
+  "meteor": {
+    "mainModule": {
+      "client": "client/main.coffee",
+      "server": "server/main.coffee"
+    }
   }
 }

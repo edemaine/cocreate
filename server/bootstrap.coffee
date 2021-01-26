@@ -1,11 +1,16 @@
+if process.env.COCREATE_SKIP_UPGRADE_DB
+  return console.log 'Skipping database upgrades.'
+
 ## 'push' diffs used to just list a single point, but arrays are more helpful
 ## to deal with coalesced events, so make them all arrays.
-ObjectsDiff.find
-  type: 'push'
-  pts: $not: $type: 'array'
-.forEach (diff) ->
-  ObjectsDiff.update diff._id,
-    $set: pts: [diff.pts]
+## This update is slow, so it's disabled by default.
+if false
+  ObjectsDiff.find
+    type: 'push'
+    pts: $not: $type: 'array'
+  .forEach (diff) ->
+    ObjectsDiff.update diff._id,
+      $set: pts: [diff.pts]
 
 ## `pen` objects used to have no `width` attribute, and `pts` points' `w`
 ## attribute used to be an absolute width.  Now `w` is a multiplier for `width`.
@@ -45,5 +50,36 @@ Objects.find
     $set:
       width: width
       pts: obj.pts
+
+## Upgrade rooms to have (single) pages.
+Rooms.find
+  pages: $exists: false
+.forEach (room) ->
+  page = Meteor.apply 'pageNew', [
+    room: room._id
+  ], returnStubValue: true
+  Rooms.update room._id,
+    $set: pages: [page]
+  for collection in [Objects, ObjectsDiff, Remotes]
+    collection.update
+      room: room._id
+    ,
+      $set: page: page
+    ,
+      multi: true
+  console.log 'added page', page, 'to room', room._id
+
+## Grid property of page instead of room.
+Rooms.find
+  grid: $exists: true
+.forEach (room) ->
+  Pages.update
+    room: room._id
+  ,
+    $set: grid: room.grid
+  ,
+    multi: true
+  Rooms.update room._id,
+    $unset: grid: ''
 
 console.log 'Upgraded database as necessary.'

@@ -1,7 +1,6 @@
 head
   title Cocreate Shared Whiteboard
-  //-link(href="https://fonts.googleapis.com/css?family=Merriweather:400,400i,700&subset=latin-ext", rel="stylesheet", crossorigin="anonymous")
-  link(href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500&display=swap", rel="stylesheet", crossorigin="anonymous")
+  link(href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&family=Roboto+Slab:wght@500;900&display=swap", rel="stylesheet", crossorigin="anonymous")
   meta(name="viewport", content="width=device-width, initial-scale=1")
 
 body
@@ -16,12 +15,27 @@ body
     .collapse.navbar-collapse#navbar
       ul.nav.navbar-nav.navbar-right
         +loginButtons
+  #pages.top.horizontal.palette
+    #pageNumbers
+      | page
+      input#pageNum(type='text', value='?')
+      | of
+      span#numPages ?
+    // Buttons go here
+    input#name(type='text', placeholder='Your Name')
   #tools.vertical.palette
-  #colors.horizontal.palette.historyHide
-  #history.horizontal.palette.historyShow
+  #attribs.bottom.horizontal.palette.historyHide
+    #widths.subpalette.textHide
+    #fontSizes.subpalette.textShow
+    #fillTool.subpalette
+    #colors.subpalette
+  #history.bottom.horizontal.palette.historyShow
     input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
-  svg#board.board.historyHide
-  svg#historyBoard.board.historyShow
+  #text.nextBottom.horizontal.palette.textShow
+    textarea#textInput(type="text", placeholder='(type text here)')
+  // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
+  svg#board.board.historyHide(touch-action="none")
+  svg#historyBoard.board.historyShow(touch-action="none")
   svg#remotes.board.historyHide
   #badRoom.modal.error
     h1 Invalid Room ID

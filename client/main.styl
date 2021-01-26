@@ -1,26 +1,36 @@
 :root
   --palette-size: 32px
   // The following grow to accomodate scrollbars if needed:
-  --palette-offset-width: var(--palette-size)
-  --palette-offset-height: var(--palette-size)
+  --palette-left-width: var(--palette-size)
+  --palette-bottom-height: var(--palette-size)
+  --palette-top-height: var(--palette-size)
   --palette-color: #ccc
-  --palette-border: 2px
+  --palette-border: 2px #ccc
+  --tooltip-color: hsl(60, 50%, 76%)
   --tooltip-width: 200px
   --tooltip-arrow: 5px
+
+.dark
+  --palette-color: #333
+  --palette-border: 2px #666
+  --tooltip-color: hsl(60, 50%, 25%)
 
 // A few basics from Bootstrap:
 *, :before, :after
   box-sizing: border-box
 svg
   overflow: hidden
-input
+input, textarea
   width: 100%
 kbd
   padding: 2px 4px
-  font-family: monospace
+  font-family: 'Roboto Mono', monospace
   font-size: 90%
   color: #fff
   background-color: #333
+  /.dark &
+    color: #333
+    background-color: #ddd
   border-radius: 3px
   box-shadow: inset 0 -1px 0 rgba(0,0,0,.25)
   display: inline-block // prevent line breaks in CTRL-something
@@ -28,108 +38,183 @@ kbd
 body
   font-family: 'Roboto Slab', serif
   touch-action: none  // Prevent mobile zooming
+  margin: 0
+  background: #fff
+  &.dark
+    color: #aaa
+    background: #000
+input, textarea
+  font-family: 'Roboto Slab', serif
+  font-size: 16px
+  padding-top: 0px
+  /.dark &
+    color: #aaa
+    &::placeholder
+      color: #555
+    background: #000
 
 .board, .modal
   position: absolute
   overflow: hidden
-  top: 0
-  left: var(--palette-offset-width)
-  width: calc(100% - var(--palette-offset-width))
-  height: calc(100% - var(--palette-offset-height))
+  top: var(--palette-top-height)
+  left: var(--palette-left-width)
+  width: calc(100% - var(--palette-left-width))
+  height: calc(100% - var(--palette-top-height) - var(--palette-bottom-height))
+  /.dark &
+    filter: invert(1) hue-rotate(180deg)
 .board
   cursor: crosshair
   touch-action: none  // PointerEvents only
+  user-select: none  // avoid selecting text objects while drawing
 #remotes
   pointer-events: none
 
 .palette
   position: absolute
-  background: content-box var(--palette-color)
+  background: var(--palette-color)
   display: flex
+  z-index: 1
+  user-select: none  // prevent selection e.g. of line thickness numbers
 .vertical.palette
   flex-direction: column
   overflow-x: hidden
   overflow-y: auto
   top: 0
   left: 0
-  width: var(--palette-offset-width)
-  height: calc(100% - var(--palette-offset-height))
-  // Tooltip on right
-  box-sizing: content-box
-  margin-right: calc(-1 * var(--tooltip-width))
-  padding-right: var(--tooltip-width)
+  width: var(--palette-left-width)
+  height: 100%
+  //-height: calc(100% - var(--palette-bottom-height))
 .horizontal.palette
   flex-direction: row
   overflow-x: auto
   overflow-y: hidden
-  bottom: 0
-  left: 0
-  width: 100%
-  height: var(--palette-offset-height)
+  left: var(--palette-left-width)
+  width: calc(100% - var(--palette-left-width))
+  &.top
+    top: 0
+    height: var(--palette-top-height)
+  &.bottom
+    bottom: 0
+    height: var(--palette-bottom-height)
+    //-left: 0
+    //-width: 100%
+  &.nextBottom
+    bottom: var(--palette-bottom-height)
+    height: var(--palette-size)
   &#historyRange
     margin: 0 10px
+.subpalette
+  display: flex
 
-.tool, .color, .width
-  position: relative  // for tooltip placement
+#pageNumbers
+  display: flex
+  align-items: baseline
+  padding: 0px 8px
+  #pageNum
+    width: 2em
+    height: 100%
+    margin: 0 0.3em
+  #numPages
+    margin-left: 0.3em
+#name
+  width: 8em
+
+.tool, .attrib
   flex: none
   width: var(--palette-size)
   height: var(--palette-size)
-  border: var(--palette-border) outset #ccc
+  border: var(--palette-border) outset
   cursor: pointer
 
   &.selected, &.active
     --palette-border: 3px
     background: rgba(0,0,0,0.2)
     border: var(--palette-border) inset rgba(0,0,0,0.2)
+    /.dark &
+      border: var(--palette-border) inset rgba(0,0,0,0.75)
     &[data-color="black"]
       border: var(--palette-border) inset rgba(255,255,255,0.2)
+      /.dark &
+        border: var(--palette-border) inset rgba(255,255,255,0.3)
   &:active
     --palette-border: 3px
     background: rgba(0,0,0,0.4)
     border: var(--palette-border) inset rgba(0,0,0,0.4)
+    /.dark &
+      border: var(--palette-border) inset rgba(0,0,0,1)
+
+.dark .color
+  filter: invert(1) hue-rotate(180deg)
 
 .tooltip
-  display: none
-.tool:hover .tooltip
-  pointer: help
+  cursor: help
   display: block
   position: absolute
   z-index: 99
-  left: calc(var(--palette-size) - var(--palette-border))
-  &.top
-    top: calc(-1 * var(--palette-border))
-  &.bottom
-    bottom: calc(-1 * var(--palette-border))
   width: var(--tooltip-width)
   padding: 5px 8px
   font-size: 16px
-  margin-left: var(--tooltip-arrow)
-  background: padding-box var(--palette-color)
-  // Left arrow
+  background: padding-box var(--tooltip-color)
+  /.dark &
+    color: #ddd
+  // Arrow
   &:before
     content: ''
     position: absolute
-    left: calc(-2 * var(--tooltip-arrow))
     width: var(--tooltip-arrow)
     height: var(--tooltip-arrow)
     border: var(--tooltip-arrow) solid transparent
-    border-right-color: var(--palette-color)
-  &.top:before
-    top: calc(-5px + 0.5 * var(--palette-size))  // 5px is padding on .tooltip
-  &.bottom:before
-    bottom: calc(-5px + 0.5 * var(--palette-size))  // 5px is padding on .tooltip
-  .hotkey
+    pointer-events: none
+  &.vertical
+    left: var(--palette-size)
+    margin-left: var(--tooltip-arrow)
+    // Left arrow
+    &:before
+      left: calc(-2 * var(--tooltip-arrow))
+      border-right-color: var(--tooltip-color)
+    &.align-top:before
+      top: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
+    &.align-bottom:before
+      bottom: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
+  &.horizontal
+    &.top
+      top: var(--palette-top-height)
+      margin-top: var(--tooltip-arrow)
+      // Up arrow
+      &:before
+        top: calc(-2 * var(--tooltip-arrow))
+        border-bottom-color: var(--tooltip-color)
+        left: calc(50% - var(--tooltip-arrow))
+    &.bottom
+      bottom: var(--palette-bottom-height)
+      margin-bottom: var(--tooltip-arrow)
+      // Down arrow
+      &:before
+        bottom: calc(-2 * var(--tooltip-arrow))
+        border-top-color: var(--tooltip-color)
+        left: calc(50% - var(--tooltip-arrow))
+  .hotkeys
     float: right
-    margin-top: 1px
-  // Hide tooltip again if mouse goes onto it, i.e., outside toolbar
-  &:hover
+    .hotkey
+      margin-top: 1px
+      margin-left: 3px
+
+.tool[data-tool="fill"]
+  #fillOn
+    display: block
+  #fillOff
     display: none
+  &.active
+    #fillOn
+      display: block
+    #fillOff
+      display: none
 
 .spacer
   flex-basis: 100%
   min-height: calc(var(--palette-size)/2)
 
-.width
+.width, .fontSize
   display: flex
   justify-content: center
   align-items: center
@@ -139,24 +224,62 @@ body
     fill: black
     text-anchor: middle
     font-size: 10px
+  /.dark & svg
+    filter: invert(1) hue-rotate(180deg)
 
 .tool
   padding: 2px
 
-svg .highlight
-  opacity: 0.333
-  pointer-events: none
-svg .selected
-  opacity: 0.666
-  pointer-events: none
+svg
+  .highlight
+    opacity: 0.333
+    pointer-events: none
+  .selected
+    opacity: 0.666
+    pointer-events: none
+  line.cursor
+    opacity: 0.5
+    stroke: black
+    stroke-linecap: round
+  .selected line.cursor
+    visibility: hidden // don't highlight cursor in selection
+  .selector
+    fill: rgba(255,255,255,0.25)
+    stroke: rgba(0,0,0,0.5)
+    stroke-width: 3
+    stroke-dasharray: 6
+  .outline
+    fill: none
+    stroke: rgba(0,0,0,0.5)
+    stroke-width: 2
+    stroke-dasharray: 2
+  tspan.code
+    font-family: 'Roboto Mono', monospace
+  tspan.emph
+    font-style: oblique
+  tspan.strong
+    font-weight: bold
+  tspan.strike
+    text-decoration: line-through
 
-body:not(.history)
+body:not(.tool-history)
   .historyShow
-    visibility: hidden
-body.history
-  --palette-color: #d6bc9f  // sepia-like
+    display: none
+body.tool-history
+  --palette-color: hsl(32,40%,73%)  // sepia-like
+  &.dark
+    --palette-color: hsl(32,40%,20%)
   .historyHide
-    visibility: hidden
+    display: none
+body:not(.tool-text)
+  .textShow
+    display: none
+body.tool-text
+  .textHide
+    display: none
+body.nopage
+  .board
+    visibility: hidden !important
 
 #loading
   position: absolute
