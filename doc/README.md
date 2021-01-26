@@ -622,6 +622,17 @@ and
 When you choose a fill color, you automatically turn on
 [<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill](#-fill---no-fill-toggle).
 
+The last color button has a rainbow on it, indicating that it can take on
+any color.  Selecting the rainbow subicon brings up a color selection widget
+(dependent on your browser), letting you change the custom color
+which is indicated by the colored border around the rainbow.
+Selecting the colored border directly lets you choose the same color again
+without bringing up the color selection widget.
+If you want to match the color of an existing object, use the
+[<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool)
+to select just that object, which will set the current attributes
+(including custom color) to the attributes of that object.
+
 ## Troubleshooting
 
 If something weird is happening in Cocreate, you should check the

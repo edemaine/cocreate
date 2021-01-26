@@ -863,6 +863,8 @@ colors = [
   '#eced00' # custom yellow
 ]
 currentColor = 'black'
+colorMap = {}
+colorMap[color] = true for color in colors
 
 widths = [
   1
@@ -2245,9 +2247,30 @@ paletteColors = ->
       style: backgroundColor: color
       dataset: color: color
     ,
-      click: (e) ->
+      click: onColor = (e) ->
         (if e.shiftKey then selectFill else selectColor) \
           e.currentTarget.dataset.color
+  colorsDiv.appendChild dom.create 'div', null,
+    id: 'customColor'
+    className: 'custom color attrib'
+    dataset: color: '#808080'
+    style: backgroundColor: '#808080'
+  ,
+    click: onColor
+  , [
+    dom.create 'div', null,
+      className: 'set'
+    ,
+      click: (e) ->
+        e.stopPropagation()
+        customColorInput.click()
+    customColorInput = dom.create 'input', null,
+      type: 'color'
+      id: 'customColorInput'
+    ,
+      input: (e) ->
+        selectColor customColorInput.value
+  ]
 
 widthSize = 22
 paletteWidths = ->
@@ -2326,7 +2349,14 @@ drawingToolIcon = (tool, color, fill) ->
 
 selectColor = (color, keepTool, skipSelection) ->
   currentColor = color if color?
-  dom.select '.color', "[data-color='#{currentColor}']"
+  if currentColor of colorMap
+    dom.select '.color', "[data-color='#{currentColor}']"
+  else
+    dom.select '.color', '#customColor'
+    customColor = document.getElementById 'customColor'
+    customColor.style.backgroundColor = currentColor
+    customColor.dataset.color = currentColor
+    document.getElementById('customColorInput').value = currentColor
   document.documentElement.style.setProperty '--currentColor', currentColor
   if not skipSelection and selection.nonempty()
     selection.edit 'color', currentColor
