@@ -52,6 +52,12 @@ export classSet = (elt, key, value) ->
   else
     elt.classList.remove key
 
+export classToggle = (elt, key) ->
+  if elt.classList.contains key
+    elt.classList.remove key
+  else
+    elt.classList.add key
+
 export select = (allQuery, subQuery) ->
   for elt in document.querySelectorAll "#{allQuery}.selected"
     elt.classList.remove 'selected'
