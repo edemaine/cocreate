@@ -32,7 +32,7 @@
     "meteor-node-stubs": "^1.0.1",
     "pepjs": "^0.5.2",
     "pug": "^3.0.0",
-    "qrious": "^4.0.2",
+    "qrcode-svg": "^1.1.0",
     "tex2svg-webworker": "^0.1.1"
   },
   "devDependencies": {

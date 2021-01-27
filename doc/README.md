@@ -29,7 +29,7 @@ Then open Cocreate in the browser:
   `https://cocreate.your.domain/`) and you'll be put into a fresh room
   (with URL something like `https://cocreate.your.domain/r/gLoBaLlYuNiQuEiD7`).
 * If you want to share the room you're in with others, click the
-  [<img src="icons/clipboard-link.svg" width="18" alt="Copy Link Icon"> Copy Link button](#-copy-link)
+  [<img src="icons/clipboard-link.svg" width="18" alt="Share Link Icon"> Share Link button](#-share-link)
   to copy the URL to your clipboard (or select and copy it
   from the URL bar at the top of your browser), then paste it into your
   favorite messaging platform (e.g., email).
@@ -402,17 +402,23 @@ dragging to get them back into perfect alignment with the original.
 Selecting objects (by clicking on them or dragging a rectangle)
 is unaffected by grid snapping.
 
-### <img src="icons/clipboard-link.svg" width="18" alt="Copy Link Icon"> Copy Link
+### <img src="icons/clipboard-link.svg" width="18" alt="Share Link Icon"> Share Link
 
-This button copies a link to this Cocreate room/board to your clipboard.
-You can then share the link with others by pasting the link into your
-favorite messaging platform (e.g., email).
+This button aims to make it easy to share the link to this Cocreate
+room/board with other people or devices.
 
-### <img src="icons/qrcode.svg" width="18" alt="QR Code Icon"> QR Code
+First, if allowed by your browser, it copies the link to your clipboard,
+so you should be able to paste the link directly into your favorite
+messaging platform (e.g., chat or email).
 
-This button displays a QR code for the current room.
-You can then navigate to the link from a device with a camera and QR code reader,
-for example most mobile phones or tablets.
+Second, it brings up a dialog with the link itself,
+presented as text and as a QR code.
+* Scanning the QR code is a quick way to switch to using
+  your mobile device.
+* On some browsers (e.g. Chrome logged into multiple devices),
+  you can right-click the link and send it to other devices.
+* On some mobile browsers, you can long-press on the link
+  to bring up a Share interface.
 
 ### <img src="icons/door-plus-circle.svg" width="18" alt="New Room Icon"> New Room
 

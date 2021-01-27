@@ -7,7 +7,6 @@ import storage from './lib/storage'
 import throttle from './lib/throttle'
 import timesync from './lib/timesync'
 import {meteorCallPromise} from '/lib/meteorPromise'
-import QRious from 'qrious'
 
 board = historyBoard = null # Board objects
 gridDefault = true
@@ -588,15 +587,28 @@ tools =
       updateGridSnap()
   linkRoom:
     icon: 'clipboard-link'
-    help: 'Copy a link to this room/board to clipboard (for sharing with others)'
+    help: 'Share a link to this room/board: show the URL, copy it to the clipboard, and show a QR code.'
     once: ->
-      navigator.clipboard.writeText document.URL
-  qrToggle:
-    icon: 'qrcode'
-    help: 'Show this room\'s QR code (for sharing with others)'
-    once: ->
-      dom.classToggle document.getElementById('qrPane'), 'show'
-      dom.classToggle document.querySelector('.tool[data-tool="qrToggle"]'), 'active'
+      dom.classToggle document.getElementById('qrCode'), 'show'
+      dom.classToggle document.querySelector('.tool[data-tool="linkRoom"]'),
+        'active'
+      if document.getElementById('qrCode').classList.contains 'show'
+        try
+          navigator.clipboard.writeText document.URL
+        document.getElementById('qrCodeSvg').innerHTML = ''
+        do updateRoomLink = ->
+          document.getElementById('linkToRoom').href = document.URL
+          document.getElementById('linkToRoom').innerText = document.URL
+          import('qrcode-svg').then (QRCode) ->
+            document.getElementById('qrCodeSvg').innerHTML =
+              new QRCode.default
+                content: document.URL
+                ecl: 'M'
+                join: true
+                container: 'svg-viewbox'
+              .svg()
+      else
+        updateRoomLink = null
   newRoom:
     icon: 'door-plus-circle'
     help: 'Create a new room/board (with new URL) in a new browser tab/window'
@@ -2059,7 +2071,7 @@ class Room
     updateGridSnap()
   stop: ->
     @auto.stop()
-    @observe.stop()
+    @observe?.stop()
     @sub.stop()
     @pageAuto?.stop()
     @roomObserveObjects?.stop()
@@ -2109,8 +2121,9 @@ changeRoom = (roomId) ->
     room = null
     updateBadRoom()
 
+updateRoomLink = null
 urlChange = ->
-  updateQRCode()
+  updateRoomLink?()
   if document.location.pathname == '/'
     Meteor.call 'roomNew',
       grid: gridDefault
@@ -2124,14 +2137,6 @@ urlChange = ->
     changeRoom match[1]
   else
     changeRoom null
-
-updateQRCode = ->
-  new QRious({
-    element: document.getElementById('qrcode'),
-    value: document.URL,
-    level: 'M',
-    size:  128
-  })
 
 paletteTools = ->
   tooltip = null  # currently open tooltip

@@ -53,7 +53,7 @@ export classSet = (elt, key, value) ->
     elt.classList.remove key
 
 export classToggle = (elt, key) ->
-  if key in elt.classList
+  if elt.classList.contains key
     elt.classList.remove key
   else
     elt.classList.add key

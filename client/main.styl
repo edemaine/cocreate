@@ -315,10 +315,20 @@ body.nopage
   &.show
     visibility: visible
   cursor: help
+  color: black
 .modal.error
   background: pink
 .modal.info
-  background: lightgray
+  background: #bbb
+
+#linkToRoom
+  font-size: larger
+#qrCodeSvg
+  svg
+    width: 100%
+    max-height: 50vh
+  /.dark &
+    filter: invert(1) hue-rotate(180deg)
 
 // Based on keyframes from Font Awesome Free (see `lib/icons.coffee`).
 @keyframes fa-spin
@@ -329,6 +339,9 @@ body.nopage
 
 #download
   display: none
+
+.center
+  text-align: center
 
 .grid
   stroke-width: 0.96
