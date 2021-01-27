@@ -7,12 +7,12 @@ import storage from './lib/storage'
 import throttle from './lib/throttle'
 import timesync from './lib/timesync'
 import {meteorCallPromise} from '/lib/meteorPromise'
+import {UndoStack} from './UndoStack'
 
 board = historyBoard = null # Board objects
 gridDefault = true
 selection = null # Selection object representing selected objects
-undoStack = []
-redoStack = []
+undoStack = new UndoStack
 eraseDist = 2   # require movement by this many pixels before erasing swipe
 dragDist = 2    # require movement by this many pixels before select drags
 remoteIconSize = 24
@@ -56,13 +56,19 @@ tools =
     help: 'Undo the last operation you did'
     hotkey: "#{Ctrl}-Z"
     once: ->
-      undo()
+      if currentTool == 'history'
+        historyAdvance -1
+      else
+        setSelection undoStack.undo()
   redo:
     icon: 'redo'
     help: 'Redo: Undo the last undo you did (if you did no operations since)'
     hotkey: ["#{Ctrl}-Y", "#{Ctrl}-Shift-Z"]
     once: ->
-      redo()
+      if currentTool == 'history'
+        historyAdvance +1
+      else
+        setSelection undoStack.redo()
   pan:
     icon: 'arrows-alt'
     hotspot: [0.5, 0.5]
@@ -173,7 +179,7 @@ tools =
         h.selector = null
       else if h?.moved
         h.edit.flush()
-        undoableOp
+        undoStack.push
           type: 'multi'
           ops:
             for id, obj of pointers.objects when obj?
@@ -212,7 +218,6 @@ tools =
         else
           h.clear()
     select: (ids) ->
-      selectHighlightReset()
       selection.addId id for id in ids
   pen:
     icon: 'pencil-alt'
@@ -237,7 +242,7 @@ tools =
     up: (e) ->
       return unless pointers[e.pointerId]
       pointers[e.pointerId].push.flush()
-      undoableOp
+      undoStack.push
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
@@ -274,7 +279,7 @@ tools =
     up: (e) ->
       return unless pointers[e.pointerId]
       pointers[e.pointerId].edit.flush()
-      undoableOp
+      undoStack.push
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
@@ -318,7 +323,7 @@ tools =
     up: (e) ->
       return unless pointers[e.pointerId]
       pointers[e.pointerId].edit.flush()
-      undoableOp
+      undoStack.push
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
@@ -362,7 +367,7 @@ tools =
     up: (e) ->
       return unless pointers[e.pointerId]
       pointers[e.pointerId].edit.flush()
-      undoableOp
+      undoStack.push
         type: 'new'
         obj: Objects.findOne pointers[e.pointerId].id
       delete pointers[e.pointerId]
@@ -393,7 +398,7 @@ tools =
       h?.clear()
       if h?.deleted?.length
         ## The following is similar to Selection.delete:
-        undoableOp
+        undoStack.push
           type: 'multi'
           ops:
             for obj in h.deleted
@@ -441,7 +446,7 @@ tools =
               id: pointers.text
               text: text
             unless pointers.undoable?
-              undoableOp pointers.undoable =
+              undoStack.push pointers.undoable =
                 type: 'multi'
                 ops: [
                   type: 'edit'
@@ -477,8 +482,7 @@ tools =
       return unless (id = pointers.text)?
       if (object = Objects.findOne id)?
         unless object.text
-          index = undoStack.indexOf pointers.undoable
-          undoStack.splice index, 1 if index >= 0
+          undoStack.remove pointers.undoable
           Meteor.call 'objectDel', id
       pointers.undoable = null
       pointers.text = null
@@ -508,7 +512,7 @@ tools =
           fontSize: currentFontSize
         ], returnStubValue: true
         selection.addId pointers.text
-        undoableOp pointers.undoable =
+        undoStack.push pointers.undoable =
           type: 'multi'
           ops: [
             type: 'new'
@@ -1170,13 +1174,12 @@ class Selection
   delete: ->
     return unless @nonempty()
     ## The following is similar to eraser.up:
-    undoableOp
+    undoStack.pushAndDo
       type: 'multi'
       ops:
         for id in @ids()
           type: 'del'
           obj: Objects.findOne id
-    , true
     ## Clear any highlights in addition to clearing selection
     selectHighlightReset()
     #@clear()
@@ -1191,7 +1194,7 @@ class Selection
             continue unless obj.type in ['rect', 'ellipse']
         obj
     return unless objs.length
-    undoableOp
+    undoStack.pushAndDo
       type: 'multi'
       ops:
         for obj in objs
@@ -1202,7 +1205,6 @@ class Selection
           id: obj._id
           before: "#{attrib}": obj[attrib] ? null
           after: "#{attrib}": value
-    , true
   duplicate: ->
     oldIds = selection.ids()
     newObjs =
@@ -1215,7 +1217,7 @@ class Selection
         obj.ty += gridSize
         obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
         obj
-    undoableOp
+    undoStack.push
       type: 'multi'
       ops:
         for obj in newObjs
@@ -1264,80 +1266,15 @@ class Selection
     if (fontSize = uniformAttribute 'fontSize')?  # uniform font size
       selectFontSize fontSize, true, true
 
-undoableOp = (op, now) ->
-  redoStack = []
-  undoStack.push op
-  doOp op if now
-doOp = (op, reverse = false) ->
-  editArgs = (sub) ->
-    Object.assign
-      id: sub.id
-    ,
-      if reverse
-        sub.before
-      else
-        sub.after
-  switch op.type
-    when 'multi'
-      ops = op.ops
-      ops = ops[..].reverse() if reverse
-      if ops.every (sub) -> sub.type == 'edit'
-        Meteor.call 'objectsEdit',
-          for sub in ops
-            editArgs sub
-      else
-        for sub in ops
-          doOp sub, reverse
-    when 'new', 'del'
-      if (op.type == 'new') == reverse
-        Meteor.call 'objectDel', op.obj._id
-      else
-        #obj = {}
-        #for key, value of op.obj
-        #  obj[key] = value unless key of skipKeys
-        #op.obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
-        Meteor.call 'objectNew', op.obj
-    when 'edit'
-      Meteor.call 'objectEdit', editArgs op
-    else
-      console.error "Unknown op type #{op.type} for undo/redo"
-selectOp = (op, reverse = false) ->
-  return unless tools[currentTool]?.select?
-  recurse = (sub) ->
-    if sub.selection? and reverse
-      sub.selection
-    else
-      switch sub.type
-        when 'new', 'del'
-          if (sub.type == 'new') == reverse  # delete
-            []
-          else  # insert
-            [sub.obj._id]
-        when 'edit'
-          [sub.id]
-        when 'multi'
-          [].concat ...(recurse part for part in sub.ops)
-        else
-          []
-  tools[currentTool].select recurse op
-undo = ->
-  if currentTool == 'history'
-    return historyAdvance -1
-  return unless undoStack.length
-  op = undoStack.pop()
-  doOp op, true
-  redoStack.push op
+## Resets the selection, and if the current tool supports selection,
+## sets the selection to the specified array of object IDs
+## (as e.g. returned by `UndoStack.undo` and `UndoStack.redo`).
+## Does nothing if `objIds` is undefined (as when `undo` or `redo` failed).
+setSelection = (objIds) ->
+  return unless objIds?
   selectHighlightReset()
-  selectOp op, true
-redo = ->
-  if currentTool == 'history'
-    return historyAdvance +1
-  return unless redoStack.length
-  op = redoStack.pop()
-  doOp op, false
-  undoStack.push op
-  selectHighlightReset()
-  selectOp op, false
+  tools[currentTool]?.select? objIds
+
 historyAdvance = (delta) ->
   range = document.getElementById 'historyRange'
   value = parseInt range.value
@@ -2462,12 +2399,12 @@ Meteor.startup ->
         when 'z', 'Z'
           if e.ctrlKey or e.metaKey
             if e.shiftKey
-              redo()
+              tools.redo.once()
             else
-              undo()
+              tools.undo.once()
         when 'y', 'Y'
           if e.ctrlKey or e.metaKey
-            redo()
+            tools.redo.once()
         when 'Delete', 'Backspace'
           selection.delete()
         when ' '  ## pan via space-drag
