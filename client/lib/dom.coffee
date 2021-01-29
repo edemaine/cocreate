@@ -39,7 +39,7 @@ export prop = (elt, props) ->
         elt[key] = value
 
 export listen = (elt, events, now) ->
-  if Array.isArray elt
+  if Array.isArray(elt) or elt instanceof NodeList
     listen sub, events, now for sub in elt when sub?
   else
     for key, value of events when value?
