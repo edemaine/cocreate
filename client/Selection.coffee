@@ -126,6 +126,8 @@ export class Selection
     for id of @selected
       return true
     false
+  json: ->
+    JSON.stringify Objects.find(_id: $in: @ids()).fetch()
   delete: ->
     return unless @nonempty()
     ## The following is similar to eraser.up:

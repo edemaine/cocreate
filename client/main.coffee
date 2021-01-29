@@ -1584,6 +1584,36 @@ Meteor.startup ->
             selectTool lastTool, noStart: true
             pointers = oldPointers
             spaceDown = false
+    copy: onCopy = (e) ->
+      return if e.target.tagName == 'INPUT'  # ignore operations in text boxes
+      return unless selection.nonempty()
+      e.preventDefault()
+      e.clipboardData.setData 'application/cocreate-objects', selection.json()
+      true
+    cut: (e) ->
+      if onCopy e
+        selection.delete()
+    paste: (e) ->
+      return if e.target.tagName == 'INPUT'  # ignore operations in text boxes
+      if json = e.clipboardData.getData 'application/cocreate-objects'
+        e.preventDefault()
+        objects =
+          for obj in JSON.parse json
+            delete obj._id
+            delete obj.created
+            delete obj.updated
+            obj.room = room.id
+            obj.page = room.page
+            obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
+            obj
+        undoStack.push
+          type: 'multi'
+          ops:
+            for obj in objects
+              type: 'new'
+              obj: obj
+        selectTool 'select'  # usually want to move pasted objects
+        setSelection (obj._id for obj in objects)
 
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->
