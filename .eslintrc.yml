@@ -1,0 +1,72 @@
+env:
+  browser: true
+  es2020: true
+  node: true
+extends:
+  - 'eslint:recommended'
+  - 'plugin:meteor/recommended'
+  #- 'plugin:react/recommended'
+globals:
+  Meteor: readonly
+  WebApp: readonly
+  Objects: readonly
+  ObjectsDiff: readonly
+  Pages: readonly
+  Remotes: readonly
+  Rooms: readonly
+overrides:
+  - files:
+    - server/bootstrap.coffee
+    parserOptions:
+      sourceType: script  # support for module-level return (but no import)
+parserOptions:
+  ecmaFeatures:
+    globalReturn: true
+    jsx: true
+  ecmaVersion: 11
+  sourceType: module
+plugins:
+  - coffeescript
+  - meteor
+  - react
+rules:
+  indent: off  # incompatible with CoffeeScript
+    #- error
+    #- 2
+  linebreak-style:
+    - error
+    - unix
+  no-constant-condition:
+    - error
+    - checkLoops: false  # for CoffeeScript's loop
+  no-empty:
+    - error
+    - allowEmptyCatch: true  # CoffeeScript's try without catch block
+  no-unreachable: off  # currently incompatible with CoffeeScript's switch
+  no-unused-vars:
+    - error
+    - args: none  # allow callbacks of the form (e) -> ...not using e...
+  no-useless-escape: off  # incompatible with CoffeeScript's ///
+  quotes:
+    - error
+    - single
+  semi:
+    - error
+    - always
+  react/jsx-no-target-blank:
+    - error
+    - allowReferrer: true
+  react/no-unescaped-entities:
+    - warn
+    - forbid: ['>', '"', '}']
+  react/prop-types: off
+  meteor/no-session: off
+  meteor/no-zero-timeout: off
+  meteor/audit-argument-checks:
+    - error
+    - checkEquivalents:
+      - checkId
+      - checkMeeting
+settings:
+  react:
+    version: detect

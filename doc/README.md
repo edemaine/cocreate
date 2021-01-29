@@ -413,8 +413,8 @@ messaging platform (e.g., chat or email).
 
 Second, it brings up a dialog with the link itself,
 presented as text and as a QR code.
-* Scanning the QR code is a quick way to switch to using
-  your mobile device.
+
+* Scanning the QR code is a quick way to switch to using your mobile device.
 * On some browsers (e.g. Chrome logged into multiple devices),
   you can right-click the link and send it to other devices.
 * On some mobile browsers, you can long-press on the link

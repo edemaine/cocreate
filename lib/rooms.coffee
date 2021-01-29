@@ -1,3 +1,6 @@
+import {check, Match} from 'meteor/check'
+import {Mongo} from 'meteor/mongo'
+
 import {validId} from './id'
 
 @Rooms = new Mongo.Collection 'rooms'

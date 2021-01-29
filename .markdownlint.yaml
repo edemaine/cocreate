@@ -1,3 +1,5 @@
+line-length:
+  tables: false
 no-inline-html:
   allowed_elements:
   - img

@@ -17,7 +17,6 @@ export class Grid
     margin = gridSize
     switch mode
       when true
-        far = 10 * gridSize
         range = (xy) ->
           [Math.floor(bounds.min[xy] / gridSize) .. \
            Math.ceil bounds.max[xy] / gridSize]

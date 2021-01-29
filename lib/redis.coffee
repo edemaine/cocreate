@@ -1,3 +1,5 @@
+import {Mongo} from 'meteor/mongo'
+
 unless Meteor.isServer and Mongo.Collection.prototype.configureRedisOplog
 
   Originals =

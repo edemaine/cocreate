@@ -1,3 +1,6 @@
+import {check, Match} from 'meteor/check'
+import {Mongo} from 'meteor/mongo'
+
 import {validId} from './id'
 import {checkRoom} from './rooms'
 import {checkPage} from './pages'

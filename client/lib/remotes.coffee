@@ -10,12 +10,10 @@ export {fade} from '/lib/remotes'
 export id = null
 try
   id = window?.sessionStorage?.getItem? 'remoteId'
-catch
 unless validId id
   id = Random.id()
   try
     window?.sessionStorage?.setItem? 'remoteId', id
-  catch
 
 ###
 Call remoteUpdate method, but throttled to 66 ms ~ 1/15 sec i.e. 15fps.

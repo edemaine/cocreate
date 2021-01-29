@@ -3,9 +3,12 @@
 They track the location of users' cursors/tools/views on board(s).
 ###
 
+import {check, Match} from 'meteor/check'
+import {Mongo} from 'meteor/mongo'
+
 import {checkId} from './id'
-import {checkRoom} from './rooms'
-import {checkPage} from './pages'
+#import {checkRoom} from './rooms'
+#import {checkPage} from './pages'
 export fade = 60
 
 @Remotes = new Mongo.Collection 'remotes'

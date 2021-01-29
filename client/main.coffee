@@ -1,3 +1,5 @@
+import {Tracker} from 'meteor/tracker'
+
 import '../lib/main'
 import './lib/polyfill'
 import icons from './lib/icons'
@@ -515,7 +517,7 @@ export tools =
           type: 'multi'
           ops: [
             type: 'new'
-            obj: object = Objects.findOne pointers.text
+            obj: Objects.findOne pointers.text
           ]
       input = document.getElementById 'textInput'
       input.value = text
@@ -604,7 +606,7 @@ export tools =
         close.removeEventListener 'click', toggleLinkRoom
         close.addEventListener 'click', toggleLinkRoom
         document.getElementById('qrCodeSvg').innerHTML = ''
-        do updateRoomLink = ->
+        updateRoomLink = ->
           document.getElementById('linkToRoom').href = document.URL
           document.getElementById('linkToRoom').innerText = document.URL
           import('qrcode-svg').then (QRCode) ->
@@ -615,6 +617,7 @@ export tools =
                 join: true
                 container: 'svg-viewbox'
               .svg()
+        updateRoomLink()
       else
         updateRoomLink = null
   newRoom:
@@ -630,9 +633,6 @@ export tools =
       historyObjects = {}
       range = document.getElementById 'historyRange'
       range.value = 0
-      query =
-        room: room.id
-        page: room.page
       lastTarget = null
       historyRender = null
       diffs = []
@@ -972,9 +972,9 @@ eventToPointW = (e) ->
     ## Android Chrome (Samsung Note 8) sends pressure 1 for touch events.
     ## Just ignore pressure on touch and mouse events; could they make sense?
     if e.pointerType == 'pen'
-      w = pressureW e
+      pressureW e
     else
-      w = 1
+      1
   pt
 
 eventToRawPoint = (e) ->
@@ -1225,13 +1225,11 @@ urlChange = ->
   else
     changeRoom null
 
+tooltip = null  # currently open tooltip
+removeTooltip = ->
+  tooltip?.remove()
+  tooltip = null
 paletteTools = ->
-  tooltip = null  # currently open tooltip
-  removeTooltip = ->
-    tooltip?.remove()
-    tooltip = null
-  toolsDiv = document.getElementById 'tools'
-  pagesDiv = document.getElementById 'pages'
   align = 'top'
   for tool, {icon, help, hotkey, init, palette} of tools
     palette ?= if tool.startsWith 'page' then 'pages' else 'tools'
@@ -1505,11 +1503,11 @@ paletteSize = ->
   .getPropertyValue '--palette-size')
 
 resize = (reps = 1) ->
-  tooltip?.remove()
-  for [id, attrib, dimen] in [
-    ['tools', '--palette-left-width', 'Width']
-    ['attribs', '--palette-bottom-height', 'Height']
-    ['pages', '--palette-top-height', 'Height']
+  removeTooltip()
+  for [id, attrib] in [
+    ['tools', '--palette-left-width']
+    ['attribs', '--palette-bottom-height']
+    ['pages', '--palette-top-height']
   ]
     div = document.getElementById id
     if 0 <= attrib.indexOf 'width'

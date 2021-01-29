@@ -20,10 +20,10 @@
   "scripts": {
     "doc:icons": "coffee --transpile doc/icons/make.coffee",
     "doc:lint": "markdownlint **/*.md --ignore node_modules --rules markdownlint-rule-github-internal-links",
+    "eslint": "eslint --ext .coffee .",
+    "lint": "npm run eslint && npm run doc:lint",
     "prepare": "cp node_modules/tex2svg-webworker/dist/tex2svg.js public/",
     "start": "meteor run",
-    "test": "meteor test --once --driver-package meteortesting:mocha",
-    "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
     "visualize": "meteor --production --extra-packages bundle-visualizer"
   },
   "dependencies": {
@@ -39,6 +39,10 @@
     "@babel/core": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
     "coffeescript": "^2.5.1",
+    "eslint": "^7.17.0",
+    "eslint-plugin-coffeescript": "^1.0.0",
+    "eslint-plugin-meteor": "^7.2.2",
+    "eslint-plugin-react": "^7.22.0",
     "markdownlint-cli": "^0.23.2"
   },
   "meteor": {

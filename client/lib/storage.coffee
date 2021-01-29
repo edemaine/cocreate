@@ -17,13 +17,11 @@ export class Variable
     if json
       try
         @val = @constructor.parse json
-      catch
     if @sync
       window.addEventListener 'storage', (e) =>
         if e.key == @key
           try
             @val = @constructor.parse e.newValue
-          catch
           @sync()
   get: -> @val
   set: (val) ->

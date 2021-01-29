@@ -315,7 +315,7 @@ export class RenderObjects
     text = g.firstChild
     dx = job.width * fontSize
     ## Roboto Slab in https://opentype.js.org/font-inspector.html:
-    unitsPerEm = 1000 # Font Header table
+    #unitsPerEm = 1000 # Font Header table
     descender = 271   # Horizontal Header table
     ascender = 1048   # Horizontal Header table
     job.texts[id] =
