@@ -698,7 +698,7 @@ export tools =
   downloadSVG:
     icon: 'download-svg'
     help: 'Download/export selection or entire drawing as an SVG file'
-    once: ->
+    once: (download = true) ->
       ## Temporarily remove transform for export
       root = currentBoard().root # <g>
       oldTransform = root.getAttribute 'transform'
@@ -744,10 +744,12 @@ export tools =
       root.setAttribute 'transform', oldTransform if oldTransform?
       currentBoard().grid?.update()
       ## Download file
-      download = document.getElementById 'download'
-      download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
-      download.download = "cocreate-#{room.id}.svg"
-      download.click()
+      if download
+        download = document.getElementById 'download'
+        download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
+        download.download = "cocreate-#{room.id}.svg"
+        download.click()
+      svg
   github:
     icon: 'github'
     help: 'Go to Github repository: documentation, source code, bug reports, and feature requests'
@@ -1589,6 +1591,7 @@ Meteor.startup ->
       return unless selection.nonempty()
       e.preventDefault()
       e.clipboardData.setData 'application/cocreate-objects', selection.json()
+      e.clipboardData.setData 'image/svg+xml', tools.downloadSVG.once false
       true
     cut: (e) ->
       if onCopy e
