@@ -7,17 +7,18 @@ import storage from './lib/storage'
 import throttle from './lib/throttle'
 import {meteorCallPromise} from '/lib/meteorPromise'
 import {Board} from './Board'
-import {gridSize, Grid} from './Grid'
+import {Grid, gridSize} from './Grid'
 import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
+import {Selection, Highlighter, highlighterClear} from './Selection'
 import {UndoStack} from './UndoStack'
 
 board = historyBoard = null # Board objects
 gridDefault = true
-export selection = null # Selection object representing selected objects
-undoStack = new UndoStack
 eraseDist = 2   # require movement by this many pixels before erasing swipe
 dragDist = 2    # require movement by this many pixels before select drags
+export selection = null # Selection object representing selected objects
+export undoStack = new UndoStack
 export room = null
 currentFill = 'white'
 currentFillOn = false
@@ -97,12 +98,9 @@ export tools =
       pointers.objects = {}
     stop: selectHighlightReset = (nextTool) ->
       selection.clear() unless nextTool == 'text'
-      for key, highlighter of pointers
-        if highlighter instanceof Highlighter
-          highlighter.clear()
-          highlighter.selector?.remove()
+      highlighterClear()
     down: (e) ->
-      pointers[e.pointerId] ?= new Highlighter
+      pointers[e.pointerId] ?= new Highlighter board
       h = pointers[e.pointerId]
       return if h.down  # in case of repeat events
       h.down = e
@@ -114,7 +112,7 @@ export tools =
         Object.assign older, newer
       ## Check for clicking on a selected object, to ensure dragging selection
       ## works even when another object is more topmost.
-      if (sel = h.eventSelected e).length
+      if (sel = h.eventSelected e, selection).length
         h.highlight sel[0]
       ## Deselect existing selection unless requesting multiselect
       toggle = e.shiftKey or e.ctrlKey or e.metaKey
@@ -193,7 +191,7 @@ export tools =
       h?.clear()
       delete pointers[e.pointerId]
     move: (e) ->
-      pointers[e.pointerId] ?= new Highlighter
+      pointers[e.pointerId] ?= new Highlighter board
       h = pointers[e.pointerId]
       if h.down
         if h.selector?
@@ -380,7 +378,7 @@ export tools =
     hotkey: 'x'
     stop: -> selectHighlightReset()
     down: (e) ->
-      pointers[e.pointerId] ?= new Highlighter
+      pointers[e.pointerId] ?= new Highlighter board
       h = pointers[e.pointerId]
       return if h.down  # repeat events can happen because of erasure
       h.down = e
@@ -407,7 +405,7 @@ export tools =
               obj: obj
       delete pointers[e.pointerId]
     move: (e) ->
-      pointers[e.pointerId] ?= new Highlighter
+      pointers[e.pointerId] ?= new Highlighter board
       h = pointers[e.pointerId]
       target = h.eventCoalescedTop e
       if target?
@@ -462,7 +460,7 @@ export tools =
               when 'edit'
                 pointers.undoable.ops[0].after.text = text
     start: ->
-      pointers.highlight = new Highlighter 'text'
+      pointers.highlight = new Highlighter board, 'text'
       if (ids = selection.ids()).length == 1 and
          (obj = Objects.findOne(ids[0]))?.type == 'text'
         pointers.text = obj._id
@@ -1059,220 +1057,11 @@ pointerEvents = ->
       remote.fill = currentFill if currentFillOn
       remotes.update remote
 
-class Highlighter
-  constructor: (@type) ->
-    @target = null       # <g/polyline/rect/ellipse/text>
-    @highlighted = null  # <g/polyline/rect/ellipse/text class="highlight">
-    @id = null           # highlighted object ID
-  eventTop: (e) ->
-    ## Pen and touch devices don't always seem to set `e.target` correctly;
-    ## use `document.elementFromPoint` instead.
-    #target = e.target
-    #if target.tagName.toLowerCase() == 'svg'
-    @findGroup document.elementFromPoint e.clientX, e.clientY
-  eventCoalescedTop: (e) ->
-    ## Find first event in the coalesced sequence that hits an object
-    for c in e.getCoalescedEvents?() ? [e]
-      if top = @eventTop c
-        return top
-    undefined
-  eventAll: (e) ->
-    for elt in document.elementsFromPoint e.clientX, e.clientY
-      elt = @findGroup elt
-      continue unless elt?
-      elt
-  eventSelected: (e) ->
-    target for target in @eventAll e when selection.has target.dataset.id
-  findGroup: (target) ->
-    while target? and not target.dataset?.id?
-      return if target.classList?.contains 'board'
-      target = target.parentNode
-    return unless target?
-    #return if target == @highlighted
-    ## Shouldn't get pointer events on highlighted or selected overlays thanks
-    ## to `pointer-events: none`, but check for them just in case:
-    for elt in [target, target.parentNode]
-      return if elt?.getAttribute('class') in ['highlight', 'selected']
-    ## Check for specific match type
-    if @type?
-      return unless Objects.findOne(target.dataset.id)?.type == @type
-    target
-  highlight: (target) ->
-    ## `target` should be the result of `findGroup` (or `eventTop`/`eventall`),
-    ## so satisfies all above conditions.
-    @clear()
-    @target = target
-    @id = target.dataset.id
-    @highlighted ?= dom.create 'g', class: 'highlight'
-    board.root.appendChild @highlighted  # ensure on top
-    doubler = (match, left, number, right) -> "#{left}#{2 * number}#{right}"
-    html = target.outerHTML
-    #.replace /\bdata-id=["'][^'"]*["']/g, ''
-    .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
-    .replace /(\br=["'])([\d.]+)(["'])/g, doubler
-    if /<text\b/.test html
-      width = 1.5 # for text
-      html = html.replace /\bfill=(["'][^"']+["'])/g, (match, fill) ->
-        out = "#{match} stroke=#{fill} stroke-width=\"#{width}\""
-        width = 100 # for LaTeX SVGs
-        out
-      .replace /<svg\b/, '$& overflow="visible"'
-    @highlighted.innerHTML = html
-    true
-  select: (target) ->
-    if target?
-      @highlight target
-    selected = @highlighted
-    selected?.setAttribute 'class', 'selected'
-    @target = @highlighted = @id = null
-    selected
-  clear: ->
-    if @highlighted?
-      board.root.removeChild @highlighted
-      @target = @highlighted = @id = null
-
-class Selection
-  constructor: (@board) ->
-    @selected = {}  # mapping from object ID to .selected DOM element
-    @rehighlighter = new Highlighter  # used in redraw()
-  add: (highlighter) ->
-    id = highlighter.id
-    return unless id?
-    @selected[id] = highlighter.select()
-    @outline()
-  addId: (id) ->
-    if target = document.querySelector \
-         """#board > g > [data-id="#{CSS.escape id}"]"""
-      @rehighlighter.highlight target
-      @selected[id] = @rehighlighter.select()
-      @outline()
-    else
-      ## Add an object to the selection before it's been rendered
-      ## (triggering redraw when it gets rendered).
-      @selected[id] = true
-  redraw: (id, target) ->
-    unless @selected[id] == true  # added via `addId`
-      board.root.removeChild @selected[id]
-    @rehighlighter.highlight target
-    @selected[id] = @rehighlighter.select()
-    @outline()
-  remove: (id) ->
-    unless @selected[id] == true  # added via `addId`
-      board.root.removeChild @selected[id]
-    delete @selected[id]
-    @outline()
-  clear: ->
-    @remove id for id of @selected
-  ids: ->
-    id for id of @selected
-  has: (id) ->
-    id of @selected
-  count: ->
-    @ids().length
-  nonempty: ->
-    for id of @selected
-      return true
-    false
-  delete: ->
-    return unless @nonempty()
-    ## The following is similar to eraser.up:
-    undoStack.pushAndDo
-      type: 'multi'
-      ops:
-        for id in @ids()
-          type: 'del'
-          obj: Objects.findOne id
-    ## Clear any highlights in addition to clearing selection
-    selectHighlightReset()
-    #@clear()
-  edit: (attrib, value) ->
-    objs =
-      for id in @ids()
-        obj = Objects.findOne id
-        switch attrib
-          when 'width'
-            continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse']
-          when 'fill'
-            continue unless obj.type in ['rect', 'ellipse']
-        obj
-    return unless objs.length
-    undoStack.pushAndDo
-      type: 'multi'
-      ops:
-        for obj in objs
-          #unless obj?[attrib]
-          #  console.warn "Object #{id} has no #{attrib} attribute"
-          #  continue
-          type: 'edit'
-          id: obj._id
-          before: "#{attrib}": obj[attrib] ? null
-          after: "#{attrib}": value
-  duplicate: ->
-    oldIds = selection.ids()
-    newObjs =
-      for id in oldIds
-        obj = Objects.findOne id
-        delete obj._id
-        obj.tx ?= 0
-        obj.ty ?= 0
-        obj.tx += gridSize
-        obj.ty += gridSize
-        obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
-        obj
-    undoStack.push
-      type: 'multi'
-      ops:
-        for obj in newObjs
-          type: 'new'
-          obj: obj
-      selection: oldIds
-    @clear()
-    @addId obj._id for obj in newObjs
-  outline: ->
-    if @nonempty()
-      @board.root.appendChild @rect ?= dom.create 'rect',
-        class: 'outline'
-      dom.attr @rect, dom.pointsToRect dom.unionSvgExtremes @board.svg,
-        for id, elt of @selected
-          continue if elt == true  # added via `addId`
-          elt
-      , @board.root
-    else
-      @rect?.remove()
-      @rect = null
-  setAttributes: ->
-    ## Set user's attributes to match selected objects, if they're all same.
-    return unless @nonempty()
-    objects = (Objects.findOne id for id in @ids())
-    for object in objects
-      return unless object?  # not sure what to do if some object is missing
-    uniformAttribute = (key, nullWild = true) ->
-      values = (object[key] for object in objects)
-      example = (value for value in values when value?)[0]
-      for value in values
-        ## Special null value represents "not uniform" (or "all null"),
-        ## whereas if all values are undefined, we return undefined.
-        return null unless value == example or (nullWild and not value?)
-      example
-    if (color = uniformAttribute 'color')?  # uniform draw color
-      selectColor color, true, true
-    if (fill = uniformAttribute 'fill', false)?  # uniform actual fill color
-      currentFill = fill
-      currentFillOn = true
-      updateFill()
-    if fill == undefined  # uniform no fill
-      currentFillOn = false
-      updateFill()
-    if (width = uniformAttribute 'width')?  # uniform line width
-      selectWidth width, true, true
-    if (fontSize = uniformAttribute 'fontSize')?  # uniform font size
-      selectFontSize fontSize, true, true
-
 ## Resets the selection, and if the current tool supports selection,
 ## sets the selection to the specified array of object IDs
 ## (as e.g. returned by `UndoStack.undo` and `UndoStack.redo`).
 ## Does nothing if `objIds` is undefined (as when `undo` or `redo` failed).
-setSelection = (objIds) ->
+export setSelection = (objIds) ->
   return unless objIds?
   selectHighlightReset()
   tools[currentTool]?.select? objIds
@@ -1666,7 +1455,7 @@ export drawingToolIcon = (tool, color, fill) ->
     icon = icons.stackIcons [icon, icons.modIcon iconFill, fill: fill]
   icon
 
-selectColor = (color, keepTool, skipSelection) ->
+export selectColor = (color, keepTool, skipSelection) ->
   currentColor = color if color?
   if currentColor of colorMap
     dom.select '.color', "[data-color='#{currentColor}']"
@@ -1683,16 +1472,21 @@ selectColor = (color, keepTool, skipSelection) ->
   selectDrawingTool() unless keepTool
   updateCursor()
 
-selectFill = (color) ->
+export selectFill = (color, fromSelection) ->
   currentFill = color
   currentFillOn = true
   updateFill()
+  return if fromSelection
   if selection.nonempty()
     selection.edit 'fill', currentFill
   else
     selectDrawingTool()
 
-selectWidth = (width, keepTool, skipSelection) ->
+export selectFillOff = ->
+  currentFillOn = false
+  updateFill()
+
+export selectWidth = (width, keepTool, skipSelection) ->
   currentWidth = parseFloat width if width?
   if not skipSelection and selection.nonempty()
     selection.edit 'width', currentWidth
@@ -1700,7 +1494,7 @@ selectWidth = (width, keepTool, skipSelection) ->
   selectDrawingTool() unless keepTool
   dom.select '.width', "[data-width='#{currentWidth}']"
 
-selectFontSize = (fontSize, skipSelection) ->
+export selectFontSize = (fontSize, skipSelection) ->
   currentFontSize = parseFloat fontSize if fontSize?
   if not skipSelection and selection.nonempty()
     selection.edit 'fontSize', currentFontSize
