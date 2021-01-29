@@ -5,18 +5,18 @@ import dom from './lib/dom'
 import remotes from './lib/remotes'
 import storage from './lib/storage'
 import throttle from './lib/throttle'
-import timesync from './lib/timesync'
 import {meteorCallPromise} from '/lib/meteorPromise'
+import {Board} from './Board'
+import {RenderObjects} from './RenderObjects'
+import {RenderRemotes} from './RenderRemotes'
 import {UndoStack} from './UndoStack'
 
 board = historyBoard = null # Board objects
 gridDefault = true
-selection = null # Selection object representing selected objects
+export selection = null # Selection object representing selected objects
 undoStack = new UndoStack
 eraseDist = 2   # require movement by this many pixels before erasing swipe
 dragDist = 2    # require movement by this many pixels before select drags
-remoteIconSize = 24
-remoteIconOutside = 0.2  # fraction to render icons outside view
 export room = null
 currentFill = 'white'
 currentFillOn = false
@@ -49,8 +49,8 @@ distanceThreshold = (p, q, t) ->
   dy = p.clientY - q.clientY
   dx * dx + dy * dy >= t * t
 
-pointers = {}   # maps pointerId to tool-specific data
-tools =
+export pointers = {}   # maps pointerId to tool-specific data
+export tools =
   undo:
     icon: 'undo'
     help: 'Undo the last operation you did'
@@ -429,7 +429,7 @@ tools =
       updateTextCursor = (e) ->
         setTimeout ->
           return unless pointers.text?
-          render.render Objects.findOne(pointers.text), text: true
+          room.render.render Objects.findOne(pointers.text), text: true
         , 0
       dom.listen input,
         keydown: (e) ->
@@ -470,8 +470,8 @@ tools =
         input.disabled = false
         setTimeout (-> input.focus()), 0  # wait for input to show
       else
-        textStop()
-    stop: textStop = (nextTool, keepHighlight) ->
+        tools.text.stop()
+    stop: (nextTool, keepHighlight) ->
       input = document.getElementById 'textInput'
       input.value = ''
       input.disabled = true
@@ -489,7 +489,7 @@ tools =
     up: (e) ->
       return unless e.type == 'pointerup' # ignore pointerleave
       ## Stop editing any previous text object.
-      textStop null, true
+      tools.text.stop null, true
       ## In future, may support dragging a rectangular container for text,
       ## but maybe only after SVG 2's <text> flow support...
       h = pointers.highlight
@@ -534,7 +534,7 @@ tools =
       return if pointers.text == ids[0]
       obj = Objects.findOne ids[0]
       return unless obj?.type == 'text'
-      textStop()
+      tools.text.stop()
       pointers.text = obj._id
       selection.addId pointers.text
       input = document.getElementById 'textInput'
@@ -645,7 +645,7 @@ tools =
         else
           historyBoard.clear()
           historyBoard.retransform()
-          historyRender = new Render historyBoard.root
+          historyRender = new RenderObjects historyBoard.root
           apply = diffs[...target]
         return if apply.length == 0
         lastTarget = target
@@ -855,7 +855,7 @@ tools =
         selectDrawingTool()
 
 currentTool = 'pan'
-drawingTools =
+export drawingTools =
   pen: true
   segment: true
   rect: true
@@ -864,7 +864,7 @@ drawingTools =
 lastDrawingTool = 'pen'
 hotkeys = {}
 
-currentBoard = ->
+export currentBoard = ->
   if currentTool == 'history'
     historyBoard
   else
@@ -890,7 +890,8 @@ colors = [
   '#ed8e00' # custom orange
   '#eced00' # custom yellow
 ]
-currentColor = 'black'
+export defaultColor = 'black'
+currentColor = defaultColor
 colorMap = {}
 colorMap[color] = true for color in colors
 
@@ -1283,652 +1284,8 @@ historyAdvance = (delta) ->
   event.initEvent 'change', false, true
   range.dispatchEvent event
 
-nonrenderedClasses =
-  highlight: true
-  selected: true
-  outline: true
-  grid: true
-
-class Board
-  constructor: (domId) ->
-    @svg = document.getElementById domId
-    @svg.appendChild @root = dom.create 'g'
-    @transform =
-      x: 0
-      y: 0
-      scale: 1
-  resize: ->
-    ## @bbox maintains client bounding box (top/left/bottom/right) of board,
-    ## computed from the currently visible board (maybe not this one).
-    @bbox = currentBoard().svg.getBoundingClientRect()
-    @remotesRender?.resize()
-    @grid?.update()
-  setScaleFixingPoint: (newScale, fixed) ->
-    ###
-    Transform point (x,y) while preserving (fixed.x, fixed.y):
-      fixed.x = (x + transform.x) * transform.scale
-        => x = fixed.x / transform.scale - transform.x
-      fixed.x = (x + newX) * newScale
-        => newX = fixed.x / newScale - x
-         = fixed.x / newScale - fixed.x / transform.scale + transform.x
-         = fixed.x * (1 / newScale - 1 / transform.scale) + transform.x
-    ###
-    @transform.x += fixed.x * (1/newScale - 1/@transform.scale)
-    @transform.y += fixed.y * (1/newScale - 1/@transform.scale)
-    @transform.scale = newScale
-    @retransform()
-  zoomToFit: ({min, max}, extra = 0.05) ->
-    ## Change transform to fit on screen the rectangle bounded by (min, max),
-    ## as output by renderedBBox() or dom.unionSvgExtremes(), plus 5%.
-    width = max.x - min.x
-    height = max.y - min.y
-    return unless width and height
-    midx = 0.5 * (min.x + max.x)
-    midy = 0.5 * (min.y + max.y)
-    hScale = @bbox.width / width
-    vScale = @bbox.height / height
-    newScale = Math.min hScale, vScale
-    newScale /= 1 + extra
-    # Center the content
-    targetx = midx - 0.5*@bbox.width/newScale
-    targety = midy - 0.5*@bbox.height/newScale
-    @transform.x = -targetx
-    @transform.y = -targety
-    @transform.scale = newScale
-    @retransform()
-  setScaleFixingCenter: (newScale) ->
-    ###
-    Maintain center point (bbox.width/2, bbox.height/2)
-    ###
-    @setScaleFixingPoint newScale,
-      x: @bbox.width/2
-      y: @bbox.height/2
-  retransform: ->
-    @root.setAttribute 'transform',
-      "scale(#{@transform.scale}) translate(#{@transform.x} #{@transform.y})"
-    @remotesRender?.retransform()
-    ## Update grid after `transform` attribute gets rendered.
-    Meteor.setTimeout =>
-      @grid?.update()
-    , 0
-  renderedChildren: ->
-    for child in @root.childNodes
-      skip = false
-      for className in child.classList
-        if className of nonrenderedClasses
-          skip = true
-          break
-      continue if skip
-      child
-  selectedRenderedChildren: ->
-    child for child in @renderedChildren() when selection.has child.dataset.id
-  renderedBBox: (children) ->
-    dom.unionSvgExtremes @svg, children, @root
-  clear: ->
-    @root.innerHTML = ''
-
-dot = (obj, p) ->
-  dom.create 'circle',
-    cx: p.x
-    cy: p.y
-    r: obj.width * p.w / 2
-    fill: obj.color
-edge = (obj, p1, p2) ->
-  dom.create 'line',
-    x1: p1.x
-    y1: p1.y
-    x2: p2.x
-    y2: p2.y
-    stroke: obj.color
-    'stroke-width': obj.width * (p1.w + p2.w) / 2
-    #'stroke-linecap': 'round' # alternative to dot
-    ## Dots mode:
-    #'stroke-width': 1
-
-class Render
-  constructor: (@root) ->
-    @dom = {}
-    @tex = {}
-    @texQueue = []
-    @texById = {}
-  id: (obj) ->
-    ###
-    `obj` can be an `ObjectDiff` object, in which case `id` is the object ID
-    (and `_id` is the diff ID); or a regular `Object` object, in which case
-    `_id` is the object ID.  Also allow raw ID string for `delete`.
-    ###
-    obj.id ? obj._id ? obj
-  renderPen: (obj, options) ->
-    ## Redraw from scratch if no `start` specified, or if color or width changed
-    start = 0
-    if options?.start?
-      start = options.start unless options.color or options.width
-    id = @id obj
-    if exists = @dom[id]
-      ## Destroy existing drawing if starting over
-      exists.innerHTML = '' if start == 0
-      frag = document.createDocumentFragment()
-    else
-      frag = dom.create 'g', null, dataset: id: id
-    ## Draw a `dot` at each point, and an `edge` between consecutive dots
-    if start == 0
-      frag.appendChild dot obj, obj.pts[0]
-      start = 1
-    for i in [start...obj.pts.length]
-      pt = obj.pts[i]
-      frag.appendChild edge obj, obj.pts[i-1], pt
-      frag.appendChild dot obj, pt  # alternative to linecap: round
-    if exists
-      exists.appendChild frag
-    else
-      @root.appendChild @dom[id] = frag
-    @dom[id]
-  renderPoly: (obj) ->
-    id = @id obj
-    unless (poly = @dom[id])?
-      @root.appendChild @dom[id] = poly =
-        dom.create 'polyline', null, dataset: id: id
-    dom.attr poly,
-      points: ("#{x},#{y}" for {x, y} in obj.pts).join ' '
-      stroke: obj.color
-      'stroke-width': obj.width
-      'stroke-linecap': 'round'
-      'stroke-linejoin': 'round'
-      fill: 'none'
-    poly
-  renderRect: (obj) ->
-    id = @id obj
-    unless (rect = @dom[id])?
-      @root.appendChild @dom[id] = rect =
-        dom.create 'rect', null, dataset: id: id
-    dim = dom.pointsToRect obj.pts[0], obj.pts[1]
-    dim.width or= Number.EPSILON
-    dim.height or= Number.EPSILON
-    dom.attr rect, Object.assign dim,
-      stroke: obj.color
-      'stroke-width': obj.width
-      'stroke-linejoin': 'round'
-      fill: obj.fill or 'none'
-    rect
-  renderEllipse: (obj) ->
-    id = @id obj
-    unless (ellipse = @dom[id])?
-      @root.appendChild @dom[id] = ellipse =
-        dom.create 'ellipse', null, dataset: id: id
-    {x, y, width, height} = dom.pointsToRect obj.pts[0], obj.pts[1]
-    rx = (width / 2) or Number.EPSILON
-    ry = (height / 2) or Number.EPSILON
-    dom.attr ellipse,
-      cx: x + rx
-      cy: y + ry
-      rx: rx
-      ry: ry
-      stroke: obj.color
-      'stroke-width': obj.width
-      fill: obj.fill or 'none'
-    ellipse
-  renderText: (obj, options) ->
-    id = @id obj
-    unless (wrapper = @dom[id])?
-      @root.appendChild @dom[id] = wrapper =
-        dom.create 'g', null,
-          dataset: id: id
-      wrapper.appendChild g = dom.create 'g'
-      g.appendChild text = dom.create 'text'
-    else
-      g = wrapper.firstChild
-      text = g.firstChild
-    dom.attr g,
-      transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
-    dom.attr text,
-      fill: obj.color
-      style: "font-size:#{obj.fontSize}px"
-    if options?.text != false or options?.fontSize != false or options?.color != false
-      ## Remove any leftover TeX expressions
-      svgG.remove() while (svgG = g.lastChild) != text
-      @texDelete id if @texById[id]?
-      content = obj.text
-      input = document.getElementById 'textInput'
-      ## Extract $math$ and $$display math$$ expressions.
-      ## Based loosely on Coauthor's `replaceMathBlocks`.
-      readyJobs = []
-      maths = []
-      latex = (text) =>
-        cursorRE = '<tspan\\s+class="cursor">[^<>]*<\\/tspan>'
-        mathRE = /// \$(#{cursorRE})\$ | \$\$? | \\. | [{}] ///g
-        math = null
-        while match = mathRE.exec text
-          if math?
-            switch match[0]
-              when '{'
-                math.brace++
-              when '}'
-                math.brace--
-                math.brace = 0 if math.brace < 0  # ignore extra }s
-              #when '$', '$$'
-              else
-                if match[0].startsWith('$') and math.brace <= 0
-                  math.formulaEnd = match.index
-                  math.end = match.index + match[0].length
-                  math.suffix = match[1]
-                  maths.push math
-                  math = null
-          else if match[0].startsWith '$'
-            math =
-              display: match[0].length > 1
-              start: match.index
-              formulaStart: match.index + match[0].length
-              brace: 0
-              prefix: match[1]
-        if maths.length
-          @texById[id] = jobs = []
-          out = [text[...maths[0].start]]
-          for math, i in maths
-            math.formula = text[math.formulaStart...math.formulaEnd]
-            .replace ///#{cursorRE}///, (match) ->
-              out.push match
-              ''
-            .replace /\u00a0/g, ' '  # undo dom.escape
-            math.formula = dom.unescape math.formula
-            out.push math.prefix if math.prefix?
-            out.push "$MATH#{i}$"
-            out.push math.suffix if math.suffix?
-            math.out = """<tspan data-tex="#{dom.escapeQuote math.formula}" data-display="#{math.display}">&VeryThinSpace;</tspan>"""
-            if i < maths.length-1
-              out.push text[math.end...maths[i+1].start]
-            else
-              out.push text[math.end..]
-            if job = @tex[[math.formula, math.display]]
-              unless job.texts[id]?
-                job.texts[id] = true
-                jobs.push job
-                readyJobs.push {job, id} if job.svg? # already rendered
-            else
-              job = @tex[[math.formula, math.display]] =
-                formula: math.formula
-                display: math.display
-                texts: "#{id}": true
-              @texQueue.push job
-              jobs.push job
-              if @texQueue.length == 1  # added job while idle
-                @texInit()
-                @texJob()
-          out.join ''
-        else
-          text
-      ## Basic Markdown support based on CommonMark and loosely on Slimdown:
-      ## https://gist.github.com/jbroadway/2836900
-      markdown = (text) ->
-        text = text
-        .replace /(^|[^\\])(`+)([^]*?)\2/g, (m, pre, left, inner) ->
-          "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
-        text = latex text
-        .replace ///
-          (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
-          (\*+|_+)(\S(?:[^]*?\S)?)\2
-          (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-        ///g, (m, pre, left, inner) ->
-          ## GFM supports ***bold italic***, and uses a parity rule for >3 *s
-          classes = []
-          classes.push 'strong' if left.length > 1
-          classes.push 'emph' if left.length % 2 == 1
-          "#{pre}<tspan class='#{classes.join ' '}'>#{inner}</tspan>"
-        .replace ///
-          (^|[\s!"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~])  # omitting \\
-          (~~)(\S(?:[^]*?\S)?)\2
-          (?=$|[\s!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])
-        ///g, (m, pre, left, inner) ->
-          "#{pre}<tspan class='strike'>#{inner}</tspan>"
-        .replace /\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, "$1"
-        .replace /\$MATH(\d+)\$/g, (match, i) ->
-          maths[i].out
-        ## Multiline support: if text has newlines, split into multiple <tspan>s
-        ## that duplicate font changes as necessary.
-        if 0 <= text.indexOf '\n'
-          tspans = []  # currently unclosed font-changing <tspan>s
-          text = (
-            for line, i in text.split '\n'
-              resume = tspans.join ''
-              ## Find newly opened <tspan>s, and closing </tspan>s,
-              ## by first removing all <tspan>s closed within the line.
-              unmatched = line
-              loop
-                oldUnmatched = unmatched
-                unmatched = unmatched.replace ///<tspan[^<>]*>.*?</tspan>///, ''
-                break if unmatched == oldUnmatched
-              unmatched.replace ///</tspan>///g, ->
-                tspans.pop()
-                ''
-              unmatched.replace ///<tspan[^<>]*>///g, (match) ->
-                tspans.push match
-                ''
-              line = resume + line + ("</tspan>" for tspan in tspans).join ''
-              line = """<tspan x="0" dy="1.25em">#{line}</tspan>""" unless i == 0
-              line
-          ).join '\n'
-        text
-      if id == pointers.text
-        input = document.getElementById 'textInput'
-        cursor = input.selectionStart
-        if input.value != content  # newer text from server (parallel editing)
-          ## If suffix starting at current cursor matches new text, then move
-          ## cursor to start at new version of suffix.  Otherwise leave as is.
-          suffix = input.value[cursor..]
-          if suffix == content[-suffix.length..]
-            cursor = content.length - suffix.length
-          input.value = content
-          setTimeout ->
-            input.selectionStart = input.selectionEnd = cursor
-          , 0
-        content = dom.escape(content[...cursor]) +
-                  '<tspan class="cursor">&VeryThinSpace;</tspan>' +
-                  dom.escape(content[cursor..])
-        g.appendChild pointers.cursor = dom.create 'line',
-          class: 'cursor'
-          ## 0.05555 is actual size of &VeryThinSpace;, 2 is to exaggerate
-          'stroke-width': 2 * 0.05555 * obj.fontSize
-          ## 1.2 is to exaggerate
-          y1: -0.5 * 1.2 * obj.fontSize
-          y2:  0.5 * 1.2 * obj.fontSize
-        setTimeout pointers.cursorUpdate = ->
-          return unless pointers.cursor?
-          bbox = text.querySelector('tspan.cursor').getBBox()
-          x = bbox.x + 0.5 * bbox.width
-          y = bbox.y + 0.5 * bbox.height
-          dom.attr pointers.cursor, transform: "translate(#{x} #{y})"
-        , 0
-      else
-        content = dom.escape content
-      content = markdown content
-      text.innerHTML = content
-      for {job, id} in readyJobs
-        @texRender job, id
-    wrapper
-  texInit: ->
-    return if @tex2svg?
-    if Meteor.settings.public.tex2svg
-      @tex2svg = new Worker window.URL.createObjectURL new Blob ["""
-        importScripts(#{JSON.stringify Meteor.settings.public.tex2svg});
-      """], type: 'text/javascript'
-    else
-      @tex2svg = new Worker '/tex2svg.js'
-    @tex2svg.onmessage = (e) =>
-      {formula, display, svg} = e.data
-      job = @tex[[formula,display]]
-      unless job?
-        return console.warn "No job for #{formula},#{display}"
-      unless formula == job.formula and display == job.display
-        console.warn "Mismatch between #{formula},#{display} and #{job.formula},#{job.display}"
-      exScale = 0.523
-      exScaler = (match, dimen, value) ->
-        "#{dimen}=\"#{job[dimen] = exScale * parseFloat value}\""
-      job.depth = 0  # default if no vertical-align specification
-      svg = svg
-      .replace /\b(width)="([\-\.\d]+)ex"/, exScaler
-      .replace /\b(height)="([\-\.\d]+)ex"/, exScaler
-      .replace /\bvertical-align:\s*([\-\.\d]+)ex/, (match, depth) ->
-        job.depth = -parseFloat depth
-        ''
-      .replace /<rect\s+data-background="true"/g, "$& fill=\"#f88\""
-      job.svg = svg
-      for id of job.texts
-        @texRender job, id
-      @texJob()
-  texRender: (job, id) ->
-    ###
-    Render all instances of `job` within text object with ID `id`.
-    Precondition: `job.texts[id]` should exist.
-
-    `job.texts[id]` can be one of two values:
-      * `true` means "needs to be rendered"
-      * array of rendered <g> elements, one for each instance of `job`
-        (in the order they appear in the text)
-    This method only does work in the first case.
-    ###
-    return unless job.texts[id] == true
-    object = Objects.findOne id
-    return unless object
-    fontSize = object.fontSize
-    g = @dom[id].firstChild
-    text = g.firstChild
-    dx = job.width * fontSize
-    ## Roboto Slab in https://opentype.js.org/font-inspector.html:
-    unitsPerEm = 1000 # Font Header table
-    descender = 271   # Horizontal Header table
-    ascender = 1048   # Horizontal Header table
-    job.texts[id] =
-      for tspan in text.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
-        dom.attr tspan, {dx}
-        tspanBBox = tspan.getBBox()
-        g.appendChild svgG = dom.create 'g'
-        svgG.innerHTML = job.svg
-        .replace /currentColor/g, object.color
-        x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
-        y = tspanBBox.y \
-          + tspanBBox.height * (1 - descender/(descender+ascender)) \
-          - job.height * fontSize + job.depth * fontSize / 2
-          # not sure where the /2 comes from... exFactor?
-        dom.attr svgG,
-          transform: "translate(#{x} #{y}) scale(#{fontSize})"
-        svgG
-    ## The `dx` attributes set above may mean that previously rendered LaTeX
-    ## <g>s need to shift horizontally.  Update their x translation.
-    for job2 in @texById[id]
-      continue if job == job2  # don't need to update job we just rendered
-      continue if job2.texts[id] == true  # only update already rendered jobs
-      for tspan, i in text.querySelectorAll """tspan[data-tex="#{CSS.escape job2.formula}"][data-display="#{job2.display}"]"""
-        tspanBBox = tspan.getBBox()
-        x = tspanBBox.x - tspan.getAttribute('dx') + tspanBBox.width/2  # divvy up &VeryThinSpace;
-        svgG = job2.texts[id][i]
-        svgG.setAttribute 'transform', svgG.getAttribute('transform').replace \
-          /translate\([\-\.\d]+/, "translate(#{x}"
-    selection.redraw id, @dom[id] if selection.has id
-    pointers.cursorUpdate?() if id == pointers.text
-  texJob: ->
-    return unless @texQueue.length
-    @tex2svg.postMessage @texQueue.shift()
-  render: (obj, options = {}) ->
-    elt =
-      switch obj.type
-        when 'pen'
-          @renderPen obj, options
-        when 'poly'
-          @renderPoly obj, options
-        when 'rect'
-          @renderRect obj, options
-        when 'ellipse'
-          @renderEllipse obj, options
-        when 'text'
-          @renderText obj, options
-        else
-          console.warn "No renderer for object of type #{obj.type}"
-    if options.translate != false and elt?
-      if obj.tx? or obj.ty?
-        elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
-      else
-        elt.removeAttribute 'transform'
-    selection.redraw obj._id, elt if selection.has obj._id
-  delete: (obj) ->
-    id = @id obj
-    unless @dom[id]?
-      return console.warn "Attempt to delete unknown object ID #{id}?!"
-    @root.removeChild @dom[id]
-    delete @dom[id]
-    textStop() if id == pointers.text
-    @texDelete id if @texById[id]?
-  texDelete: (id) ->
-    for job in check = @texById[id]
-      delete job.texts[id]
-    delete @texById[id]
-    ## After we potentially rerender text, check for expired cache jobs
-    setTimeout =>
-      for job in check
-        unless (t for t of job.texts).length
-          delete @tex[[job.formula, job.display]]
-    , 0
-  #has: (obj) ->
-  #  (id obj) of @dom
-  shouldNotExist: (obj) ->
-    ###
-    Call before rendering a should-be-new object.  If already exists, log a
-    warning and clear the object from the map so a new one will get created.
-    Currently the old object stays in the DOM, though.
-    ###
-    id = @id obj
-    if id of @dom
-      console.warn "Duplicate object with ID #{id}?!"
-      delete @dom[id]
-
-render = null
-observeRender = ->
-  board.clear()
-  render = new Render board.root
-  board.grid = new Grid board.root
-  Objects.find
-    room: room.id
-    page: room.page
-  .observe
-    added: (obj) ->
-      render.shouldNotExist obj
-      render.render obj
-    changed: (obj, old) ->
-      ## Assuming that pen's `pts` field changes only by appending
-      render.render obj,
-        start: old.pts.length
-        translate: obj.tx != old.tx or obj.ty != old.ty
-        color: obj.color != old.color
-        width: obj.width != old.width
-        text: obj.text != old.text
-        fontSize: obj.fontSize != old.fontSize
-    removed: (obj) ->
-      render.delete obj
-
-class RemotesRender
-  constructor: ->
-    @elts = {}
-    @updated = {}
-    @transforms = {}
-    @svg = document.getElementById 'remotes'
-    @svg.innerHTML = ''
-    @svg.appendChild @root = dom.create 'g'
-    @resize()
-  render: (remote, oldRemote = {}) ->
-    id = remote._id
-    return if id == remotes.id  # don't show own cursor
-    @updated[id] = remote.updated
-    ## Omit this in case remoteNow() is inaccurate at startup:
-    #return if (timesync.remoteNow() - @updated[id]) / 1000 > remotes.fade
-    unless elt = @elts[id]
-      @elts[id] = elt = dom.create 'g'
-      @root.appendChild elt
-    unless remote.tool == oldRemote.tool and remote.color == oldRemote.color
-      if icon = tools[remote.tool]?.icon
-        if remote.tool of drawingTools
-          icon = drawingToolIcon remote.tool,
-            (remote.color ? colors[0]), remote.fill
-        elt.innerHTML = icons.cursorIcon icon, ...tools[remote.tool].hotspot
-        elt.appendChild dom.create 'text',
-          dx: icons.cursorSize + 2
-          dy: icons.cursorSize / 2 + 6  # for 16px default font size
-        oldRemote?.name = null
-      else
-        elt.innerHTML = ''
-        return  # don't set transform or opacity
-    text = elt.childNodes[1]
-    unless remote.name == oldRemote.name
-      text.innerHTML = dom.escape remote.name ? ''
-    elt.style.visibility =
-      if remote.page == room.page
-        'visible'
-      else
-        'hidden'
-    elt.style.opacity = 1 -
-      (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
-    hotspot = tools[remote.tool]?.hotspot ? [0,0]
-    minX = (hotspot[0] - remoteIconOutside) * remoteIconSize
-    minY = (hotspot[1] - remoteIconOutside) * remoteIconSize
-    do @transforms[id] = ->
-      maxX = board.bbox.width - (1 - hotspot[0] - remoteIconOutside) * remoteIconSize
-      maxY = board.bbox.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
-      x = (remote.cursor.x + board.transform.x) * board.transform.scale
-      y = (remote.cursor.y + board.transform.y) * board.transform.scale
-      unless goodX = (minX <= x <= maxX) and
-             goodY = (minY <= y <= maxY)
-        x1 = board.bbox.width / 2
-        y1 = board.bbox.height / 2
-        x2 = x
-        y2 = y
-        unless goodX
-          if x < minX
-            x3 = minX
-          else if x > maxX
-            x3 = maxX
-          ## https://mathworld.wolfram.com/Two-PointForm.html
-          y3 = y1 + (y2 - y1) / (x2 - x1) * (x3 - x1)
-        unless goodY
-          if y < minY
-            y4 = minY
-          else if y > maxY
-            y4 = maxY
-          x4 = x1 + (x2 - x1) / (y2 - y1) * (y4 - y1)
-        if goodX or minX <= x4 <= maxX
-          x = x4
-          y = y4
-        else if goodY or minY <= y3 <= maxY
-          x = x3
-          y = y3
-        else
-          x = x3
-          y = y3
-          if x < minX
-            x = minX
-          else if x > maxX
-            x = maxX
-          if y < minY
-            y = minY
-          else if y > maxY
-            y = maxY
-      elt.setAttribute 'transform', """
-        translate(#{x} #{y})
-        scale(#{remoteIconSize})
-        translate(#{-hotspot[0]} #{-hotspot[1]})
-        scale(#{1/icons.cursorSize})
-      """
-      if x >= 0.8 * maxX + 0.2 * minX
-        dom.attr text,
-          dx: -2
-          'text-anchor': 'end'
-      else
-        dom.attr text,
-          dx: icons.cursorSize + 2
-          'text-anchor': 'start'
-  delete: (remote) ->
-    id = remote._id ? remote
-    if elt = @elts[id]
-      @root.removeChild elt
-      delete @elts[id]
-      delete @transforms[id]
-  resize: ->
-    @svg.setAttribute 'viewBox', "0 0 #{board.bbox.width} #{board.bbox.height}"
-    @retransform()
-  retransform: ->
-    for id, transform of @transforms
-      transform()
-  timer: (elt, id) ->
-    now = timesync.remoteNow()
-    for id, elt of @elts
-      elt.style.opacity = 1 - (now - @updated[id]) / 1000 / remotes.fade
-
-observeRemotes = ->
-  board.remotesRender = new RemotesRender
-  Remotes.find
-    room: room.id
-  .observe
-    added: (remote) -> board.remotesRender.render remote
-    changed: (remote, oldRemote) -> board.remotesRender.render remote, oldRemote
-    removed: (remote) -> board.remotesRender.delete remote
 setInterval ->
-  board.remotesRender?.timer()
+  board?.remotesRender?.timer()
 , 1000
 
 gridSize = 37.76
@@ -1994,7 +1351,7 @@ subscribe = (...args) ->
     onStop: done
 
 class Room
-  constructor: (@id) ->
+  constructor: (@id, @board) ->
     @changePage null
     @sub = subscribe 'room', @id
     @auto = Tracker.autorun =>
@@ -2023,13 +1380,14 @@ class Room
     @pageAuto?.stop()
     @page = page
     tools[currentTool]?.stop?()
-    @roomObserveObjects?.stop()
-    @roomObserveRemotes?.stop()
+    @objectsObserver?.stop()
+    @remotesObserver?.stop()
+    @objectsObserver = @remotesObserver = null
     if @page?
-      @roomObserveObjects = observeRender()
-      @roomObserveRemotes = observeRemotes()
+      @observeObjects()  # sets @objectsObserver
+      @observeRemotes()  # sets @remotesObserver
     else
-      board.clear()
+      @board.clear()
     dom.classSet document.body, 'nopage', not @page?
       # in particular, disable pointer events when no page
     @updatePageNum()
@@ -2042,7 +1400,7 @@ class Room
           @pageGrid = @pageData?.grid
           dom.classSet document.querySelector('.tool[data-tool="grid"]'),
             'active', @pageGrid
-          board.grid?.update()
+          @board.grid?.update()
   updatePageNum: ->
     pageNumber = @pageIndex()
     pageNumber++ if pageNumber?
@@ -2052,12 +1410,43 @@ class Room
     index = @data.pages.indexOf @page
     return if index < 0
     index
+  observeObjects: ->
+    @render?.stop()
+    @render = render = new RenderObjects @board.root
+    @board.clear()
+    @board.grid = new Grid @board.root
+    @objectsObserver = Objects.find
+      room: @id
+      page: @page
+    .observe
+      added: (obj) ->
+        render.shouldNotExist obj
+        render.render obj
+      changed: (obj, old) ->
+        ## Assuming that pen's `pts` field changes only by appending
+        render.render obj,
+          start: old.pts.length
+          translate: obj.tx != old.tx or obj.ty != old.ty
+          color: obj.color != old.color
+          width: obj.width != old.width
+          text: obj.text != old.text
+          fontSize: obj.fontSize != old.fontSize
+      removed: (obj) ->
+        render.delete obj
+  observeRemotes: ->
+    @board.remotesRender = remotesRender = new RenderRemotes @
+    @remotesObserver = Remotes.find
+      room: @id
+    .observe
+      added: (remote) -> remotesRender.render remote
+      changed: (remote, oldRemote) -> remotesRender.render remote, oldRemote
+      removed: (remote) -> remotesRender.delete remote
 
 changeRoom = (roomId) ->
   return if roomId == room?.id
   room?.stop()
   if roomId?
-    room = new Room roomId
+    room = new Room roomId, board
     room.updateUI()
   else
     room = null
@@ -2295,7 +1684,7 @@ paletteFontSizes = ->
       ]
     ]
 
-drawingToolIcon = (tool, color, fill) ->
+export drawingToolIcon = (tool, color, fill) ->
   icon = tools[tool]?.icon
   return icon unless icon?
   attr = fill: color
