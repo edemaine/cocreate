@@ -7,6 +7,7 @@ import storage from './lib/storage'
 import throttle from './lib/throttle'
 import {meteorCallPromise} from '/lib/meteorPromise'
 import {Board} from './Board'
+import {gridSize, Grid} from './Grid'
 import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
 import {UndoStack} from './UndoStack'
@@ -1288,40 +1289,6 @@ setInterval ->
   board?.remotesRender?.timer()
 , 1000
 
-gridSize = 37.76
-class Grid
-  constructor: (root) ->
-    @svg = root.parentNode
-    root.appendChild @grid = dom.create 'g', class: 'grid'
-    @update()
-  update: (mode = room?.pageGrid, bounds) ->
-    @grid.innerHTML = ''
-    bounds ?=
-      min: dom.svgPoint @svg, board.bbox.left, board.bbox.top, @grid
-      max: dom.svgPoint @svg, board.bbox.right, board.bbox.bottom, @grid
-    margin = gridSize
-    switch mode
-      when true
-        far = 10 * gridSize
-        range = (xy) ->
-          [Math.floor(bounds.min[xy] / gridSize) .. \
-           Math.ceil bounds.max[xy] / gridSize]
-        for i in range 'x'
-          x = i * gridSize
-          @grid.appendChild dom.create 'line',
-            x1: x
-            x2: x
-            y1: bounds.min.y - margin
-            y2: bounds.max.y + margin
-        for j in range 'y'
-          y = j * gridSize
-          @grid.appendChild dom.create 'line',
-            y1: y
-            y2: y
-            x1: bounds.min.x - margin
-            x2: bounds.max.x + margin
-      #else
-
 loadingCount = 0
 loadingUpdate = (delta) ->
   loadingCount += delta
@@ -1414,7 +1381,7 @@ class Room
     @render?.stop()
     @render = render = new RenderObjects @board.root
     @board.clear()
-    @board.grid = new Grid @board.root
+    @board.grid = new Grid @
     @objectsObserver = Objects.find
       room: @id
       page: @page
