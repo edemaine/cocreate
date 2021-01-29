@@ -1565,7 +1565,9 @@ Meteor.startup ->
             e.preventDefault()  # ctrl-D bookmarks on Chrome
             selection.duplicate()
         when 'Escape'
-          if currentTool == 'history'
+          if document.getElementById('qrCode').classList.contains 'show'
+            tools.linkRoom.once()  # QR overlay toggle
+          else if currentTool == 'history'
             selectTool 'history'  # escape history view by toggling
         else
           ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
