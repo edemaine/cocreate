@@ -168,6 +168,8 @@ export class Selection
       for id in oldIds
         obj = Objects.findOne id
         delete obj._id
+        delete obj.updated
+        delete obj.created
         obj.tx ?= 0
         obj.ty ?= 0
         obj.tx += gridSize
