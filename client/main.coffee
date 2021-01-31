@@ -1764,12 +1764,29 @@ Meteor.startup ->
         selectTool 'select'  # usually want to move pasted objects
         setSelection (obj._id for obj in objects)
       else
-        {x, y} = snapPoint board.relativePoint 0.25, 0.25
+        ## Cache text content in case we want to paste it later; walking
+        ## through all items during `tryAddImage` seems to clear text content.
+        text = e.clipboardData.getData 'text/plain'
+        point = snapPoint board.relativePoint 0.25, 0.25
         options =
-          tx: x
-          ty: y
+          tx: point.x
+          ty: point.y
+        ## First check for image paste
         unless await tryAddImage e.clipboardData.items, options
-          console.log 'maybe text?'
+          ## On failure, paste text content as text object
+          if text
+            selectTool 'text'
+            undoStack.pushAndDo
+              type: 'new'
+              obj: obj =
+                room: room.id
+                page: room.page
+                type: 'text'
+                pts: [point]
+                text: text
+                color: currentColor
+                fontSize: currentFontSize
+            setSelection [obj._id]
 
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->
