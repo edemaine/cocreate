@@ -731,9 +731,11 @@ export tools =
           tspan.strike { text-decoration: line-through }
 
         '''
+      width = bbox.max.x - bbox.min.x
+      height = bbox.max.y - bbox.min.y
       svg = """
         <?xml version="1.0" encoding="utf-8"?>
-        <svg xmlns="#{dom.SVGNS}" viewBox="#{bbox.min.x} #{bbox.min.y} #{bbox.max.x - bbox.min.x} #{bbox.max.y - bbox.min.y}">
+        <svg xmlns="#{dom.SVGNS}" viewBox="#{bbox.min.x} #{bbox.min.y} #{width} #{height}" width="#{width}px" height="#{height}px">
         <style>
         .grid { stroke-width: 0.96; stroke: #c4e3f4 }
         #{fonts}</style>
