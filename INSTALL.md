@@ -38,8 +38,12 @@ This configuration can be achieved fully automatically via `mup` as follows:
    [`mup-redis`](https://github.com/zodern/mup-redis)
    via `npm install -g mup mup-redis`
    (after installing [Node](https://nodejs.org/en/) and thus NPM).
-3. Copy `settings.json` to `.deploy1/settings.json` and edit if desired
-   (see configuration choices mentioned below).
+3. Copy `settings.json` to `.deploy1/settings.json` and edit.
+   In particular, you should change the `cors-anywhere` setting to point to
+   your own [CORS Anywhere server](https://github.com/Rob--W/cors-anywhere/),
+   or remove that setting altogether (to disable image loading via proxy).
+   For further configuration choices for `settings.json`, see
+   [APM](#application-performance-management-apm) and [CDN](#cdn) below.
 4. Edit `.deploy1/mup.js` to point to your hostname/IP and SSH key
    (for accessing the server), and maybe adjust RAM available to Meteor.
 5. `cd .deploy1`
