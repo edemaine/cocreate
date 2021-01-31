@@ -1281,14 +1281,13 @@ class Room
         render.shouldNotExist obj
         render.render obj
       changed: (obj, old) ->
-        ## Assuming that pen's `pts` field changes only by appending
-        render.render obj,
-          start: old.pts?.length
-          translate: obj.tx != old.tx or obj.ty != old.ty
-          color: obj.color != old.color
-          width: obj.width != old.width
-          text: obj.text != old.text
-          fontSize: obj.fontSize != old.fontSize
+        options = {}
+        if old.pts?
+          ## Assuming that pen's `pts` field changes only by appending
+          options.start = old.pts.length
+        for own key of obj when key != 'pts'
+          options[key] = obj[key] != old[key]
+        render.render obj, options
       removed: (obj) ->
         render.delete obj
   observeRemotes: ->

@@ -3,6 +3,7 @@
 
 import {proxyUrl} from '../lib/url'
 import dom from './lib/dom'
+import icons from './lib/icons'
 import {tools, pointers, selection} from './main'
 
 export class RenderObjects
@@ -105,7 +106,7 @@ export class RenderObjects
     dom.attr text,
       fill: obj.color
       style: "font-size:#{obj.fontSize}px"
-    if options?.text != false or options?.fontSize != false or options?.color != false
+    if not options? or options.text or options.fontSize or options.color
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
       @texDelete id if @texById[id]?
@@ -356,12 +357,21 @@ export class RenderObjects
       @root.appendChild @dom[id] = image =
         dom.create 'image', null, dataset: id: id
       #image.onload = (e) -> console.log 'loaded'
-      #image.onerror = (e) -> console.log 'error'
-    dom.attr image,
-      href: if obj.proxy then proxyUrl obj.url else obj.url
-      crossorigin: if obj.credentials then 'use-credentials' else 'anonymous'
+      image.onerror = (e) =>
+        return if image.getAttribute('href').startsWith 'data:' # avoid looping
+        dom.attr image, href: icons.dataUrl \
+          icons.svgIcon 'exclamation-rect',
+            width: '64px'
+            height: '64px'
+        selection.redraw id, @dom[id] if selection.has id
+    if not options? or options.url or options.proxy or options.credentials
+      dom.attr image,
+        href: if obj.proxy then proxyUrl obj.url else obj.url
+        crossorigin: if obj.credentials then 'use-credentials' else 'anonymous'
     image
-  render: (obj, options = {}) ->
+  render: (obj, options) ->
+    ## `options` should be an object mapping changed keys of `obj` to `true`,
+    ## or absent (`undefined`, not `{}`), meaning `obj` is brand new.
     elt =
       switch obj.type
         when 'pen'
@@ -378,7 +388,7 @@ export class RenderObjects
           @renderImage obj, options
         else
           console.warn "No renderer for object of type #{obj.type}"
-    if options.translate != false and elt?
+    if (not options? or options.tx or options.ty) and elt?
       if obj.tx? or obj.ty?
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else

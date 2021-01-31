@@ -57,6 +57,7 @@ export class Highlighter
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
+    .replace /<image\b/g, '<image filter="url(#selectFilter)"'
     if /<text\b/.test html
       width = 1.5 # for text
       html = html.replace /\bfill=(["'][^"']+["'])/g, (match, fill) ->
