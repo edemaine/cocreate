@@ -9,6 +9,7 @@
   --tooltip-color: hsl(60, 50%, 76%)
   --tooltip-width: 200px
   --tooltip-arrow: 5px
+  --dragzone-color: hsla(60, 50%, 76%, 50%)
 
 .dark
   --palette-color: #333
@@ -53,7 +54,7 @@ input, textarea
       color: #555
     background: #000
 
-.board, .modal
+.board, .modal, .overlay
   position: absolute
   overflow: hidden
   top: var(--palette-top-height)
@@ -66,8 +67,14 @@ input, textarea
   cursor: crosshair
   touch-action: none  // PointerEvents only
   user-select: none  // avoid selecting text objects while drawing
-#remotes
+.overlay
   pointer-events: none
+#dragzone
+  transition: opacity 500ms
+  background-color: var(--dragzone-color)
+  opacity: 0
+  &.drag
+    opacity: 1
 
 .palette
   position: absolute

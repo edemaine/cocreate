@@ -2,6 +2,7 @@ import {Tracker} from 'meteor/tracker'
 
 import '../lib/main'
 import './lib/polyfill'
+import {validUrl, proxyUrl} from '../lib/url'
 import icons from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
@@ -650,7 +651,7 @@ export tools =
         lastTarget = target
         for diff in apply
           switch diff.type
-            when 'pen', 'poly', 'rect', 'ellipse', 'text'
+            when 'pen', 'poly', 'rect', 'ellipse', 'text', 'image'
               obj = diff
               historyObjects[obj.id] = obj
               historyRender.render obj
@@ -1061,6 +1062,103 @@ pointerEvents = ->
       remote.fill = currentFill if currentFillOn
       remotes.update remote
 
+dragEvents = ->
+  dragDepth = 0
+  all = (e) ->
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  dom.listen board.svg,
+    dragenter: (e) ->
+      all e
+      return if dragDepth++
+      ## Entering for the first time
+      document.getElementById('dragzone').classList.add 'drag'
+    dragover: (e) ->
+      all e
+      #return unless dragDepth
+    dragleave: (e) ->
+      all e
+      return if --dragDepth
+      ## Leaving for the last time
+      document.getElementById('dragzone').classList.remove 'drag'
+    drop: (e) ->
+      all e
+      dragDepth = 0
+      document.getElementById('dragzone').classList.remove 'drag'
+      tryAddImage e.dataTransfer.items
+
+tryAddImage = (items) ->
+  ## HTML <img> tag (as from dragging images) or <a href> tag
+  ## (without nested <a> links, as from dragging links)
+  ## are highest priority.
+  for item in items when item.type == 'text/html'
+    html = await new Promise (done) -> item.getAsString done
+    match = ///^\s* <img\b [^<>]* \b src \s*=\s* ("[^"]*"|'[^']*')
+                      [^<>]*> \s*$///i.exec(html) or
+    ///^\s* <a\b [^<>]* \b href \s*=\s* ("[^"]*"|'[^']*')
+              [^<>]*> ([^]*) </a> \s*$///i.exec(html)
+    if match? and not (match[2] and ///</a>///i.test match[2])
+      url = match[1][1...match[1].length-1]
+      return true if await tryAddImageUrl url
+  ## Next check for plain text that consists solely of a URL
+  for item in items when item.type == 'text/plain'
+    text = await new Promise (done) -> item.getAsString done
+    text = text.trim()
+    return true if await tryAddImageUrl text
+  false
+
+## Asynchronously try to verify URL points to an image, and if so,
+## add it to the current room and page and return the new object ID.
+## `options` should not be provided; instead, it will be modified
+## automatically to find a workable method.
+tryAddImageUrl = (url, options = {}) ->
+  return unless validUrl url
+  {credentials, proxy} = options
+  fetchUrl =
+    if options.proxy
+      proxyUrl url
+    else
+      url
+  fetchOptions =
+    cache: 'reload' # don't use cache while testing whether need credentials
+    mode: 'cors'
+    credentials: if credentials then 'include' else 'same-origin'
+  ## Test whether image will load successfully by manually running a CORS
+  ## preflight test (OPTIONS); then load content-type via HEAD request.
+  try
+    for method in ['OPTIONS', 'HEAD']
+      response = await fetch fetchUrl, Object.assign {method}, fetchOptions
+  catch e
+    if Meteor.settings.public['cors-anywhere'] and
+        not options.proxy and not options.credentials
+      console.log "URL #{fetchUrl} failed to load, likely blocked by CORS; trying again with proxy"
+      return tryAddImageUrl url, Object.assign options, proxy: true
+    else
+      console.log "URL #{fetchUrl} failed to load (#{e}) :-("
+      return
+  ## Status: Unauthorized or Forbidden -> try again with credentials
+  ## (e.g. for Coauthor images)
+  if response.status in [401, 403] and
+     not options.credentials and not options.proxy
+    console.log "URL #{fetchUrl} returned status #{response.status} from server; trying again with credentials"
+    return tryAddImageUrl url, Object.assign options, credentials: true
+  unless response.status in [200, 204]
+    console.log "URL #{fetchUrl} returned status #{response.status} from server :-("
+    return
+  contentType = response.headers.get 'content-type'
+  unless /^image\//.test contentType
+    console.log "URL #{fetchUrl} has content-type #{contentType} which is not a supported image type"
+    return
+  undoStack.pushAndDo
+    type: 'new'
+    obj:
+      room: room.id
+      page: room.page
+      type: 'image'
+      url: url
+      credentials: Boolean credentials
+      proxy: Boolean proxy
+
 ## Resets the selection, and if the current tool supports selection,
 ## sets the selection to the specified array of object IDs
 ## (as e.g. returned by `UndoStack.undo` and `UndoStack.redo`).
@@ -1185,7 +1283,7 @@ class Room
       changed: (obj, old) ->
         ## Assuming that pen's `pts` field changes only by appending
         render.render obj,
-          start: old.pts.length
+          start: old.pts?.length
           translate: obj.tx != old.tx or obj.ty != old.ty
           color: obj.color != old.color
           width: obj.width != old.width
@@ -1540,6 +1638,7 @@ Meteor.startup ->
   selectWidth null, true
   selectFontSize null
   pointerEvents()
+  dragEvents()
   dom.listen window,
     resize: resize
     popstate: urlChange
@@ -1600,8 +1699,9 @@ Meteor.startup ->
         selection.delete()
     paste: (e) ->
       return if e.target.tagName == 'INPUT'  # ignore operations in text boxes
+      e.preventDefault()
+      console.log 'paste'
       if json = e.clipboardData.getData 'application/cocreate-objects'
-        e.preventDefault()
         objects =
           for obj in JSON.parse json
             delete obj._id
@@ -1619,6 +1719,8 @@ Meteor.startup ->
               obj: obj
         selectTool 'select'  # usually want to move pasted objects
         setSelection (obj._id for obj in objects)
+      else unless await tryAddImage e.clipboardData.items
+        console.log 'maybe text?'
 
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->

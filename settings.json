@@ -1,5 +1,6 @@
 {
   "public": {
+    "cors-anywhere": "https://cors-anywhere.herokuapp.com/",
     "tex2svg": "https://cdn.jsdelivr.net/npm/tex2svg-webworker@0.1.1/dist/tex2svg.js"
   }
 }

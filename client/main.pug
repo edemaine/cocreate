@@ -36,7 +36,8 @@ body
   // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
   svg#board.board.historyHide(touch-action="none")
   svg#historyBoard.board.historyShow(touch-action="none")
-  svg#remotes.board.historyHide
+  svg#remotes.board.overlay.historyHide
+  #dragzone.overlay
   #badRoom.modal.error
     h1 Invalid Room ID
     p Perhaps there's a typo in the URL?  It should look like this:

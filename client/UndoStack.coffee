@@ -60,7 +60,9 @@ doOp = (op, reverse = false) ->
         #for key, value of op.obj
         #  obj[key] = value unless key of skipKeys
         #op.obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
-        Meteor.call 'objectNew', op.obj
+        id = Meteor.apply 'objectNew', [op.obj], returnStubValue: true
+        op.obj._id ?= id  # for pushAndDo to support later undo
+        id
     when 'edit'
       Meteor.call 'objectEdit', editArgs op
     else

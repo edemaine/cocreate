@@ -1,6 +1,7 @@
 ## RenderObjects class handles rendering and rerendering of objects on a board.
 ## (Arguably, it should be merged with Board.)
 
+import {proxyUrl} from '../lib/url'
 import dom from './lib/dom'
 import {tools, pointers, selection} from './main'
 
@@ -349,6 +350,17 @@ export class RenderObjects
   texJob: ->
     return unless @texQueue.length
     @tex2svg.postMessage @texQueue.shift()
+  renderImage: (obj, options) ->
+    id = @id obj
+    unless (image = @dom[id])?
+      @root.appendChild @dom[id] = image =
+        dom.create 'image', null, dataset: id: id
+      #image.onload = (e) -> console.log 'loaded'
+      #image.onerror = (e) -> console.log 'error'
+    dom.attr image,
+      href: if obj.proxy then proxyUrl obj.url else obj.url
+      crossorigin: if obj.credentials then 'use-credentials' else 'anonymous'
+    image
   render: (obj, options = {}) ->
     elt =
       switch obj.type
@@ -362,6 +374,8 @@ export class RenderObjects
           @renderEllipse obj, options
         when 'text'
           @renderText obj, options
+        when 'image'
+          @renderImage obj, options
         else
           console.warn "No renderer for object of type #{obj.type}"
     if options.translate != false and elt?

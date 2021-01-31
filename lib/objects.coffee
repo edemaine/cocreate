@@ -4,6 +4,7 @@ import {Mongo} from 'meteor/mongo'
 import {validId} from './id'
 import {checkRoom} from './rooms'
 import {checkPage} from './pages'
+import {validUrl} from './url'
 
 @Objects = new Mongo.Collection 'objects'
 @ObjectsDiff = new Mongo.Collection 'objects.diff' if Meteor.isServer
@@ -64,6 +65,11 @@ Meteor.methods
           color: String
           text: String
           fontSize: Number
+      when 'image'
+        Object.assign pattern,
+          url: Match.Where validUrl
+          credentials: Match.Optional Boolean
+          proxy: Match.Optional Boolean
       else
         throw new Error "Invalid type #{obj?.type} for object"
     check obj, pattern
@@ -106,15 +112,17 @@ Meteor.methods
     obj = checkObject id
     pattern =
       id: String
-      color: Match.Optional String
-      pts: Match.Optional Match.Where (pts) ->
-        return false unless typeof pts == 'object'
-        for key, value of pts
-          return false unless /^\d+$/.test key
-          check value, xyType
-        true
       tx: Match.Optional Number
       ty: Match.Optional Number
+    unless obj.type == 'image'
+      Object.assign pattern,
+        color: Match.Optional String
+        pts: Match.Optional Match.Where (pts) ->
+          return false unless typeof pts == 'object'
+          for key, value of pts
+            return false unless /^\d+$/.test key
+            check value, xyType
+          true
     if obj.type in ['pen', 'poly', 'rect', 'ellipse']
       Object.assign pattern,
         width: Match.Optional Number
@@ -125,6 +133,10 @@ Meteor.methods
       Object.assign pattern,
         text: Match.Optional String
         fontSize: Match.Optional Number
+    if obj.type == 'image'
+      Object.assign pattern,
+        credentials: Match.Optional Boolean
+        proxy: Match.Optional Boolean
     check diff, pattern
     set = {}
     for key, value of diff when key != 'id'
