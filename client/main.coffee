@@ -715,9 +715,13 @@ export tools =
       if currentBoard().grid?
         currentBoard().grid.update room.pageGrid, bbox
         elts.splice 0, 0, currentBoard().grid.grid
-      ## Create SVG header
+      ## Convert everything to SVG
       svg = (elt.outerHTML for elt in elts).join '\n'
       .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
+      ## Reset transform and grid
+      root.setAttribute 'transform', oldTransform if oldTransform?
+      currentBoard().grid?.update()
+      ## Create SVG header
       fonts = ''
       if /<text/.test svg
         for styleSheet in document.styleSheets
@@ -743,9 +747,45 @@ export tools =
         #{svg}
         </svg>
       """
-      ## Reset transform and grid
-      root.setAttribute 'transform', oldTransform if oldTransform?
-      currentBoard().grid?.update()
+      ## Inline images.  (Asynchronous String.replace based on
+      ## https://github.com/dsblv/string-replace-async)
+      fetches = []
+      svg.replace ///<image\b([^<>]*)>///g, (match, attrs) ->
+        href = ///href="(https?://[^"]*)"///.exec attrs # ignore data: URLs
+        crossorigin = ///crossorigin="([^"]*)"///.exec attrs
+        if href? and crossorigin?
+          href = href[1]
+          crossorigin = crossorigin[1]
+          fetches.push [href,
+            cache: 'force-cache'
+            credentials:
+              if crossorigin == 'use-credentials'
+                'include'
+              else
+                'same-origin'
+          ]
+        else
+          fetches.push undefined
+      images =
+        for args in fetches
+          if args?
+            try
+              response = await fetch ...args
+              if response.status == 200
+                blob = await response.blob()
+                await new Promise (done) ->
+                  reader = new FileReader
+                  reader.onloadend = -> done reader.result
+                  reader.readAsDataURL blob
+            catch e
+              console.log "Failed to inline image #{args[0]}: #{e}"
+      count = 0
+      svg = svg.replace ///<image\b([^<>]*)>///g, (match, attrs) ->
+        image = images[count++]
+        return match unless image?
+        match
+        .replace ///crossorigin="([^"]*)"///, ''
+        .replace ///href="(https?://[^"]*)"///, "href=\"#{image}\""
       ## Download file
       if download
         download = document.getElementById 'download'
