@@ -1123,11 +1123,14 @@ dragEvents = ->
       document.getElementById('dragzone').classList.remove 'drag'
     drop: (e) ->
       all e
+      point = snapPoint eventToPoint e
       dragDepth = 0
       document.getElementById('dragzone').classList.remove 'drag'
-      tryAddImage e.dataTransfer.items
+      tryAddImage e.dataTransfer.items,
+        tx: point.x
+        ty: point.y
 
-tryAddImage = (items) ->
+tryAddImage = (items, options) ->
   ## HTML <img> tag (as from dragging images) or <a href> tag
   ## (without nested <a> links, as from dragging links)
   ## are highest priority.
@@ -1139,12 +1142,12 @@ tryAddImage = (items) ->
               [^<>]*> ([^]*) </a> \s*$///i.exec(html)
     if match? and not (match[2] and ///</a>///i.test match[2])
       url = match[1][1...match[1].length-1]
-      return true if await tryAddImageUrl url
+      return true if await tryAddImageUrl url, options
   ## Next check for plain text that consists solely of a URL
   for item in items when item.type == 'text/plain'
     text = await new Promise (done) -> item.getAsString done
     text = text.trim()
-    return true if await tryAddImageUrl text
+    return true if await tryAddImageUrl text, options
   false
 
 ## Asynchronously try to verify URL points to an image, and if so,
@@ -1153,7 +1156,6 @@ tryAddImage = (items) ->
 ## automatically to find a workable method.
 tryAddImageUrl = (url, options = {}) ->
   return unless validUrl url
-  {credentials, proxy} = options
   fetchUrl =
     if options.proxy
       proxyUrl url
@@ -1162,7 +1164,7 @@ tryAddImageUrl = (url, options = {}) ->
   fetchOptions =
     cache: 'reload' # don't use cache while testing whether need credentials
     mode: 'cors'
-    credentials: if credentials then 'include' else 'same-origin'
+    credentials: if options.credentials then 'include' else 'same-origin'
   ## Test whether image will load successfully by manually running a CORS
   ## preflight test (OPTIONS); then load content-type via HEAD request.
   try
@@ -1189,15 +1191,19 @@ tryAddImageUrl = (url, options = {}) ->
   unless /^image\//.test contentType
     console.log "URL #{fetchUrl} has content-type #{contentType} which is not a supported image type"
     return
+  obj =
+    room: room.id
+    page: room.page
+    type: 'image'
+    url: url
+    credentials: Boolean options.credentials
+    proxy: Boolean options.proxy
+  for key in ['tx', 'ty']
+    if key of options
+      obj[key] = options[key]
   undoStack.pushAndDo
     type: 'new'
-    obj:
-      room: room.id
-      page: room.page
-      type: 'image'
-      url: url
-      credentials: Boolean credentials
-      proxy: Boolean proxy
+    obj: obj
 
 ## Resets the selection, and if the current tool supports selection,
 ## sets the selection to the specified array of object IDs
@@ -1739,7 +1745,6 @@ Meteor.startup ->
     paste: (e) ->
       return if e.target.tagName == 'INPUT'  # ignore operations in text boxes
       e.preventDefault()
-      console.log 'paste'
       if json = e.clipboardData.getData 'application/cocreate-objects'
         objects =
           for obj in JSON.parse json
@@ -1758,8 +1763,13 @@ Meteor.startup ->
               obj: obj
         selectTool 'select'  # usually want to move pasted objects
         setSelection (obj._id for obj in objects)
-      else unless await tryAddImage e.clipboardData.items
-        console.log 'maybe text?'
+      else
+        {x, y} = snapPoint board.relativePoint 0.25, 0.25
+        options =
+          tx: x
+          ty: y
+        unless await tryAddImage e.clipboardData.items, options
+          console.log 'maybe text?'
 
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->

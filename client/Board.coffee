@@ -73,6 +73,12 @@ export class Board
     Meteor.setTimeout =>
       @grid?.update()
     , 0
+  relativePoint: (xRatio, yRatio) ->
+    {x, y} = dom.svgPoint @svg,
+      @bbox.left + xRatio * @bbox.width,
+      @bbox.top + yRatio * @bbox.height,
+      @root
+    {x, y}
   renderedChildren: ->
     for child in @root.childNodes
       skip = false
