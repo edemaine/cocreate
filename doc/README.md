@@ -389,8 +389,9 @@ two situations that require a second try:
   from Coauthor which are accessible only to those in a Coauthor group, and
   only those properly logged into Coauthor will be able to see the images.
 * If the server does not seem to support CORS, and Cocreate is
-  [properly configured](../INSTALL.md), then it will proxy the image through
-  its [CORS Anywhere](https://github.com/Rob--W/cors-anywhere) proxy.
+  [properly configured](../INSTALL.md#cors-anywhere-proxy), then it will proxy
+  the image through its
+  [CORS Anywhere](https://github.com/Rob--W/cors-anywhere) proxy.
 
 ### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
 
