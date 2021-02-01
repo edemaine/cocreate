@@ -156,7 +156,7 @@ the WebWorker script will be served from the Cocreate server.
 ## CORS Anywhere Proxy
 
 To enable flexible [embedding images from the web](doc/README.md#-image-tool),
-including those restricted by a CORS proxy, we recommend installing a
+including those restricted by CORS, we recommend installing a
 [CORS Anywhere](https://github.com/Rob--W/cors-anywhere) proxy server and
 configuring Cocreate to use it by setting the `cors-anywhere` public setting
 in `.deploy/settings.json`.  For example, here is how to use the CORS Anywhere
@@ -170,10 +170,10 @@ public test server, which is rate limited and for development only:
 }
 ```
 
-CORS Anywhere is a framework for making proxy servers; a good specific server
-to use with easy-to-follow installation instructions is
-[Corsproxy](https://github.com/caltechlibrary/corsproxy/blob/main/admin/README.md),
-(easy to use for user ports only, e.g., 8080), along with the accompanying
+CORS Anywhere is a framework for making proxy servers.  A good specific server
+is [Corsproxy](https://github.com/caltechlibrary/corsproxy) which has
+[easy-to-follow installation instructions](https://github.com/caltechlibrary/corsproxy/blob/main/admin/README.md)
+(for ports &ge; 1024, e.g., 8080), along with the accompanying
 [certbot letsencrypt installation instructions](https://certbot.eff.org/lets-encrypt/debiantesting-other)
 for SSL certificates.
 
