@@ -53,6 +53,18 @@ input, textarea
     &::placeholder
       color: #555
     background: #000
+  &.pending
+    background-color: hsl(0, 0%, 75%)
+    /.dark &
+      background-color: hsl(0, 0%, 15%)
+  &.error
+    background-color: hsl(354, 62%, 75%)
+    /.dark &
+      background-color: hsl(354, 62%, 15%)
+  &.success
+    background-color: hsl(134, 62%, 75%)
+    /.dark &
+      background-color: hsl(134, 62%, 15%)
 
 .board, .modal, .overlay
   position: absolute
@@ -293,6 +305,12 @@ body:not(.tool-text)
     display: none
 body.tool-text
   .textHide
+    display: none
+body:not(.tool-image)
+  .imageShow
+    display: none
+body.tool-image
+  .imageHide
     display: none
 body.nopage
   .board

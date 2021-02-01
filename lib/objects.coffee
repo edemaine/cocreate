@@ -135,6 +135,7 @@ Meteor.methods
         fontSize: Match.Optional Number
     if obj.type == 'image'
       Object.assign pattern,
+        url: Match.Optional String
         credentials: Match.Optional Boolean
         proxy: Match.Optional Boolean
     check diff, pattern

@@ -24,7 +24,7 @@ body
     // Buttons go here
     input#name(type='text', placeholder='Your Name')
   #tools.vertical.palette
-  #attribs.bottom.horizontal.palette.historyHide
+  #attribs.bottom.horizontal.palette.historyHide.imageHide
     #widths.subpalette.textHide
     #fontSizes.subpalette.textShow
     #fillTool.subpalette
@@ -33,6 +33,8 @@ body
     input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
   #text.nextBottom.horizontal.palette.textShow
     textarea#textInput(type="text", placeholder='(type text here)')
+  #imageUrl.bottom.horizontal.palette.imageShow
+    input#urlInput(type="text", placeholder='(enter image URL here)')
   // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
   svg#board.board.historyHide(touch-action="none")
     filter#selectFilter

@@ -1,4 +1,5 @@
 import {Tracker} from 'meteor/tracker'
+import debounce from 'debounce'
 
 import '../lib/main'
 import './lib/polyfill'
@@ -100,7 +101,7 @@ export tools =
     start: ->
       pointers.objects = {}
     stop: selectHighlightReset = (nextTool) ->
-      selection.clear() unless nextTool == 'text'
+      selection.clear() unless nextTool in ['text', 'image']
       highlighterClear()
     down: (e) ->
       pointers[e.pointerId] ?= new Highlighter board
@@ -545,6 +546,121 @@ export tools =
       ## Giving the input focus makes it hard to do repeated global undo/redo;
       ## instead the text-entry box does its own undo/redo.
       #input.focus()
+  image:
+    icon: 'image'
+    hotspot: [0.21875, 0.34375]
+    help: 'Embed image (SVG, JPG, PNG, etc.) on web by entering its URL at bottom. Click on existing image to modify URL, or a point to specify location. You can also paste an image URL from the clipboard, or drag an image from a webpage (without needing this tool).'
+    init: ->
+      input = document.getElementById 'urlInput'
+      dom.listen input,
+        keydown: (e) ->
+          e.stopPropagation() # avoid hotkeys
+          e.target.blur() if e.key == 'Escape'
+          updateUrl e if e.key == 'Enter'  # force rechecking URL
+        input: (e) ->
+          input.className = 'pending'
+        change: updateUrl = debounce (e) ->
+          url = input.value
+          old = if pointers.image then Objects.findOne pointers.image
+          #return if url == old?.url
+          obj = await tryAddImageUrl url, objOnly: true
+          input.className = if obj? then 'success' else 'error'
+          return unless obj?
+          unless old?
+            point = pointers.point ? snapPoint board.relativePoint 0.25, 0.25
+            obj.tx = point.x
+            obj.ty = point.y
+            undoStack.pushAndDo pointers.undoable =
+              type: 'new'
+              obj: obj
+            pointers.image = obj._id
+          else
+            return if obj.url == old.url and
+              obj.credentials == old.credentials and obj.proxy == old.proxy
+            edit =
+              id: pointers.image
+              url: obj.url
+              credentials: obj.credentials
+              proxy: obj.proxy
+            Meteor.call 'objectEdit', edit
+            delete edit.id
+            unless pointers.undoable?
+              undoStack.push pointers.undoable =
+                type: 'edit'
+                id: pointers.image
+                before:
+                  url: old.url
+                  credentials: old.credentials
+                  proxy: old.proxy
+                after: edit
+            switch pointers.undoable.type
+              when 'new'
+                Object.assign pointers.undoable.obj, edit
+              when 'edit'
+                Object.assign pointers.undoable.after, edit
+        , 50
+    start: ->
+      pointers.highlight = new Highlighter board, 'image'
+      if (ids = selection.ids()).length == 1 and
+         (obj = Objects.findOne(ids[0]))?.type == 'image'
+        pointers.image = obj._id
+        input = document.getElementById 'urlInput'
+        input.value = obj.url ? ''
+        input.className = ''
+        setTimeout (-> input.focus()), 0  # wait for input to show
+      else
+        tools.image.stop()
+    stop: (nextTool, keepHighlight) ->
+      input = document.getElementById 'urlInput'
+      input.value = ''
+      input.className = ''
+      selection.clear() unless nextTool == 'select'
+      pointers.highlight?.clear() unless keepHighlight
+      return unless (id = pointers.image)?
+      if (object = Objects.findOne id)?
+        unless object.url
+          undoStack.remove pointers.undoable
+          Meteor.call 'objectDel', id
+      pointers.undoable = null
+      pointers.image = null
+      pointers.point = null
+    up: (e) ->
+      return unless e.type == 'pointerup' # ignore pointerleave
+      ## Stop editing any previous image object.
+      tools.image.stop null, true
+      h = pointers.highlight
+      unless h.id?
+        if (target = h.eventTop e)?
+          h.highlight target
+      if h.id?
+        pointers.image = h.id
+        selection.add h
+        selection.setAttributes()
+        url = Objects.findOne(pointers.image)?.url ? ''
+      else
+        pointers.point = snapPoint eventToPoint e
+        url = ''
+      input = document.getElementById 'urlInput'
+      input.value = url
+      input.className = ''
+      input.focus()
+    move: (e) ->
+      h = pointers.highlight
+      target = h.eventTop e
+      if target? and Objects.findOne(target.dataset.id).type == 'image'
+        h.highlight target
+      else
+        h.clear()
+    select: (ids) ->
+      return unless ids.length == 1
+      return if pointers.image == ids[0]
+      obj = Objects.findOne ids[0]
+      return unless obj?.type == 'image'
+      tools.image.stop()
+      pointers.image = obj._id
+      selection.addId pointers.image
+      input = document.getElementById 'urlInput'
+      input.value = obj.url
   spacer: {}
   touch:
     icon: 'hand-pointer'
@@ -1201,9 +1317,11 @@ tryAddImageUrl = (url, options = {}) ->
   for key in ['tx', 'ty']
     if key of options
       obj[key] = options[key]
-  undoStack.pushAndDo
-    type: 'new'
-    obj: obj
+  unless options.objOnly
+    undoStack.pushAndDo
+      type: 'new'
+      obj: obj
+  obj
 
 ## Resets the selection, and if the current tool supports selection,
 ## sets the selection to the specified array of object IDs
