@@ -567,9 +567,8 @@ export tools =
           input.className = if obj? then 'success' else 'error'
           return unless obj?
           unless old?
-            point = pointers.point ? snapPoint board.relativePoint 0.25, 0.25
-            obj.tx = point.x
-            obj.ty = point.y
+            obj.pts = [pointers.point ?
+                       snapPoint board.relativePoint 0.25, 0.25]
             undoStack.pushAndDo pointers.undoable =
               type: 'new'
               obj: obj
@@ -1239,12 +1238,10 @@ dragEvents = ->
       document.getElementById('dragzone').classList.remove 'drag'
     drop: (e) ->
       all e
-      point = snapPoint eventToPoint e
       dragDepth = 0
       document.getElementById('dragzone').classList.remove 'drag'
       tryAddImage e.dataTransfer.items,
-        tx: point.x
-        ty: point.y
+        pts: [snapPoint eventToPoint e]
 
 tryAddImage = (items, options) ->
   ## HTML <img> tag (as from dragging images) or <a href> tag
@@ -1314,7 +1311,7 @@ tryAddImageUrl = (url, options = {}) ->
     url: url
     credentials: Boolean options.credentials
     proxy: Boolean options.proxy
-  for key in ['tx', 'ty']
+  for key in ['pts', 'tx', 'ty']
     if key of options
       obj[key] = options[key]
   unless options.objOnly
@@ -1885,22 +1882,19 @@ Meteor.startup ->
         ## Cache text content in case we want to paste it later; walking
         ## through all items during `tryAddImage` seems to clear text content.
         text = e.clipboardData.getData 'text/plain'
-        point = snapPoint board.relativePoint 0.25, 0.25
-        options =
-          tx: point.x
-          ty: point.y
+        obj =
+          pts: [snapPoint board.relativePoint 0.25, 0.25]
         ## First check for image paste
-        unless await tryAddImage e.clipboardData.items, options
+        unless await tryAddImage e.clipboardData.items, obj
           ## On failure, paste text content as text object
           if text
             selectTool 'text'
             undoStack.pushAndDo
               type: 'new'
-              obj: obj =
+              obj: Object.assign obj,
                 room: room.id
                 page: room.page
                 type: 'text'
-                pts: [point]
                 text: text
                 color: currentColor
                 fontSize: currentFontSize

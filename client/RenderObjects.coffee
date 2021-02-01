@@ -364,6 +364,9 @@ export class RenderObjects
             width: '64px'
             height: '64px'
         selection.redraw id, @dom[id] if selection.has id
+    dom.attr image,
+      x: obj.pts[0].x
+      y: obj.pts[0].y
     if not options? or options.url or options.proxy or options.credentials
       dom.attr image,
         href: if obj.proxy then proxyUrl obj.url else obj.url

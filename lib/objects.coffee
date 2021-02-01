@@ -67,6 +67,9 @@ Meteor.methods
           fontSize: Number
       when 'image'
         Object.assign pattern,
+          pts: Match.Where (pts) ->
+            check pts, [xyType]
+            pts.length == 1
           url: Match.Where validUrl
           credentials: Match.Optional Boolean
           proxy: Match.Optional Boolean
@@ -114,15 +117,15 @@ Meteor.methods
       id: String
       tx: Match.Optional Number
       ty: Match.Optional Number
+      pts: Match.Optional Match.Where (pts) ->
+        return false unless typeof pts == 'object'
+        for key, value of pts
+          return false unless /^\d+$/.test key
+          check value, xyType
+        true
     unless obj.type == 'image'
       Object.assign pattern,
         color: Match.Optional String
-        pts: Match.Optional Match.Where (pts) ->
-          return false unless typeof pts == 'object'
-          for key, value of pts
-            return false unless /^\d+$/.test key
-            check value, xyType
-          true
     if obj.type in ['pen', 'poly', 'rect', 'ellipse']
       Object.assign pattern,
         width: Match.Optional Number
