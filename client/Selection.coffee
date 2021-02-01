@@ -150,6 +150,8 @@ export class Selection
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse']
           when 'fill'
             continue unless obj.type in ['rect', 'ellipse']
+          when 'color'
+            continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse', 'text']
         obj
     return unless objs.length
     undoStack.pushAndDo
