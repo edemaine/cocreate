@@ -450,19 +450,15 @@ export tools =
               text: text
             unless pointers.undoable?
               undoStack.push pointers.undoable =
-                type: 'multi'
-                ops: [
-                  type: 'edit'
-                  id: pointers.text
-                  before: text: oldText
-                  after: text: text
-                ]
-            console.assert pointers.undoable.ops.length == 1
-            switch pointers.undoable.ops[0].type
+                type: 'edit'
+                id: pointers.text
+                before: text: oldText
+                after: text: text
+            switch pointers.undoable.type
               when 'new'
-                pointers.undoable.ops[0].obj.text = text
+                pointers.undoable.obj.text = text
               when 'edit'
-                pointers.undoable.ops[0].after.text = text
+                pointers.undoable.after.text = text
     start: ->
       pointers.highlight = new Highlighter board, 'text'
       if (ids = selection.ids()).length == 1 and
@@ -516,11 +512,8 @@ export tools =
         ], returnStubValue: true
         selection.addId pointers.text
         undoStack.push pointers.undoable =
-          type: 'multi'
-          ops: [
-            type: 'new'
-            obj: Objects.findOne pointers.text
-          ]
+          type: 'new'
+          obj: Objects.findOne pointers.text
       input = document.getElementById 'textInput'
       input.value = text
       input.disabled = false
