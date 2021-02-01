@@ -1248,12 +1248,12 @@ tryAddImage = (items, options) ->
               [^<>]*> ([^]*) </a> \s*$///i.exec(html)
     if match? and not (match[2] and ///</a>///i.test match[2])
       url = match[1][1...match[1].length-1]
-      return true if await tryAddImageUrl url, options
+      return image if image = await tryAddImageUrl url, options
   ## Next check for plain text that consists solely of a URL
   for item in items when item.type == 'text/plain'
     text = await new Promise (done) -> item.getAsString done
     text = text.trim()
-    return true if await tryAddImageUrl text, options
+    return image if image = await tryAddImageUrl text, options
   false
 
 ## Asynchronously try to verify URL points to an image, and if so,
@@ -1878,20 +1878,21 @@ Meteor.startup ->
         obj =
           pts: [snapPoint board.relativePoint 0.25, 0.25]
         ## First check for image paste
-        unless await tryAddImage e.clipboardData.items, obj
-          ## On failure, paste text content as text object
-          if text
-            selectTool 'text'
-            undoStack.pushAndDo
-              type: 'new'
-              obj: Object.assign obj,
-                room: room.id
-                page: room.page
-                type: 'text'
-                text: text
-                color: currentColor
-                fontSize: currentFontSize
-            setSelection [obj._id]
+        if image = await tryAddImage e.clipboardData.items, obj
+          setSelection [image._id]
+        ## On failure, paste text content as text object
+        else if text
+          selectTool 'text'
+          undoStack.pushAndDo
+            type: 'new'
+            obj: Object.assign obj,
+              room: room.id
+              page: room.page
+              type: 'text'
+              text: text
+              color: currentColor
+              fontSize: currentFontSize
+          setSelection [obj._id]
 
   dom.listen pageNum = document.getElementById('pageNum'),
     keydown: (e) ->
