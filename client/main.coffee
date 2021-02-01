@@ -826,6 +826,13 @@ export tools =
       ## Convert everything to SVG
       svg = (elt.outerHTML for elt in elts).join '\n'
       .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
+      .replace /\bdata-tex="([^"]*)"/g, (match, tex) ->
+        ## HTML doesn't escape < in attribute values, but XML needs it
+        ## (allowing only > to be unescaped)
+        "data-tex=\"#{tex
+        .replace /</g, '&lt;'
+        .replace />/g, '&gt;'
+        }\""
       ## Reset transform and grid
       root.setAttribute 'transform', oldTransform if oldTransform?
       currentBoard().grid?.update()
