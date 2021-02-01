@@ -207,15 +207,23 @@ object highlights before dragging.)
 If you hold <kbd>Shift</kbd> while dragging, the move is constrained to be
 purely horizontal or vertical.
 
-**Duplicating objects.**
-If you have a keyboard, you can duplicate the selected objects by
-<kbd>Ctrl-D</kbd> or <kbd>Command-D</kbd> on a Mac.
+**Cut/copy/paste/duplicate/delete.**
+You can copy or cut your selection and paste it anywhere else in Cocreate,
+such as another page or another board altogether.
+Use your browser's standard clipboard operations; with a keyboard:
 
-**Deleting objects.**
-If you have a keyboard, you can delete the selected objects by
-pressing the <kbd>Delete</kbd> or <kbd>Backspace</kbd> key.
-Otherwise, check out the
-[<img src="icons/eraser.svg" width="18" alt="Erase Icon"> Erase Tool](#-erase-tool).
+* **Copy** via <kbd>Ctrl-C</kbd> or <kbd>Command-C</kbd> on a Mac.
+* **Cut** via <kbd>Ctrl-X</kbd> or <kbd>Command-X</kbd> on a Mac.
+* **Paste** via <kbd>Ctrl-V</kbd> or <kbd>Command-V</kbd> on a Mac.
+
+In addition, Cocreate offers two nonclipboard operations:
+
+* You can **duplicate** the selected objects (with a one-grid-square horizontal
+  and vertical shift) via <kbd>Ctrl-D</kbd> or <kbd>Command-D</kbd> on a Mac.
+* You can **delete** the selected objects by pressing the <kbd>Delete</kbd>
+  or <kbd>Backspace</kbd> key.
+  (If you prefer a pen interface for deleting objects, check out the
+  [<img src="icons/eraser.svg" width="18" alt="Erase Icon"> Erase Tool](#-erase-tool).)
 
 ### <img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen Tool
 
@@ -329,9 +337,60 @@ When you're done typing in a text object, press the <kbd>Escape</kbd> key.
 This won't deselect the object, but it will defocus the text entry field,
 allowing you to press other keyboard shortcuts to use other tools.
 
-Cocreate does its best to handle multiple people editing the same text object, but
-it won't be perfect: if two people type changes at exactly the same time,
+Cocreate does its best to handle multiple people editing the same text object,
+but it won't be perfect: if two people type changes at exactly the same time,
 one of their changes will get lost.
+
+If you have text already on your clipboard, you can paste it directly onto
+your Cocreate board without changing tools.  Just press
+<kbd>Ctrl-V</kbd> or <kbd>Command-V</kbd> on a Mac.
+
+### <img src="icons/image.svg" width="18" alt="Image Icon"> Image Tool
+
+The Image Tool is a drawing mode that lets you embed images from the web
+into your Cocreate boards.  Just type or paste the URL to an image
+(SVG, PNG, JPEG, etc.) in the text entry field at the bottom of the screen,
+and hit <kbd>Enter</kbd> (or otherwise defocus the text entry) to embed the image.
+Before typing the URL, you can click on an existing image object to edit its
+URL; or you can click on an empty point to define the starting location for
+the image.
+
+Alternatively, you don't need to use the Image Tool at all.  You can **drag**
+an image (or link to an image) from another website and **drop** it on your Cocreate board.
+Or you can use the **clipboard**: right click or long press on an image on a
+webpage, copy the image address/location, and paste it directly into
+Cocreate via <kbd>Ctrl-V</kbd> or <kbd>Command-V</kbd> on a Mac.
+
+You cannot directly upload an image from your device to Cocreate, as Cocreate
+does not offer the ability to store files.  Instead, upload your image to a
+service such as [Imgur](https://imgur.com/) (which offers free unlimited
+hidden JPEG/PNG image uploads) or
+[Coauthor](https://github.com/edemaine/coauthor/) (if you already share a
+Coauthor group with the people you're collaborating with).
+Then drag the image from Imgur or Coauthor and drop it into Cocreate.
+
+Embedded images are linked into the page via the URL, not stored by Cocreate,
+so be careful that the image doesn't disappear from the web.  (If it needs to
+change locations, you can always edit the URL in the Cocreate page.)
+If you're unable to access an image, it will render as
+<img src="icons/exclamation-rect.svg" width="18" alt="Error Image">.
+To permanently archive a page's contents, including the images, you can use
+[<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg),
+which inlines all of the images in the resulting SVG file.
+
+When you embed an image, Cocreate does its best to figure out how to access
+the URL.  It first tries to directly embed the image.  If the server supports
+CORS (such as Imgur or Coauthor), this may work on the first try.  There are
+two situations that require a second try:
+
+* If the server reports that the image needs authentication to access,
+  Cocreate will try again using the server's cookies (assuming the server
+  is configured to allow CORS credentials).  For example, you can embed images
+  from Coauthor which are accessible only to those in a Coauthor group, and
+  only those properly logged into Coauthor will be able to see the images.
+* If the server does not seem to support CORS, and Cocreate is
+  [properly configured](../INSTALL.md), then it will proxy the image through
+  its [CORS Anywhere](https://github.com/Rob--W/cors-anywhere) proxy.
 
 ### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
 
@@ -481,6 +540,18 @@ where the second part is the unique ID of your room.
 This way, if you lose the link to the Cocreate room, you can figure it
 out from the filename.  But be careful not to accidentally leak it to someone
 you don't want to by sending them the file with its original name.
+
+The downloaded file inlines all embedded images (as described in
+<img src="icons/image.svg" width="18" alt="Image Icon"> Image Tool).
+Thus the SVG file serves as a permanent archive of the page's contents,
+and can be edited in vector drawing programs such as
+[Inkscape](https://inkscape.org/) or Adobe Illustrator.
+However, the font used in nonmathematical text is currently loaded
+by a Google Fonts URL, so it requires an Internet connection to access.
+
+In some environments, you can select some objects and
+copy the SVG directly to your clipboard using
+<kbd>Ctrl-C</kbd> or <kbd>Command-C</kbd> on a Mac.
 
 ### <img src="icons/github.svg" width="18" alt="Github Icon"> Github Link
 
