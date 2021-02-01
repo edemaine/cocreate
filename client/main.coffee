@@ -1848,7 +1848,8 @@ Meteor.startup ->
             pointers = oldPointers
             spaceDown = false
     copy: onCopy = (e) ->
-      return if e.target.tagName == 'INPUT'  # ignore operations in text boxes
+      ## Ignore paste operations within text boxes
+      return if e.target.tagName in ['INPUT', 'TEXTAREA']
       return unless selection.nonempty()
       e.preventDefault()
       e.clipboardData.setData 'application/cocreate-objects', selection.json()
@@ -1858,7 +1859,8 @@ Meteor.startup ->
       if onCopy e
         selection.delete()
     paste: (e) ->
-      return if e.target.tagName == 'INPUT'  # ignore operations in text boxes
+      ## Ignore paste operations within text boxes
+      return if e.target.tagName in ['INPUT', 'TEXTAREA']
       e.preventDefault()
       if json = e.clipboardData.getData 'application/cocreate-objects'
         objects =
@@ -1892,11 +1894,12 @@ Meteor.startup ->
           selectTool 'text'
           undoStack.pushAndDo
             type: 'new'
-            obj: Object.assign obj,
+            obj: obj =
               room: room.id
               page: room.page
               type: 'text'
               text: text
+              pts: obj.pts
               color: currentColor
               fontSize: currentFontSize
           setSelection [obj._id]
