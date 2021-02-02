@@ -17,9 +17,11 @@ export class Grid
     margin = gridSize
     switch mode
       when true
+        ### eslint-disable no-unused-vars ###
         range = (xy) ->
           [Math.floor(bounds.min[xy] / gridSize) .. \
            Math.ceil bounds.max[xy] / gridSize]
+        ### eslint-enable no-unused-vars ###
         for i in range 'x'
           x = i * gridSize
           @grid.appendChild dom.create 'line',
