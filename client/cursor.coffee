@@ -1,4 +1,4 @@
-import {mainBoard} from './DrawApp'
+import {mainBoard, historyBoard} from './DrawApp'
 import {currentColor, currentFill, currentFillOn} from './tools/color'
 import {currentTool, drawingTools, tools} from './tools/tools'
 import {dark, fancyCursor} from './tools/settings'
@@ -22,9 +22,7 @@ export updateCursor = ->
         if currentFillOn.get() then currentFill.get()),
       ...tools[tool].hotspot
   else if tool == 'history'
-    setCursor document.getElementById('historyRange'),
-      tools['history'].icon, ...tools['history'].hotspot
-    setCursor document.getElementById('historyBoard'),
+    setCursor historyBoard.svg,
       tools['pan'].icon, ...tools['pan'].hotspot
   else
     setCursor mainBoard.svg, tools[tool].icon, ...tools[tool].hotspot

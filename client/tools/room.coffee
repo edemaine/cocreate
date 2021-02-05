@@ -1,37 +1,59 @@
+import React, {useLayoutEffect, useState} from 'react'
+import Modal from 'react-bootstrap/Modal'
+import {useTracker} from 'meteor/react-meteor-data'
+import {useLocation} from 'react-router-dom'
+import {ReactiveVar} from 'meteor/reactive-var'
+
 import {defineTool} from './defineTool'
+import {CloseIcon} from '../lib/icons'
+
+showing = new ReactiveVar false
 
 defineTool
   name: 'linkRoom'
   category: 'room'
   icon: 'clipboard-link'
   help: 'Share a link to this room/board: show the URL, copy it to the clipboard, and show a QR code.'
-  click: toggleLinkRoom = ->
-    dom.classToggle document.getElementById('qrCode'), 'show'
-    dom.classToggle document.querySelector('.tool[data-tool="linkRoom"]'),
-      'active'
-    if document.getElementById('qrCode').classList.contains 'show'
-      try
-        navigator.clipboard.writeText document.URL
-      close = document.querySelector '#qrCode .close'
-      close.innerHTML = icons.svgIcon \
-        icons.modIcon 'times-circle', fill: 'currentColor'
-      close.removeEventListener 'click', toggleLinkRoom
-      close.addEventListener 'click', toggleLinkRoom
-      document.getElementById('qrCodeSvg').innerHTML = ''
-      updateRoomLink = ->
-        document.getElementById('linkToRoom').href = document.URL
-        document.getElementById('linkToRoom').innerText = document.URL
+  active: -> showing.get()
+  click: ->
+    showing.set not showing.get()
+  dom: -> # eslint-disable-line react/display-name
+    show = useTracker ->
+      showing.get()
+    , []
+    location = useLocation()
+    here = Meteor.absoluteUrl location.pathname + location.hash
+    [qr, setQr] = useState()
+    useLayoutEffect ->
+      if show
+        try
+          navigator.clipboard.writeText here
         import('qrcode-svg').then (QRCode) ->
-          document.getElementById('qrCodeSvg').innerHTML =
-            new QRCode.default
-              content: document.URL
-              ecl: 'M'
-              join: true
-              container: 'svg-viewbox'
-            .svg()
-      updateRoomLink()
-    else
-      updateRoomLink = null
+          setQr (new QRCode.default
+            content: here
+            ecl: 'M'
+            join: true
+            container: 'svg-viewbox'
+          ).svg()
+      undefined
+    , [show, here]
+    onClose = -> showing.set false
+
+    <Modal show={show} className="info" onHide={onClose}>
+      <Modal.Header>
+        <CloseIcon onClick={onClose}/>
+        <Modal.Title>Link To This Cocreate Room/Board:</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <p className="center linkToRoom">
+          <a href={here}>{here}</a>
+        </p>
+        <p>If possible, this URL has already been <b>copied to your clipboard</b>, so you can paste it into a chat or email to send it to people.</p>
+        <p>On some browsers, you can <b>right click</b> on the URL to send it to other devices, or <b>long tap</b> to share it.</p>
+        <p>To send the board to your mobile device (phone or tablet), scan this <b>QR code</b>:</p>
+        <div className="qrCode" dangerouslySetInnerHTML={__html: qr}/>
+      </Modal.Body>
+    </Modal>
 
 defineTool
   name: 'newRoom'

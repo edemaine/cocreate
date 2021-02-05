@@ -1,5 +1,9 @@
+import {Tracker} from 'meteor/tracker'
+
 import {defineTool} from './defineTool'
-import {currentRoom} from '../DrawApp'
+import {currentRoom, currentPage} from '../DrawApp'
+import {gridSize} from '../Grid'
+import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
 
@@ -19,12 +23,8 @@ defineTool
   icon: 'hand-pointer'
   help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
   active: -> allowTouch.get()
-  init: updateAllowTouch = ->
-    dom.classSet document.querySelector('.tool[data-tool="touch"]'),
-      'active', allowTouch.get()
   click: ->
     allowTouch.set not allowTouch.get()
-    updateAllowTouch()
 
 defineTool
   name: 'crosshair'
@@ -35,10 +35,9 @@ defineTool
   init: ->
     Tracker.autorun ->
       fancyCursor.get()
-      updatorCursor()
+      updateCursor()
   click: ->
     fancyCursor.set not fancyCursor.get()
-    updateFancyCursor()
 
 defineTool
   name: 'dark'
@@ -58,8 +57,9 @@ defineTool
   category: 'setting'
   icon: 'grid'
   help: 'Toggle grid/graph paper'
+  active: -> currentPage.get()?.data()?.grid
   click: ->
-    Meteor.call 'gridToggle', currentRoom.get().page
+    Meteor.call 'gridToggle', currentPage.get().id
 
 defineTool
   name: 'gridSnap'
@@ -69,4 +69,11 @@ defineTool
   hotkey: '#'
   active: -> currentRoom.get()?.gridSnap.get()
   click: ->
-    room?.gridSnap.set not room?.gridSnap.get()
+    return unless room = currentRoom.get()
+    room.gridSnap.set not room.gridSnap.get()
+
+export snapPoint = (pt) ->
+  if currentRoom.get()?.gridSnap.get()
+    pt.x = gridSize * Math.round pt.x / gridSize
+    pt.y = gridSize * Math.round pt.y / gridSize
+  pt

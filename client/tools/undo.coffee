@@ -1,6 +1,8 @@
-import {Ctrl} from '../lib/platform'
-import {setSelection, undoStack} from '../main'
 import {defineTool} from './defineTool'
+import {setSelection} from './modes'
+import {currentTool} from './tools'
+import {Ctrl} from '../lib/platform'
+import {undoStack} from '../UndoStack'
 
 defineTool
   name: 'undo'
@@ -9,7 +11,7 @@ defineTool
   help: 'Undo the last operation you did'
   hotkey: "#{Ctrl}-Z"
   click: ->
-    if Session.get('tool') == 'history'
+    if currentTool.get() == 'history'
       historyAdvance -1
     else
       setSelection undoStack.undo()
@@ -21,7 +23,7 @@ defineTool
   help: 'Redo: Undo the last undo you did (if you did no operations since)'
   hotkey: ["#{Ctrl}-Y", "#{Ctrl}-Shift-Z"]
   click: ->
-    if Session.get('tool') == 'history'
+    if currentTool.get() == 'history'
       historyAdvance +1
     else
       setSelection undoStack.redo()

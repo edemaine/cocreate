@@ -2,9 +2,13 @@
 ## Selection class is for maintaining and highlighted set of selected objects
 ## (which often come from Highlighter).
 
-import dom from './lib/dom'
-import {pointers, undoStack, selectColor, selectFill, selectFillOff, selectWidth, selectFontSize} from './main'
+import {undoStack} from './UndoStack'
 import {gridSize} from './Grid'
+import {selectColor, selectFill, selectFillOff} from './tools/color'
+import {selectWidth} from './tools/width'
+import {selectFontSize} from './tools/font'
+import {pointers} from './tools/modes'
+import dom from './lib/dom'
 
 export class Highlighter
   constructor: (@board, @type) ->

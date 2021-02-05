@@ -1,11 +1,31 @@
 import React from 'react'
+import debounce from 'debounce'
 
 import {defineTool} from './defineTool'
-import {currentColor} from './color'
+import {currentColor, currentFill, currentFillOn} from './color'
+import {tryAddImageUrl} from './image'
+import {snapPoint} from './settings'
+import {tools} from './tools'
 import {currentWidth} from './width'
-import {currentBoard, mainBoard} from '../Board'
-import {highlighterClear} from '../Selection'
+import {currentFontSize} from './font'
+import {currentBoard, mainBoard, currentRoom, currentPage} from '../DrawApp'
+import {Highlighter, highlighterClear} from '../Selection'
+import {undoStack} from '../UndoStack'
 import {Ctrl, Alt, firefox} from '../lib/platform'
+import dom from '../lib/dom'
+import throttle from '../lib/throttle'
+
+export pointers = {}   # maps pointerId to tool-specific data
+
+eraseDist = 2   # require movement by this many pixels before erasing swipe
+dragDist = 2    # require movement by this many pixels before select drags
+
+distanceThreshold = (p, q, t) ->
+  return false if not p or not q
+  return true if p == true or q == true
+  dx = p.clientX - q.clientX
+  dy = p.clientY - q.clientY
+  dx * dx + dy * dy >= t * t
 
 defineTool
   name: 'pan'
@@ -15,13 +35,15 @@ defineTool
   help: 'Pan around the page by dragging'
   hotkey: 'hold SPACE'
   down: (e) ->
-    pointers[e.pointerId] = eventToRawPoint e
+    board = currentBoard()
+    pointers[e.pointerId] = board.eventToRawPoint e
     pointers[e.pointerId].transform = Object.assign {}, board.transform
   up: (e) ->
     delete pointers[e.pointerId]
   move: (e) ->
     return unless start = pointers[e.pointerId]
-    current = eventToRawPoint e
+    board = currentBoard()
+    current = board.eventToRawPoint e
     board.transform.x = start.transform.x +
       (current.x - start.x) / board.transform.scale
     board.transform.y = start.transform.y +
@@ -42,11 +64,11 @@ defineTool
     highlighterClear()
   down: (e) ->
     selection = mainBoard.selection
-    pointers[e.pointerId] ?= new Highlighter board
+    pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
     return if h.down  # in case of repeat events
     h.down = e
-    h.start = eventToPoint e
+    h.start = currentBoard().eventToPoint e
     h.moved = null
     h.edit = throttle.func (diffs) ->
       Meteor.call 'objectsEdit', (diff for id, diff of diffs)
@@ -80,15 +102,16 @@ defineTool
           delete pointers.objects[h.id]
         h.clear()
     else  # click on blank space -> show selection rectangle
-      board.root.appendChild h.selector = dom.create 'rect',
+      currentBoard().root.appendChild h.selector = dom.create 'rect',
         class: 'selector'
         x1: h.start.x
         y1: h.start.y
   up: (e) ->
     h = pointers[e.pointerId]
     if h?.selector?
+      board = currentBoard()
       start = dom.svgTransformPoint board.svg, h.start, board.root
-      here = eventToPoint e
+      here = board.eventToPoint e
       here = dom.svgTransformPoint board.svg, here, board.root
       rect = dom.pointsToSVGRect start, here, board.svg, board.root
       matched = []
@@ -134,15 +157,15 @@ defineTool
     h?.clear()
     delete pointers[e.pointerId]
   move: (e) ->
-    pointers[e.pointerId] ?= new Highlighter board
+    pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
     if h.down
       if h.selector?
-        here = eventToPoint e
+        here = currentBoard().eventToPoint e
         dom.attr h.selector, dom.pointsToRect h.start, here
       else if distanceThreshold h.down, e, dragDist
         h.down = true
-        here = snapPoint eventToOrthogonalPoint e, h.start
+        here = snapPoint currentBoard().eventToOrthogonalPoint e, h.start
         ## Don't set h.moved out here in case no objects selected
         diffs = {}
         for id, obj of pointers.objects when obj?
@@ -173,10 +196,10 @@ defineTool
     return if pointers[e.pointerId]
     pointers[e.pointerId] =
       id: Meteor.apply 'objectNew', [
-        room: room.id
-        page: room.page
+        room: currentRoom.get().id
+        page: currentPage.get().id
         type: 'pen'
-        pts: [eventToPointW e]
+        pts: [currentBoard().eventToPointW e]
         color: currentColor.get()
         width: currentWidth.get()
       ], returnStubValue: true
@@ -201,7 +224,7 @@ defineTool
       id: pointers[e.pointerId].id
       pts:
         for e2 in e.getCoalescedEvents?() ? [e]
-          eventToPointW e2
+          currentBoard().eventToPointW e2
 
 defineTool
   name: 'segment'
@@ -212,12 +235,12 @@ defineTool
   hotkey: ['l', '\\']
   down: (e) ->
     return if pointers[e.pointerId]
-    origin = snapPoint eventToPoint e
+    origin = snapPoint currentBoard().eventToPoint e
     pointers[e.pointerId] =
       origin: origin
       id: Meteor.apply 'objectNew', [
-        room: room.id
-        page: room.page
+        room: currentRoom.get().id
+        page: currentPage.get().id
         type: 'poly'
         pts: [origin, origin]
         color: currentColor.get()
@@ -235,7 +258,7 @@ defineTool
     return unless pointers[e.pointerId]
     {origin, id, alt, last, edit} = pointers[e.pointerId]
     pts =
-      1: snapPoint eventToOrthogonalPoint e, origin
+      1: snapPoint currentBoard().eventToOrthogonalPoint e, origin
     ## When holding Alt/Option, make origin be the center.
     if e.altKey
       pts[0] = symmetricPoint pts[1], origin
@@ -248,6 +271,10 @@ defineTool
       id: id
       pts: pts
 
+symmetricPoint = (pt, origin) ->
+  x: 2*origin.x - pt.x
+  y: 2*origin.y - pt.y
+
 defineTool
   name: 'rect'
   category: 'mode'
@@ -258,10 +285,10 @@ defineTool
   hotkey: 'r'
   down: (e) ->
     return if pointers[e.pointerId]
-    origin = snapPoint eventToPoint e
+    origin = snapPoint currentBoard().eventToPoint e
     object =
-      room: room.id
-      page: room.page
+      room: currentRoom.get().id
+      page: currentPage.get().id
       type: 'rect'
       pts: [origin, origin]
       color: currentColor.get()
@@ -282,7 +309,7 @@ defineTool
     return unless pointers[e.pointerId]
     {id, origin, alt, last, edit} = pointers[e.pointerId]
     pts =
-      1: snapPoint eventToConstrainedPoint e, origin
+      1: snapPoint currentBoard().eventToConstrainedPoint e, origin
     ## When holding Alt/Option, make origin be the center.
     if e.altKey
       pts[0] = symmetricPoint pts[1], origin
@@ -305,10 +332,10 @@ defineTool
   hotkey: 'o'
   down: (e) ->
     return if pointers[e.pointerId]
-    origin = snapPoint eventToPoint e
+    origin = snapPoint currentBoard().eventToPoint e
     object =
-      room: room.id
-      page: room.page
+      room: currentRoom.get().id
+      page: currentPage.get().id
       type: 'ellipse'
       pts: [origin, origin]
       color: currentColor.get()
@@ -336,7 +363,7 @@ defineTool
   hotkey: 'x'
   stop: -> selectHighlightReset()
   down: (e) ->
-    pointers[e.pointerId] ?= new Highlighter board
+    pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
     return if h.down  # repeat events can happen because of erasure
     h.down = e
@@ -363,7 +390,7 @@ defineTool
             obj: obj
     delete pointers[e.pointerId]
   move: (e) ->
-    pointers[e.pointerId] ?= new Highlighter board
+    pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
     target = h.eventCoalescedTop e
     if target?
@@ -385,11 +412,12 @@ defineTool
   help: <>Type text (click location or existing text, then type at bottom), including Markdown *<i>italic</i>*, **<b>bold</b>**, ***<b><i>bold italic</i></b>***, `<code>code</code>`, ~~<s>strike</s>~~, and LaTeX $math$, $$displaymath$$</>
   hotkey: 't'
   init: ->
+    return #xxx
     input = document.getElementById 'textInput'
     updateTextCursor = (e) ->
       setTimeout ->
         return unless pointers.text?
-        room.render.render Objects.findOne(pointers.text), text: true
+        currentPage().render.render Objects.findOne(pointers.text), text: true
       , 0
     dom.listen input,
       keydown: (e) ->
@@ -417,7 +445,7 @@ defineTool
             when 'edit'
               pointers.undoable.after.text = text
   start: ->
-    pointers.highlight = new Highlighter board, 'text'
+    pointers.highlight = new Highlighter currentBoard(), 'text'
     if (ids = mainBoard.selection.ids()).length == 1 and
         (obj = Objects.findOne(ids[0]))?.type == 'text'
       pointers.text = obj._id
@@ -459,10 +487,10 @@ defineTool
       text = Objects.findOne(pointers.text)?.text ? ''
     else
       pointers.text = Meteor.apply 'objectNew', [
-        room: room.id
-        page: room.page
+        room: currentRoom.get().id
+        page: currentPage.get().id
         type: 'text'
-        pts: [snapPoint eventToPoint e]
+        pts: [snapPoint currentBoard().eventToPoint e]
         text: text = ''
         color: currentColor.get()
         fontSize: currentFontSize.get()
@@ -504,6 +532,7 @@ defineTool
   hotspot: [0.21875, 0.34375]
   help: 'Embed image (SVG, JPG, PNG, etc.) on web by entering its URL at bottom. Click on existing image to modify URL, or a point to specify location. You can also paste an image URL from the clipboard, or drag an image from a webpage (without needing this tool).'
   init: ->
+    return #xxx
     input = document.getElementById 'urlInput'
     dom.listen input,
       keydown: (e) ->
@@ -521,7 +550,7 @@ defineTool
         return unless obj?
         unless old?
           obj.pts = [pointers.point ?
-                      snapPoint board.relativePoint 0.25, 0.25]
+                      snapPoint currentBoard().relativePoint 0.25, 0.25]
           undoStack.pushAndDo pointers.undoable =
             type: 'new'
             obj: obj
@@ -552,7 +581,7 @@ defineTool
               Object.assign pointers.undoable.after, edit
       , 50
   start: ->
-    pointers.highlight = new Highlighter board, 'image'
+    pointers.highlight = new Highlighter currentBoard(), 'image'
     if (ids = mainBoard.selection.ids()).length == 1 and
         (obj = Objects.findOne(ids[0]))?.type == 'image'
       pointers.image = obj._id
@@ -590,7 +619,7 @@ defineTool
       mainBoard.selection.setAttributes()
       url = Objects.findOne(pointers.image)?.url ? ''
     else
-      pointers.point = snapPoint eventToPoint e
+      pointers.point = snapPoint currentBoard().eventToPoint e
       url = ''
     input = document.getElementById 'urlInput'
     input.value = url
@@ -614,74 +643,11 @@ defineTool
     input = document.getElementById 'urlInput'
     input.value = obj.url
 
-defineTool
-  name: 'history'
-  icon: 'history'
-  hotspot: [0.5, 0.5]
-  help: 'Time travel to the past (by dragging the bottom slider)'
-  start: ->
-    historyObjects = {}
-    range = document.getElementById 'historyRange'
-    range.value = 0
-    lastTarget = null
-    historyRender = null
-    diffs = []
-    range.addEventListener 'change', pointers.listen = (e) ->
-      target = parseInt range.value
-      ## Re-use last object set and render if just increasing in time.
-      if lastTarget? and target >= lastTarget
-        apply = diffs[lastTarget...target]
-      else
-        historyBoard.clear()
-        historyBoard.retransform()
-        historyRender = new RenderObjects historyBoard.root
-        apply = diffs[...target]
-      return if apply.length == 0
-      lastTarget = target
-      for diff in apply
-        switch diff.type
-          when 'pen', 'poly', 'rect', 'ellipse', 'text', 'image'
-            obj = diff
-            historyObjects[obj.id] = obj
-            historyRender.render obj
-          when 'push'
-            obj = historyObjects[diff.id]
-            obj.pts.push ...diff.pts
-            historyRender.render obj,
-              start: obj.pts.length - diff.pts.length
-              translate: false
-          when 'edit'
-            obj = historyObjects[diff.id]
-            for key, value of diff when key not in ['id', 'type']
-              switch key
-                when 'pts'
-                  for subkey, subvalue of value
-                    obj[key][subkey] = subvalue
-                else
-                  obj[key] = value
-            historyRender.render obj
-          when 'del'
-            historyRender.delete diff
-            delete historyObjects[diff.id]
-    range.max = 0
-    loadingUpdate +1
-    diffs = await meteorCallPromise 'history', room.id, room.page
-    loadingUpdate -1
-    range.max = diffs.length
-  stop: ->
-    document.getElementById('historyRange').removeEventListener 'change', pointers.listen
-    historyBoard.clear()
-  down: (e) ->
-    pointers[e.pointerId] = eventToRawPoint e
-    pointers[e.pointerId].transform =
-      Object.assign {}, historyBoard.transform
-  up: (e) ->
-    delete pointers[e.pointerId]
-  move: (e) ->
-    return unless start = pointers[e.pointerId]
-    current = eventToRawPoint e
-    historyBoard.transform.x = start.transform.x +
-      (current.x - start.x) / historyBoard.transform.scale
-    historyBoard.transform.y = start.transform.y +
-      (current.y - start.y) / historyBoard.transform.scale
-    historyBoard.retransform()
+## Resets the selection, and if the current tool supports selection,
+## sets the selection to the specified array of object IDs
+## (as e.g. returned by `UndoStack.undo` and `UndoStack.redo`).
+## Does nothing if `objIds` is undefined (as when `undo` or `redo` failed).
+export setSelection = (objIds) ->
+  return unless objIds?
+  selectHighlightReset()
+  tools[currentTool.get()]?.select? objIds

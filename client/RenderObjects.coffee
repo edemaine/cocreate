@@ -4,7 +4,8 @@
 import {proxyUrl} from '../lib/url'
 import dom from './lib/dom'
 import icons from './lib/icons'
-import {tools, pointers} from './tools/tools'
+import {pointers} from './tools/modes'
+import {tools} from './tools/defineTool'
 
 export class RenderObjects
   constructor: (@board) ->

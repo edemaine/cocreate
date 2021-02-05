@@ -37,6 +37,6 @@ onWheel = (e) ->
 
 export useHorizontalScroll = (ref) ->
   useEffect ->
-    ref.current.addEventListener 'wheel', onWheel, passive: false
-    -> ref.current.removeEventListener 'wheel', onWheel
+    ref.current?.addEventListener 'wheel', onWheel, passive: false
+    -> ref.current?.removeEventListener 'wheel', onWheel
   , [ref.current]

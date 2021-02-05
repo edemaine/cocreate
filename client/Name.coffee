@@ -1,4 +1,4 @@
-import React, {useRef} from 'react'
+import React from 'react'
 import {useTracker} from 'meteor/react-meteor-data'
 
 import storage from './lib/storage'

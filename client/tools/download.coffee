@@ -1,4 +1,6 @@
 import {defineTool} from './defineTool'
+import {currentBoard, currentRoom} from '../DrawApp'
+import dom from '../lib/dom'
 
 defineTool
   name: 'downloadSVG'
@@ -6,21 +8,22 @@ defineTool
   icon: 'download-svg'
   help: 'Download/export selection or entire drawing as an SVG file'
   click: (e, download = true) ->
+    board = currentBoard()
     ## Temporarily remove transform for export
-    root = currentBoard().root # <g>
+    root = board.root # <g>
     oldTransform = root.getAttribute 'transform'
     root.removeAttribute 'transform'
     ## Choose elements to export
-    if selection.nonempty() and currentBoard() == board
-      elts = currentBoard().selectedRenderedChildren()
+    if board.selection.nonempty()
+      elts = board.selectedRenderedChildren()
     else
-      elts = currentBoard().renderedChildren()
+      elts = board.renderedChildren()
     ## Compute bounding box using SVG's getBBox() and getCTM()
-    bbox = currentBoard().renderedBBox elts
+    bbox = board.renderedBBox elts
     ## Temporarily make grid span entire drawing
-    if currentBoard().grid?
-      currentBoard().grid.update room.pageGrid, bbox
-      elts.splice 0, 0, currentBoard().grid.grid
+    if board.grid?
+      board.grid.update bbox
+      elts.splice 0, 0, board.grid.grid
     ## Convert everything to SVG
     svg = (elt.outerHTML for elt in elts).join '\n'
     .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
@@ -33,7 +36,7 @@ defineTool
       }\""
     ## Reset transform and grid
     root.setAttribute 'transform', oldTransform if oldTransform?
-    currentBoard().grid?.update()
+    board.grid?.update()
     ## Create SVG header
     fonts = ''
     if /<text/.test svg
@@ -103,6 +106,6 @@ defineTool
     if download
       download = document.getElementById 'download'
       download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
-      download.download = "cocreate-#{room.id}.svg"
+      download.download = "cocreate-#{currentRoom.get().id}.svg"
       download.click()
     svg

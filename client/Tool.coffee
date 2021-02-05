@@ -3,12 +3,13 @@ import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {currentTool, tools, toolsByCategory, selectTool} from './tools/tools'
+import {currentTool, tools, toolsByCategory, clickTool} from './tools/tools'
 import icons from './lib/icons'
 
 export ToolCategory = React.memo ({category, ...rest}) ->
   for tool of toolsByCategory[category]
     <Tool key={tool} tool={tool} {...rest}/>
+ToolCategory.displayName = 'ToolCategory'
 
 export Tool = React.memo ({tool, placement}) ->
   toolSpec = tools[tool]
@@ -17,9 +18,6 @@ export Tool = React.memo ({tool, placement}) ->
   , [tool]
   if toolSpec.active
     active = useTracker toolSpec.active, []
-  useEffect ->
-    #toolSpec.init?()
-  , []
 
   className = toolSpec.className ? 'tool'
   className += ' selected' if selected
@@ -36,15 +34,12 @@ export Tool = React.memo ({tool, placement}) ->
       icon = icons.modIcon toolSpec.icon, fill: 'currentColor'
     icon = <span dangerouslySetInnerHTML={__html: icons.svgIcon icon}/>
 
-  onClick = (e) ->
-    if toolSpec.click?
-      toolSpec.click e
-    else
-      selectTool tool
+  onClick = (e) -> clickTool toolSpec, e
 
   div =
     <div className={className} data-tool={tool} onClick={onClick}>
       {icon}
+      {toolSpec.dom?()}
     </div>
   return div unless toolSpec.help?
   <OverlayTrigger placement={placement} overlay={(props) ->
@@ -64,3 +59,4 @@ export Tool = React.memo ({tool, placement}) ->
   }>
     {div}
   </OverlayTrigger>
+Tool.displayName = 'Tool'

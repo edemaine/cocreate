@@ -5,22 +5,25 @@ import icons from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
 import timesync from './lib/timesync'
-import {defaultColor} from './main'
+import {defaultColor} from './tools/color'
 import {drawingTools, drawingToolIcon, tools} from './tools/tools'
 
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 
 export class RenderRemotes
-  constructor: (@room) ->
-    @board = @room.board
+  constructor: (@board, @svg) ->
     @elts = {}
     @updated = {}
     @transforms = {}
-    @svg = document.getElementById 'remotes'
     @svg.innerHTML = ''
     @svg.appendChild @root = dom.create 'g'
     @resize()
+    @interval = setInterval =>
+      @timer()
+    , 1000
+  stop: ->
+    clearInterval @interval
   render: (remote, oldRemote = {}) ->
     id = remote._id
     return if id == remotes.id  # don't show own cursor
@@ -46,11 +49,13 @@ export class RenderRemotes
     text = elt.childNodes[1]
     unless remote.name == oldRemote.name
       text.innerHTML = dom.escape remote.name ? ''
+    ###
     elt.style.visibility =
-      if remote.page == @room.page
+      if remote.page == currentPage().id
         'visible'
       else
         'hidden'
+    ###
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
@@ -118,7 +123,7 @@ export class RenderRemotes
       delete @elts[id]
       delete @transforms[id]
   resize: ->
-    @svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
+    @board.svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
     @retransform()
   retransform: ->
     for id, transform of @transforms

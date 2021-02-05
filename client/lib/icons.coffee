@@ -167,3 +167,12 @@ export Icon = React.memo ({icon, fill, ...extra}) ->
   if fill?
     icon = modIcon icon, {fill}
   <div {...extra} dangerouslySetInnerHTML={__html: svgIcon icon}/>
+Icon.displayName = 'Icon'
+
+export CloseIcon = React.memo ->
+  <Icon icon="times-circle" fill="currentColor" className="close"/>
+CloseIcon.displayName = 'CloseIcon'
+
+export LoadingIcon = React.memo ->
+  <Icon className="loading" icon="spinner" fill="currentColor"/>
+LoadingIcon.displayName = 'LoadingIcon'

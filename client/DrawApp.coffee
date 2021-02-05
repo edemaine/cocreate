@@ -1,16 +1,28 @@
-import React, {useEffect, useRef} from 'react'
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react'
 import {useParams} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
+import {Tracker} from 'meteor/tracker'
+import {ReactiveVar} from 'meteor/reactive-var'
 
 import {Board} from './Board'
-import {Loading} from './Loading'
-import {Name} from './Name'
+import {Name, name} from './Name'
+import {Page} from './Page'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
-import {currentTool} from './tools/tools'
+import {undoStack} from './UndoStack'
+import {currentTool, lastTool, selectTool, clickTool, stopTool, resumeTool, tools, toolsByHotkey, HistorySlider, restrictTouch} from './tools/tools'
+import {currentColor, currentFill, currentFillOn} from './tools/color'
+import {currentFontSize} from './tools/font'
+import {tryAddImage} from './tools/image'
+import {pointers, setSelection} from './tools/modes'
+import {snapPoint} from './tools/settings'
 import {useHorizontalScroll} from './lib/hscroll'
+import {LoadingIcon} from './lib/icons'
+import dom from './lib/dom'
+import remotes from './lib/remotes'
 
 export currentRoom = new ReactiveVar
+export currentPage = new ReactiveVar
 export mainBoard = null
 export historyBoard = null
 
@@ -20,32 +32,38 @@ export currentBoard = ->
   else
     mainBoard
 
+export setPageId = null
+
 export DrawApp = React.memo ->
-  ## Create Board and Room data structures
-  {roomId} = useParams()
+  ## Board data structures
   mainBoardRef = useRef()
   historyBoardRef = useRef()
-  remotesRef = useRef()
   useEffect ->
     mainBoard = new Board mainBoardRef.current
     historyBoard = new Board historyBoardRef.current
+    onResize = ->
+      mainBoard.resize()
+      historyBoard.resize()
+      currentPage.get()?.resize()
     onResize()
-    currentRoom.set new Room roomId, mainBoard
+    window.addEventListener 'resize', onResize
+    ->
+      window.removeEventListener 'resize', onResize
+      historyBoard.destroy()
+      mainBoard.destroy()
+  , []
+
+  ## Room data structure
+  {roomId} = useParams()
+  useLayoutEffect ->
+    currentRoom.set new Room roomId
+    setPageId null  # reset currentPage
     ->
       currentRoom.get().stop()
       currentRoom.set null
-      historyBoard.destroy()
-      mainBoard.destroy()
   , [roomId]
-  onResize = ->
-    mainBoard?.resize()
-    historyBoard?.resize()
-  useEffect ->
-    window.addEventListener 'resize', onResize
-    -> window.removeEventListener onResize
-  , []
 
-  ## Test for whether room is loading and/or bad
+  ## Test whether room is loading and/or bad
   room = useTracker ->
     currentRoom.get()
   , []
@@ -55,12 +73,37 @@ export DrawApp = React.memo ->
     bad: room.bad()
   , [room]
 
+  ## Page data structure, and stop/resume current tool
+  [pageId, setPageId] = useState()
+  remotesRef = useRef()
+  useEffect -> # wait for mainBoard to be set
+    if pageId?
+      Tracker.nonreactive ->
+        currentPage.set new Page pageId, room, mainBoard, remotesRef.current
+        resumeTool()
+    ->
+      Tracker.nonreactive ->
+        stopTool()  # stop current tool
+        currentPage.get()?.stop()
+        currentPage.set null
+  , [room, pageId, mainBoard]
+
+  ## Auto load first page
+  useTracker ->
+    return if pageId?
+    if (pages = room?.data()?.pages)?.length
+      Tracker.nonreactive ->
+        setPageId pages[0]
+  , [pageId?, room]
+
   ## Page info
-  {pageNum, numPages} = useTracker ->
+  {page, pageNum, numPages} = useTracker ->
+    page = currentPage.get()
+    index = room?.pageIndex page
+    page: page
+    pageNum: if index? then index + 1 else '?'
     numPages: room?.numPages() ? '?'
-    pageNum: room?.pageIndex() ? '?'
   , [room]
-  pageNum++ if typeof pageNum == 'number'
 
   tool = useTracker ->
     currentTool.get()
@@ -89,6 +132,236 @@ export DrawApp = React.memo ->
     -> window.removeEventListener 'resize', onToolsResize
   , []
 
+  ## Update our remote cursor
+  useEffect ->
+    dom.listen mainBoardRef.current, pointermove: (e) ->
+      return unless currentRoom.get()?
+      return unless currentPage.get()?
+      return unless currentBoard() == mainBoard
+      return if restrictTouch e
+      remote =
+        name: name.get().trim()
+        room: currentRoom.get().id
+        page: currentPage.get().id
+        tool: currentTool.get()
+        color: currentColor.get()
+        cursor: currentBoard().eventToPointW e
+      remote.fill = currentFill.get() if currentFillOn.get()
+      remotes.update remote
+  , []
+
+  ## Pointer event handlers used on both boards
+  useEffect ->
+    dom.listen [mainBoardRef.current, historyBoardRef.current],
+      pointerdown: (e) ->
+        e.preventDefault()
+        return if restrictTouch e
+        text.blur() for text in document.querySelectorAll 'input'
+        window.focus()  # for getting keyboard focus when <iframe>d
+        tools[currentTool.get()].down? e
+      pointerenter: (e) ->
+        e.preventDefault()
+        return if restrictTouch e
+        tools[currentTool.get()].down? e if e.buttons
+      pointerup: stop = (e) ->
+        e.preventDefault()
+        return if restrictTouch e
+        tools[currentTool.get()].up? e
+      pointerleave: stop
+      pointermove: (e) ->
+        e.preventDefault()
+        return if restrictTouch e
+        tools[currentTool.get()].move? e
+      contextmenu: (e) ->
+        ## Prevent right click from bringing up context menu, as it interferes
+        ## with e.g. drawing.
+        e.preventDefault()
+      wheel: (e) ->
+        console.log 'wheel'
+        e.preventDefault()
+        transform = currentBoard().transform
+        {deltaX, deltaY} = e
+        ## Convert Shift + 1D wheel into horizontal scroll.  MacOS seems to do
+        ## this automatically (hence the deltaX check) but Windows doesn't.
+        if not e.ctrlKey and e.shiftKey and e.deltaX == 0
+          [deltaX, deltaY] = [deltaY, deltaX]
+        switch e.deltaMode
+          #when WheelEvent.DOM_DELTA_PIXEL
+          when WheelEvent.DOM_DELTA_LINE
+            deltaX *= 50
+            deltaY *= 50
+          when WheelEvent.DOM_DELTA_PAGE
+            deltaX *= currentBoard().bbox.width
+            deltaY *= currentBoard().bbox.height
+        if e.ctrlKey
+          ## Ensure zoom-out motion is inverse of equivalent zoom-in
+          factor = 1 + 0.01 * Math.abs deltaY
+          factor = 1/factor if deltaY > 0
+          currentBoard().setScaleFixingPoint transform.scale * factor,
+            x: e.offsetX
+            y: e.offsetY
+        else
+          transform.x -= deltaX / transform.scale
+          transform.y -= deltaY / transform.scale
+          currentBoard().retransform()
+  , []
+
+  ## Drag and drop
+  useEffect ->
+    dragDepth = 0
+    all = (e) ->
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+    dom.listen mainBoardRef.current,
+      dragenter: (e) ->
+        all e
+        return if dragDepth++
+        ## Entering for the first time
+        document.getElementById('dragzone').classList.add 'drag'
+      dragover: (e) ->
+        all e
+        #return unless dragDepth
+      dragleave: (e) ->
+        all e
+        return if --dragDepth
+        ## Leaving for the last time
+        document.getElementById('dragzone').classList.remove 'drag'
+      drop: (e) ->
+        all e
+        dragDepth = 0
+        document.getElementById('dragzone').classList.remove 'drag'
+        tryAddImage e.dataTransfer.items,
+          pts: [currentBoard().snapPoint currentBoard().eventToPoint e]
+  , []
+
+  ## Keyboard and copy/paste
+  useEffect ->
+    spaceDown = false
+    oldPointers = null
+    dom.listen window,
+      keydown: (e) ->
+        switch e.key
+          when 'z', 'Z'
+            if e.ctrlKey or e.metaKey
+              if e.shiftKey
+                tools.redo.once()
+              else
+                tools.undo.once()
+          when 'y', 'Y'
+            if e.ctrlKey or e.metaKey
+              tools.redo.once()
+          when 'Delete', 'Backspace'
+            currentBoard()?.selection?.delete()
+          when ' '  ## pan via space-drag
+            if currentTool.get() not in ['pan', 'history']
+              spaceDown = true
+              oldPointers = {}
+              oldPointers[key] = pointers[key] for own key of pointers
+              selectTool 'pan', noStop: true
+          when 'd', 'D'  ## duplicate
+            if (e.ctrlKey or e.metaKey) and
+               currentBoard()?.selection?.nonempty()
+              e.preventDefault()  # ctrl-D bookmarks on Chrome
+              currentBoard().selection.duplicate()
+          when 'Escape'
+            if currentTool.get() == 'history'
+              selectTool 'history'  # escape history view by toggling
+          else
+            ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
+            ## triggering width 1 hotkey.
+            return if e.ctrlKey or e.metaKey
+            if e.key of toolsByHotkey
+              clickTool toolsByHotkey[e.key]
+            else
+              clickTool toolsByHotkey[e.key.toLowerCase()]
+      keyup: (e) ->
+        switch e.key
+          when ' '  ## end of pan via space-drag
+            if spaceDown
+              selectTool lastTool, noStart: true
+              pointers[key] = oldPointers[key] for own key of oldPointers
+              spaceDown = false
+      copy: onCopy = (e) ->
+        ## Ignore paste operations within text boxes
+        return if e.target.tagName in ['INPUT', 'TEXTAREA']
+        return unless currentBoard()?.selection?.nonempty()
+        e.preventDefault()
+        e.clipboardData.setData 'application/cocreate-objects',
+          currentBoard().selection.json()
+        e.clipboardData.setData 'image/svg+xml',
+          tools.downloadSVG.once null, false
+        true
+      cut: (e) ->
+        if onCopy e
+          currentBoard()?.selection?.delete()
+      paste: (e) ->
+        ## Ignore paste operations within text boxes
+        return if e.target.tagName in ['INPUT', 'TEXTAREA']
+        e.preventDefault()
+        if json = e.clipboardData.getData 'application/cocreate-objects'
+          objects =
+            for obj in JSON.parse json
+              delete obj._id
+              delete obj.created
+              delete obj.updated
+              obj.room = room.id
+              obj.page = room.page
+              obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
+              obj
+          undoStack.push
+            type: 'multi'
+            ops:
+              for obj in objects
+                type: 'new'
+                obj: obj
+          selectTool 'select'  # usually want to move pasted objects
+          setSelection (obj._id for obj in objects)
+        else
+          ## Cache text content in case we want to paste it later; walking
+          ## through all items during `tryAddImage` seems to clear text content.
+          text = e.clipboardData.getData 'text/plain'
+          obj =
+            pts: [snapPoint currentBoard().relativePoint 0.25, 0.25]
+          ## First check for image paste
+          if image = await tryAddImage e.clipboardData.items, obj
+            setSelection [image._id]
+          ## On failure, paste text content as text object
+          else if text
+            selectTool 'text'
+            undoStack.pushAndDo
+              type: 'new'
+              obj: obj =
+                room: room.id
+                page: room.page
+                type: 'text'
+                text: text
+                pts: obj.pts
+                color: currentColor.get()
+                fontSize: currentFontSize.get()
+            setSelection [obj._id]
+  , []
+
+  ## Manual page number typing
+  pageNumRef = useRef()
+  useEffect ->
+    dom.listen pageNumRef.current,
+      keydown: (e) ->
+        e.stopPropagation() # avoid width setting hotkey
+      change: (e) ->
+        return unless (pages = currentRoom.get()?.data()?.pages)?.length
+        page = parseInt pageNumRef.current.value
+        if isNaN page
+          pageNumRef.current.value = pageNum
+        else
+          page = Math.min pages.length, Math.max 1, page
+          setPageId pages[page-1]
+  , []
+
+  ## Initialize tools (after boards are created)
+  useEffect ->
+    toolSpec.init?() for tool, toolSpec of tools
+  , []
+
   return <BadRoom/> if bad and not loading
 
   <div id="container">
@@ -105,7 +378,8 @@ export DrawApp = React.memo ->
     <div id="pages" className="top horizontal palette" ref={topRef}>
       <div id="pageNumbers">
         {'page '}
-        <input id="pageNum" type="text" value={pageNum}/>
+        <input id="pageNum" type="text" defaultValue={pageNum}
+         ref={pageNumRef}/>
         {' of '}
         <span id="numPages">{numPages}</span>
       </div>
@@ -122,7 +396,7 @@ export DrawApp = React.memo ->
       }
       {if tool == 'history'
         <div id="history" className="horizontal palette">
-          <input id="historyRange" className="history" type="range" min="0" max="0" title="Drag to time travel through history"/>
+          <HistorySlider/>
         </div>
       else if tool == 'image'
         <div id="imageUrl" className="horizontal palette">
@@ -145,7 +419,7 @@ export DrawApp = React.memo ->
         </div>
       }
     </div>
-    <div id="center">
+    <div id="center" className={"nopage" unless pageId?}>
       {###touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
        ###}
       <svg id="mainBoard" className="board historyHide" touch-action="none"
@@ -161,7 +435,7 @@ export DrawApp = React.memo ->
       <div id="dragzone" className="overlay"/>
     </div>
     {if loading
-      <Loading/>
+      <LoadingIcon/>
     }
   </div>
 

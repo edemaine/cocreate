@@ -1,4 +1,5 @@
 import React from 'react'
+import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
 import {currentBoard} from '../Board'
@@ -27,7 +28,7 @@ for fontSize in fontSizes
       className: 'fontSize attrib'
       click: -> selectFontSize fontSize
       active: -> currentFontSize.get() == fontSize
-      icon: ->
+      icon: -> # eslint-disable-line react/display-name
         <svg viewBox="#{-fontSizeSize/2} 0 #{fontSizeSize} #{fontSizeSize}"
          width={fontSizeSize} height={fontSizeSize}>
           <text y={fontSizeSize*0.5} style={fontSize: "#{fontSize}px"}>

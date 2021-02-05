@@ -7,17 +7,17 @@ export gridSize = 37.76
 export gridDefault = true
 
 export class Grid
-  constructor: (@room) ->
-    @room.board.root.appendChild @grid = dom.create 'g', class: 'grid'
+  constructor: (@page) ->
+    @page.board.root.appendChild @grid = dom.create 'g', class: 'grid'
     @update()
-  update: (mode = @room.pageGrid, bounds) ->
+  update: (bounds) ->
     @grid.innerHTML = ''
-    board = @room.board
+    board = @page.board
     bounds ?=
       min: dom.svgPoint board.svg, board.bbox.left, board.bbox.top, @grid
       max: dom.svgPoint board.svg, board.bbox.right, board.bbox.bottom, @grid
     margin = gridSize
-    switch mode
+    switch @page.gridMode
       when true
         ### eslint-disable no-unused-vars ###
         range = (xy) ->

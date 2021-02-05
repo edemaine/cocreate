@@ -1,6 +1,8 @@
 import React from 'react'
+import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
+import {selectDrawingTool} from './tools'
 import {currentBoard} from '../Board'
 
 export widths = [
@@ -26,7 +28,7 @@ for width in widths
       help: "Set line width to #{width}"
       active: -> currentWidth.get() == width
       click: -> selectWidth width
-      icon: ->
+      icon: -> # eslint-disable-line react/display-name
         <svg viewBox="0 #{-widthSize/3} #{widthSize} #{widthSize}"
          width={widthSize} height={widthSize}>
           <line x2={widthSize} strokeWidth={width}/>

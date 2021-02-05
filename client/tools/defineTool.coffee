@@ -9,6 +9,8 @@ export defineTool = (toolSpec) ->
   if toolSpec.category?
     category = toolsByCategory[toolSpec.category] ?= {}
     category[toolSpec.name] = toolSpec
+  else
+    console.warn "Tool #{toolSpec.name} has no category set."
   toolSpec.hotkey ?= []
   toolSpec.hotkey = [toolSpec.hotkey] unless Array.isArray toolSpec.hotkey
   for hotkey in toolSpec.hotkey

@@ -1,5 +1,6 @@
 import React from 'react'
-import {useTracker} from 'meteor/react-meteor-data'
+import {Tracker} from 'meteor/tracker'
+import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
@@ -45,7 +46,7 @@ defineTool
   name: 'fill'
   category: 'color'
   help: <>Toggle filling of rectangles and ellipses. <kbd>Shift</kbd>-click a color to set fill color.</>
-  icon: ->
+  icon: -> # eslint-disable-line react/display-name
     if currentFillOn
       icons.modIcon 'tint', fill: currentFill.get()
     else
@@ -65,7 +66,7 @@ for color in colors
       category: 'color'
       className: 'attrib'
       active: -> currentColor.get() == color
-      icon: ->
+      icon: -> # eslint-disable-line react/display-name
         <div className="color" style={backgroundColor: color}/>
       click: (e) -> selectColorOrFill e, color
 
@@ -77,7 +78,7 @@ defineTool
   category: 'color'
   className: 'attrib'
   active: -> currentColor.get() == customColor.get()
-  icon: ->
+  icon: -> # eslint-disable-line react/display-name
     onSet = (e) ->
       e.stopPropagation()
       customColorRef.current.querySelector('input').click()
