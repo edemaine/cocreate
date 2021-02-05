@@ -4,6 +4,8 @@ import dom from './lib/dom'
 
 export gridSize = 37.76
 
+export gridDefault = true
+
 export class Grid
   constructor: (@room) ->
     @room.board.root.appendChild @grid = dom.create 'g', class: 'grid'

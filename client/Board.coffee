@@ -3,7 +3,8 @@
 ## (Arguably, it should be merged with RenderObjects.)
 
 import dom from './lib/dom'
-import {currentBoard, selection} from './main'
+import {Selection} from './Selection'
+import {currentBoard} from './DrawApp'
 
 nonrenderedClasses =
   highlight: true
@@ -12,13 +13,13 @@ nonrenderedClasses =
   grid: true
 
 export class Board
-  constructor: (domId) ->
-    @svg = document.getElementById domId
+  constructor: (@svg, @readonly) ->
     @svg.appendChild @root = dom.create 'g'
     @transform =
       x: 0
       y: 0
       scale: 1
+    @selection = new Selection @ unless @readonly
   resize: ->
     ## @bbox maintains client bounding box (top/left/bottom/right) of board,
     ## computed from the currently visible board (maybe not this one).
@@ -89,8 +90,10 @@ export class Board
       continue if skip
       child
   selectedRenderedChildren: ->
-    child for child in @renderedChildren() when selection.has child.dataset.id
+    child for child in @renderedChildren() when @selection.has child.dataset.id
   renderedBBox: (children) ->
     dom.unionSvgExtremes @svg, children, @root
   clear: ->
     @root.innerHTML = ''
+  destroy: ->
+    @root.remove()

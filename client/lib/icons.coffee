@@ -1,3 +1,5 @@
+import React from 'react'
+
 ###
 The `icons` content below is edited SVG from Font Awesome Free which is
 licensed under CC BY 4.0.  See https://fontawesome.com/ and
@@ -160,3 +162,8 @@ export setCursor = (dom, icon, xFrac, yFrac, options) ->
 
 export dataUrl = (icon) ->
   "data:image/svg+xml,#{encodeURIComponent icon}"
+
+export Icon = React.memo ({icon, fill, ...extra}) ->
+  if fill?
+    icon = modIcon icon, {fill}
+  <div {...extra} dangerouslySetInnerHTML={__html: svgIcon icon}/>

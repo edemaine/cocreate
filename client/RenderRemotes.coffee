@@ -5,7 +5,8 @@ import icons from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
 import timesync from './lib/timesync'
-import {tools, drawingTools, drawingToolIcon, defaultColor} from './main'
+import {defaultColor} from './main'
+import {drawingTools, drawingToolIcon, tools} from './tools/tools'
 
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view

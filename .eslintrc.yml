@@ -5,7 +5,7 @@ env:
 extends:
   - 'eslint:recommended'
   - 'plugin:meteor/recommended'
-  #- 'plugin:react/recommended'
+  - 'plugin:react/recommended'
 globals:
   Meteor: readonly
   WebApp: readonly

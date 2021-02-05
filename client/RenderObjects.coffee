@@ -4,10 +4,11 @@
 import {proxyUrl} from '../lib/url'
 import dom from './lib/dom'
 import icons from './lib/icons'
-import {tools, pointers, selection} from './main'
+import {tools, pointers} from './tools/tools'
 
 export class RenderObjects
-  constructor: (@root) ->
+  constructor: (@board) ->
+    @root = @board.root
     @dom = {}
     @tex = {}
     @texQueue = []
@@ -346,7 +347,7 @@ export class RenderObjects
         svgG = job2.texts[id][i]
         svgG.setAttribute 'transform', svgG.getAttribute('transform').replace \
           /translate\([\-\.\d]+/, "translate(#{x}"
-    selection.redraw id, @dom[id] if selection.has id
+    @board.selection.redraw id, @dom[id] if @board.selection?.has id
     pointers.cursorUpdate?() if id == pointers.text
   texJob: ->
     return unless @texQueue.length
@@ -363,7 +364,7 @@ export class RenderObjects
           icons.svgIcon 'exclamation-rect',
             width: '64px'
             height: '64px'
-        selection.redraw id, @dom[id] if selection.has id
+        @board.selection.redraw id, @dom[id] if @board.selection?.has id
     dom.attr image,
       x: obj.pts[0].x
       y: obj.pts[0].y
@@ -396,7 +397,7 @@ export class RenderObjects
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
         elt.removeAttribute 'transform'
-    selection.redraw obj._id, elt if selection.has obj._id
+    @board.selection.redraw obj._id, elt if @board.selection?.has obj._id
   delete: (obj) ->
     id = @id obj
     unless @dom[id]?

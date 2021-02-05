@@ -29,6 +29,7 @@ export class Highlighter
       continue unless elt?
       elt
   eventSelected: (e, selection) ->
+    return [] unless selection?
     target for target in @eventAll e when selection.has target.dataset.id
   findGroup: (target) ->
     while target? and not target.dataset?.id?
