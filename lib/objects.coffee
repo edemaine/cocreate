@@ -25,7 +25,7 @@ export checkObject = (id) ->
   if validId(id) and obj = Objects.findOne id
     obj
   else
-    throw new Error "Invalid object ID #{id}"
+    throw new Meteor.Error "Invalid object ID #{id}"
 
 Meteor.methods
   objectNew: (obj) ->
@@ -74,13 +74,13 @@ Meteor.methods
           credentials: Match.Optional Boolean
           proxy: Match.Optional Boolean
       else
-        throw new Error "Invalid type #{obj?.type} for object"
+        throw new Meteor.Error "Invalid type #{obj?.type} for object"
     check obj, pattern
     unless @isSimulation
       checkRoom obj.room
       checkPage obj.page
       if obj._id? and Objects.findOne(obj._id)?
-        throw new Error "Attempt to create duplicate object #{obj._id}"
+        throw new Meteor.Error "Attempt to create duplicate object #{obj._id}"
       now = new Date
       obj.created ?= now
       obj.updated ?= now
