@@ -30,6 +30,8 @@ export class UndoStack
     @undoStack.push op
     selectOp op, false
 
+export undoStack = new UndoStack  # app's undoStack
+
 ## Perform an undoable operation, or the reverse of that operation,
 ## according to whether `reverse` is `false` or `true`.
 doOp = (op, reverse = false) ->

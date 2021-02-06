@@ -4,58 +4,5 @@ head
   meta(name="viewport", content="width=device-width, initial-scale=1")
 
 body
-  //-nav.navbar.navbar-default.navbar-flex(role="navigation")#top
-    .navbar-header
-      button.navbar-toggle.collapsed(type="button", data-toggle="collapse", data-target="#navbar")
-        span.sr-only Toggle navigation
-        span.icon-bar
-        span.icon-bar
-        span.icon-bar
-      a.navbar-brand Cocreate
-    .collapse.navbar-collapse#navbar
-      ul.nav.navbar-nav.navbar-right
-        +loginButtons
-  #pages.top.horizontal.palette
-    #pageNumbers
-      | page
-      input#pageNum(type='text', value='?')
-      | of
-      span#numPages ?
-    // Buttons go here
-    input#name(type='text', placeholder='Your Name')
-  #tools.vertical.palette
-  #attribs.bottom.horizontal.palette.historyHide.imageHide
-    #widths.subpalette.textHide
-    #fontSizes.subpalette.textShow
-    #fillTool.subpalette
-    #colors.subpalette
-  #history.bottom.horizontal.palette.historyShow
-    input#historyRange.history(type="range", min="0", max="0", title="Drag to time travel through history")
-  #text.nextBottom.horizontal.palette.textShow
-    textarea#textInput(type="text", placeholder='(type text here)')
-  #imageUrl.bottom.horizontal.palette.imageShow
-    input#urlInput(type="text", placeholder='(enter image URL here)')
-  // touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
-  svg#board.board.historyHide(touch-action="none")
-    filter#selectFilter
-      feGaussianBlur(stdDeviation="5")
-  svg#historyBoard.board.historyShow(touch-action="none")
-  svg#remotes.board.overlay.historyHide
-  #dragzone.overlay
-  #badRoom.modal.error
-    h1 Invalid Room ID
-    p Perhaps there's a typo in the URL?  It should look like this:
-    pre#roomLinkStyle
-    p Please double-check your copy/paste.
-    p Or <a id="newRoomLink">create a new room</a>.
-  #qrCode.modal.info
-    h1 Link To This Cocreate Room/Board:
-      .close
-    p.center
-      a#linkToRoom
-    p If possible, this URL has already been <b>copied to your clipboard</b>, so you can paste it into a chat or email to send it to people.
-    p On some browsers, you can <b>right click</b> on the URL to send it to other devices, or <b>long tap</b> to share it.
-    p To send the board to your mobile device (phone or tablet), scan this <b>QR code</b>:
-    #qrCodeSvg
-  #loading
+  #react-root
   a#download

@@ -4,4 +4,4 @@ export validId = (id) -> typeof id == 'string' and fullIdRegExp.test id
 export checkId = (id, type = '') ->
   unless validId id
     type += ' ' if type
-    throw new Error "Invalid #{type}ID #{id}"
+    throw new Meteor.Error "Invalid #{type}ID #{id}"

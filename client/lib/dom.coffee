@@ -39,13 +39,22 @@ export prop = (elt, props) ->
       else
         elt[key] = value
 
+## Returns a corresponding removeEventListener callback suitable for useEffect
 export listen = (elt, events, now) ->
   if Array.isArray(elt) or elt instanceof NodeList
-    listen sub, events, now for sub in elt when sub?
+    callbacks =
+      for sub in elt when sub?
+        listen sub, events, now
+    -> callback() for callback in callbacks
   else
-    for key, value of events when value?
-      elt.addEventListener key, value
-      value() if now
+    listeners =
+      for key, value of events when value?
+        value() if now
+        elt.addEventListener key, value
+    ->
+      i = 0
+      for key, value of events when value?
+        elt.removeEventListener key, listeners[i++]
 
 export classSet = (elt, key, value) ->
   if value

@@ -10,7 +10,7 @@ export checkPage = (page) ->
   if validId(page) and data = Pages.findOne page
     data
   else
-    throw new Error "Invalid page ID #{page}"
+    throw new Meteor.Error "Invalid page ID #{page}"
 
 Meteor.methods
   pageNew: (page, index) ->
@@ -36,7 +36,7 @@ Meteor.methods
     room = checkRoom page.room
     index = room.pages?.indexOf pageId
     unless index? and index >= 0
-      throw new Error "Page #{page._id} not found in its room #{room._id}"
+      throw new Meteor.Error "Page #{page._id} not found in its room #{room._id}"
     delete page._id
     delete page.created
     newPageId = Meteor.apply 'pageNew', [page, index+1]

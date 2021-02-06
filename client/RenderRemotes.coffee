@@ -5,21 +5,26 @@ import icons from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
 import timesync from './lib/timesync'
-import {tools, drawingTools, drawingToolIcon, defaultColor} from './main'
+import {defaultColor} from './tools/color'
+import {drawingTools, tools} from './tools/tools'
+import {drawingToolIcon} from './cursor'
 
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
 
 export class RenderRemotes
-  constructor: (@room) ->
-    @board = @room.board
+  constructor: (@board, @svg) ->
     @elts = {}
     @updated = {}
     @transforms = {}
-    @svg = document.getElementById 'remotes'
     @svg.innerHTML = ''
     @svg.appendChild @root = dom.create 'g'
     @resize()
+    @interval = setInterval =>
+      @timer()
+    , 1000
+  stop: ->
+    clearInterval @interval
   render: (remote, oldRemote = {}) ->
     id = remote._id
     return if id == remotes.id  # don't show own cursor
@@ -29,7 +34,8 @@ export class RenderRemotes
     unless elt = @elts[id]
       @elts[id] = elt = dom.create 'g'
       @root.appendChild elt
-    unless remote.tool == oldRemote.tool and remote.color == oldRemote.color
+    unless remote.tool == oldRemote.tool and remote.color == oldRemote.color and
+           remote.fill == oldRemote.fill
       if icon = tools[remote.tool]?.icon
         if remote.tool of drawingTools
           icon = drawingToolIcon remote.tool,
@@ -38,18 +44,20 @@ export class RenderRemotes
         elt.appendChild dom.create 'text',
           dx: icons.cursorSize + 2
           dy: icons.cursorSize / 2 + 6  # for 16px default font size
-        oldRemote?.name = null
+        oldRemote?.name = null  # force text update
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
     text = elt.childNodes[1]
     unless remote.name == oldRemote.name
       text.innerHTML = dom.escape remote.name ? ''
+    ###
     elt.style.visibility =
-      if remote.page == @room.page
+      if remote.page == currentPage.get().id
         'visible'
       else
         'hidden'
+    ###
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
@@ -113,11 +121,11 @@ export class RenderRemotes
   delete: (remote) ->
     id = remote._id ? remote
     if elt = @elts[id]
-      @root.removeChild elt
+      elt.remove()
       delete @elts[id]
       delete @transforms[id]
   resize: ->
-    @svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
+    #@svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
     @retransform()
   retransform: ->
     for id, transform of @transforms

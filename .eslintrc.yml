@@ -3,9 +3,11 @@ env:
   es2020: true
   node: true
 extends:
-  - 'eslint:recommended'
-  - 'plugin:meteor/recommended'
-  #- 'plugin:react/recommended'
+  - eslint:recommended
+  - plugin:import/errors
+  - plugin:import/warnings
+  - plugin:meteor/recommended
+  - plugin:react/recommended
 globals:
   Meteor: readonly
   WebApp: readonly
@@ -14,6 +16,8 @@ globals:
   Pages: readonly
   Remotes: readonly
   Rooms: readonly
+ignorePatterns:
+  - .meteor
 overrides:
   - files:
     - server/bootstrap.coffee
@@ -26,7 +30,8 @@ parserOptions:
   ecmaVersion: 11
   sourceType: module
 plugins:
-  - coffeescript
+  - "@fellow/eslint-plugin-coffee"
+  - import
   - meteor
   - react
 rules:
@@ -68,5 +73,12 @@ rules:
       - checkId
       - checkMeeting
 settings:
+  import/ignore:
+    - node_modules
+  import/resolver:
+    meteor:
+      extensions:
+        - .coffee
+        - .js
   react:
     version: detect

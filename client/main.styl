@@ -1,9 +1,6 @@
 :root
   --palette-size: 32px
   // The following grow to accomodate scrollbars if needed:
-  --palette-left-width: var(--palette-size)
-  --palette-bottom-height: var(--palette-size)
-  --palette-top-height: var(--palette-size)
   --palette-color: #ccc
   --palette-border: 2px #ccc
   --tooltip-color: hsl(60, 50%, 76%)
@@ -17,12 +14,23 @@
   --tooltip-color: hsl(60, 50%, 25%)
 
 // A few basics from Bootstrap:
-*, :before, :after
+*, ::before, ::after
   box-sizing: border-box
 svg
   overflow: hidden
 input, textarea
   width: 100%
+.sr-only
+  position: absolute
+  width: 1px
+  height: 1px
+  padding: 0
+  margin: -1px
+  overflow: hidden
+  clip: rect(0, 0, 0, 0)
+  white-space: nowrap
+  border: 0
+
 kbd
   padding: 2px 4px
   font-family: 'Roboto Mono', monospace
@@ -66,13 +74,30 @@ input, textarea
     /.dark &
       background-color: hsl(134, 62%, 15%)
 
+#container
+  display: grid
+  grid-template-areas: "left top" \
+                       "left center" \
+                       "left bottom"
+  grid-template-columns: auto 1fr
+  grid-template-rows: auto 1fr auto
+  width: 100vw
+  height: 100vh
+#tools
+  grid-area: left
+#pages
+  grid-area: top
+#bottom
+  grid-area: bottom
+#center
+  grid-area: center
+  position: relative
+
 .board, .modal, .overlay
   position: absolute
   overflow: hidden
-  top: var(--palette-top-height)
-  left: var(--palette-left-width)
-  width: calc(100% - var(--palette-left-width))
-  height: calc(100% - var(--palette-top-height) - var(--palette-bottom-height))
+  width: 100%
+  height: 100%
   /.dark &
     filter: invert(1) hue-rotate(180deg)
 .board
@@ -81,6 +106,10 @@ input, textarea
   user-select: none  // avoid selecting text objects while drawing
 .overlay
   pointer-events: none
+.nopage
+  .board, .overlay
+    visibility: hidden !important
+    // in particular, disable board's pointer events when no page
 #dragzone
   transition: opacity 500ms
   background-color: var(--dragzone-color)
@@ -89,7 +118,6 @@ input, textarea
     opacity: 1
 
 .palette
-  position: absolute
   background: var(--palette-color)
   display: flex
   z-index: 1
@@ -100,31 +128,23 @@ input, textarea
   overflow-y: auto
   top: 0
   left: 0
-  width: var(--palette-left-width)
   height: 100%
-  //-height: calc(100% - var(--palette-bottom-height))
 .horizontal.palette
   flex-direction: row
+  &.super
+    flex-direction: column
   overflow-x: auto
   overflow-y: hidden
-  left: var(--palette-left-width)
-  width: calc(100% - var(--palette-left-width))
-  &.top
-    top: 0
-    height: var(--palette-top-height)
-  &.bottom
-    bottom: 0
-    height: var(--palette-bottom-height)
-    //-left: 0
-    //-width: 100%
-  &.nextBottom
-    bottom: var(--palette-bottom-height)
-    height: var(--palette-size)
-  &#historyRange
-    margin: 0 10px
+  width: 100%
 .subpalette
   display: flex
 
+#historyRange
+  margin: 0 10px
+  height: var(--palette-size)
+
+#textInput, #urlInput
+  height: var(--palette-size)
 #pageNumbers
   display: flex
   align-items: baseline
@@ -142,8 +162,11 @@ input, textarea
   flex: none
   width: var(--palette-size)
   height: var(--palette-size)
+  flex-basis: var(--palette-size)
   border: var(--palette-border) outset
   cursor: pointer
+  overflow: hidden
+  position: relative
 
   &.selected, &.active
     --palette-border: 3px
@@ -162,86 +185,8 @@ input, textarea
     /.dark &
       border: var(--palette-border) inset rgba(0,0,0,1)
 
-.dark .color
-  filter: invert(1) hue-rotate(180deg)
-
-#customColor
-  input[type="color"], .set
-    width: calc(100% - 2 * 5px)
-    height: calc(100% - 2 * 5px)
-    margin: 5px
-  input[type="color"]
-    opacity: 0
-  .set
-    background: linear-gradient(to bottom right, red,orange,yellow,green,blue,indigo,violet)
-
-.tooltip
-  cursor: help
-  display: block
-  position: absolute
-  z-index: 99
-  width: var(--tooltip-width)
-  padding: 5px 8px
-  font-size: 16px
-  background: padding-box var(--tooltip-color)
-  /.dark &
-    color: #ddd
-  // Arrow
-  &:before
-    content: ''
-    position: absolute
-    width: var(--tooltip-arrow)
-    height: var(--tooltip-arrow)
-    border: var(--tooltip-arrow) solid transparent
-    pointer-events: none
-  &.vertical
-    left: var(--palette-size)
-    margin-left: var(--tooltip-arrow)
-    // Left arrow
-    &:before
-      left: calc(-2 * var(--tooltip-arrow))
-      border-right-color: var(--tooltip-color)
-    &.align-top:before
-      top: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
-    &.align-bottom:before
-      bottom: calc(0.5 * var(--palette-size) - var(--tooltip-arrow))
-  &.horizontal
-    &.top
-      top: var(--palette-top-height)
-      margin-top: var(--tooltip-arrow)
-      // Up arrow
-      &:before
-        top: calc(-2 * var(--tooltip-arrow))
-        border-bottom-color: var(--tooltip-color)
-        left: calc(50% - var(--tooltip-arrow))
-    &.bottom
-      bottom: var(--palette-bottom-height)
-      margin-bottom: var(--tooltip-arrow)
-      // Down arrow
-      &:before
-        bottom: calc(-2 * var(--tooltip-arrow))
-        border-top-color: var(--tooltip-color)
-        left: calc(50% - var(--tooltip-arrow))
-  .hotkeys
-    float: right
-    .hotkey
-      margin-top: 1px
-      margin-left: 3px
-
-.tool[data-tool="fill"]
-  #fillOn
-    display: block
-  #fillOff
-    display: none
-  &.active
-    #fillOn
-      display: block
-    #fillOff
-      display: none
-
-.spacer
-  flex-basis: 100%
-  min-height: calc(var(--palette-size)/2)
+.tool
+  padding: 2px
 
 .width, .fontSize
   display: flex
@@ -256,8 +201,81 @@ input, textarea
   /.dark & svg
     filter: invert(1) hue-rotate(180deg)
 
-.tool
-  padding: 2px
+.color, [data-tool="fill"] svg
+  width: 100%
+  height: 100%
+  /.dark &
+    filter: invert(1) hue-rotate(180deg)
+
+.custom.color
+  input[type="color"], .set
+    position: absolute
+    width: calc(100% - 2 * 5px)
+    height: calc(100% - 2 * 5px)
+    margin: 5px
+  input[type="color"]
+    opacity: 0
+    pointer-events: none
+  .set
+    background: linear-gradient(to bottom right, red,orange,yellow,green,blue,indigo,violet)
+
+.tooltip
+  cursor: help
+  position: absolute
+  display: block
+  z-index: 99
+  width: var(--tooltip-width)
+  font-size: 16px
+  /.dark &
+    color: #ddd
+
+  opacity: 0
+  &.show
+    opacity: 1
+  &.fade
+    transition: opacity .15s linear
+
+  .tooltip-inner
+    background: padding-box var(--tooltip-color)
+    padding: 5px 8px
+
+  // Arrow
+  .arrow
+    position: absolute
+    width: var(--tooltip-arrow)
+    height: var(--tooltip-arrow)
+    border: var(--tooltip-arrow) solid transparent
+    pointer-events: none
+    &::before
+      content: ''
+  &[x-placement^="right"]
+    padding-left: var(--tooltip-arrow)
+    .arrow  // Left arrow
+      left: calc(-1 * var(--tooltip-arrow))
+      border-right-color: var(--tooltip-color)
+  &[x-placement^="bottom"]
+    padding-top: var(--tooltip-arrow)
+    .arrow  // Left arrow
+      top: calc(-1 * var(--tooltip-arrow))
+      border-bottom-color: var(--tooltip-color)
+  &[x-placement^="top"]
+    padding-bottom: var(--tooltip-arrow)
+    .arrow  // Left arrow
+      bottom: calc(-1 * var(--tooltip-arrow))
+      border-top-color: var(--tooltip-color)
+
+  .hotkeys
+    float: right
+    .hotkey
+      margin-top: 1px
+      margin-left: 3px
+
+.clear
+  clear: both
+
+.spacer
+  flex-basis: 100%
+  min-height: calc(var(--palette-size)/2)
 
 svg
   .highlight
@@ -300,24 +318,9 @@ body.tool-history
     --palette-color: hsl(32,40%,20%)
   .historyHide
     display: none
-body:not(.tool-text)
-  .textShow
-    display: none
-body.tool-text
-  .textHide
-    display: none
-body:not(.tool-image)
-  .imageShow
-    display: none
-body.tool-image
-  .imageHide
-    display: none
-body.nopage
-  .board
-    visibility: hidden !important
 
-#loading
-  position: absolute
+.loading
+  position: fixed
   display: flex
   justify-content: center
   align-items: center
@@ -325,9 +328,6 @@ body.nopage
   left: 0
   width: 100%
   height: 100%
-  visibility: hidden
-  &.loading
-    visibility: visible
   > svg
     width: 10%
     height: 10%
@@ -336,9 +336,6 @@ body.nopage
 // Modal dialogs
 .modal
   padding: 20px 40px
-  visibility: hidden
-  &.show
-    visibility: visible
   cursor: help
   color: black
   overflow: auto
@@ -346,6 +343,9 @@ body.nopage
   background: pink
 .modal.info
   background: #bbb
+.modal-title
+  font-weight: bold
+  font-size: larger
 
 .close
   float: right
@@ -356,9 +356,9 @@ body.nopage
   &:active
     color: #888
 
-#linkToRoom
+.linkToRoom
   font-size: larger
-#qrCodeSvg
+.qrCode
   svg
     width: 100%
     max-height: 50vh

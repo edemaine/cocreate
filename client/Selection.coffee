@@ -2,9 +2,13 @@
 ## Selection class is for maintaining and highlighted set of selected objects
 ## (which often come from Highlighter).
 
-import dom from './lib/dom'
-import {pointers, undoStack, selectColor, selectFill, selectFillOff, selectWidth, selectFontSize} from './main'
+import {undoStack} from './UndoStack'
 import {gridSize} from './Grid'
+import {selectColor, selectFill, selectFillOff} from './tools/color'
+import {selectWidth} from './tools/width'
+import {selectFontSize} from './tools/font'
+import {pointers} from './tools/modes'
+import dom from './lib/dom'
 
 export class Highlighter
   constructor: (@board, @type) ->
@@ -29,6 +33,7 @@ export class Highlighter
       continue unless elt?
       elt
   eventSelected: (e, selection) ->
+    return [] unless selection?
     target for target in @eventAll e when selection.has target.dataset.id
   findGroup: (target) ->
     while target? and not target.dataset?.id?
@@ -76,7 +81,7 @@ export class Highlighter
     selected
   clear: ->
     if @highlighted?
-      @board.root.removeChild @highlighted
+      @highlighted.remove()
       @target = @highlighted = @id = null
 
 export highlighterClear = ->
@@ -95,8 +100,8 @@ export class Selection
     @selected[id] = highlighter.select()
     @outline()
   addId: (id) ->
-    if target = document.querySelector \
-         """#board > g > [data-id="#{CSS.escape id}"]"""
+    if target = @board.svg.querySelector \
+         """svg > g > [data-id="#{CSS.escape id}"]"""
       @rehighlighter.highlight target
       @selected[id] = @rehighlighter.select()
       @outline()
@@ -106,13 +111,13 @@ export class Selection
       @selected[id] = true
   redraw: (id, target) ->
     unless @selected[id] == true  # added via `addId`
-      @board.root.removeChild @selected[id]
+      @selected[id].remove()
     @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
     @outline()
   remove: (id) ->
     unless @selected[id] == true  # added via `addId`
-      @board.root.removeChild @selected[id]
+      @selected[id].remove()
     delete @selected[id]
     @outline()
   clear: ->
@@ -145,6 +150,7 @@ export class Selection
     objs =
       for id in @ids()
         obj = Objects.findOne id
+        continue unless obj?
         switch attrib
           when 'width'
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse']
