@@ -1,5 +1,5 @@
 import {defineTool} from './defineTool'
-import {currentBoard, currentRoom} from '../DrawApp'
+import {currentBoard, currentRoom} from '../AppState'
 import dom from '../lib/dom'
 
 defineTool

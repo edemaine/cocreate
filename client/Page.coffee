@@ -16,8 +16,7 @@ export class Page
     @board.onRetransform = =>
       @remotesRender.retransform()
       ## Update grid after `transform` attribute gets rendered.
-      #Meteor.setTimeout =>
-      @grid.update()
+      Meteor.setTimeout (=> @grid.update()), 0
     ## Automatically update grid
     @auto = Tracker.autorun =>
       unless @gridMode == (gridMode = @data()?.grid)

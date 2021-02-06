@@ -4,7 +4,7 @@ import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
-import {currentBoard} from '../DrawApp'
+import {currentBoard, currentColor, currentFill, currentFillOn} from '../AppState'
 import {updateCursor} from '../cursor'
 import icons from '../lib/icons'
 
@@ -30,13 +30,12 @@ export colors = [
 ]
 
 export defaultColor = 'black'
-export currentColor = new ReactiveVar defaultColor
+currentColor.set defaultColor
+currentFill.set 'white'
+currentFillOn.set false
 
 export colorMap = {}
 colorMap[color] = true for color in colors
-
-export currentFill = new ReactiveVar 'white'
-export currentFillOn = new ReactiveVar false
 
 Tracker.autorun ->
   document.documentElement.style.setProperty '--currentColor',
@@ -46,8 +45,9 @@ defineTool
   name: 'fill'
   category: 'color'
   help: <>Toggle filling of rectangles and ellipses. <kbd>Shift</kbd>-click a color to set fill color.</>
+  active: -> currentFillOn.get()
   icon: -> # eslint-disable-line react/display-name
-    if currentFillOn
+    if currentFillOn.get()
       icons.modIcon 'tint', fill: currentFill.get()
     else
       icons.modIcon 'tint-slash', fill: currentFill.get()
@@ -55,7 +55,11 @@ defineTool
     currentFillOn.set not currentFillOn.get()
     selection = currentBoard()?.selection
     if selection?.nonempty()
-      selection.edit 'fill', currentFillOn.get() or null
+      selection.edit 'fill',
+        if currentFillOn.get()
+          currentFill.get()
+        else
+          null
     else
       selectDrawingTool()
 
@@ -109,7 +113,7 @@ export selectFill = (color, fromSelection) ->
   currentFill.set color
   currentFillOn.set true
   return if fromSelection
-  selection = currentBoard().selection0
+  selection = currentBoard().selection
   if selection?.nonempty()
     selection.edit 'fill', currentFill.get()
   else
@@ -117,3 +121,8 @@ export selectFill = (color, fromSelection) ->
 
 export selectFillOff = ->
   currentFillOn.set false
+  selection = currentBoard().selection
+  if selection?.nonempty()
+    selection.edit 'fill', null
+  else
+    selectDrawingTool()

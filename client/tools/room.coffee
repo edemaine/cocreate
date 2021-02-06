@@ -17,7 +17,7 @@ defineTool
   active: -> showing.get()
   click: ->
     showing.set not showing.get()
-  dom: -> # eslint-disable-line react/display-name
+  portal: -> # eslint-disable-line react/display-name
     show = useTracker ->
       showing.get()
     , []

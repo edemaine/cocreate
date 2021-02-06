@@ -2,7 +2,7 @@ import React from 'react'
 import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
-import {currentBoard} from '../Board'
+import {currentBoard} from '../AppState'
 
 ## These numbers are based on powers of 1.2 starting from 16
 ## (the site's default font size)

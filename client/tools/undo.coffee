@@ -1,6 +1,6 @@
 import {defineTool} from './defineTool'
 import {setSelection} from './modes'
-import {currentTool} from './tools'
+import {currentTool} from '../AppState'
 import {Ctrl} from '../lib/platform'
 import {undoStack} from '../UndoStack'
 

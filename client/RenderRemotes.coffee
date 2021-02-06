@@ -6,7 +6,8 @@ import dom from './lib/dom'
 import remotes from './lib/remotes'
 import timesync from './lib/timesync'
 import {defaultColor} from './tools/color'
-import {drawingTools, drawingToolIcon, tools} from './tools/tools'
+import {drawingTools, tools} from './tools/tools'
+import {drawingToolIcon} from './cursor'
 
 remoteIconSize = 24
 remoteIconOutside = 0.2  # fraction to render icons outside view
@@ -33,7 +34,8 @@ export class RenderRemotes
     unless elt = @elts[id]
       @elts[id] = elt = dom.create 'g'
       @root.appendChild elt
-    unless remote.tool == oldRemote.tool and remote.color == oldRemote.color
+    unless remote.tool == oldRemote.tool and remote.color == oldRemote.color and
+           remote.fill == oldRemote.fill
       if icon = tools[remote.tool]?.icon
         if remote.tool of drawingTools
           icon = drawingToolIcon remote.tool,
@@ -42,7 +44,7 @@ export class RenderRemotes
         elt.appendChild dom.create 'text',
           dx: icons.cursorSize + 2
           dy: icons.cursorSize / 2 + 6  # for 16px default font size
-        oldRemote?.name = null
+        oldRemote?.name = null  # force text update
       else
         elt.innerHTML = ''
         return  # don't set transform or opacity
@@ -51,7 +53,7 @@ export class RenderRemotes
       text.innerHTML = dom.escape remote.name ? ''
     ###
     elt.style.visibility =
-      if remote.page == currentPage().id
+      if remote.page == currentPage.get().id
         'visible'
       else
         'hidden'
@@ -119,11 +121,11 @@ export class RenderRemotes
   delete: (remote) ->
     id = remote._id ? remote
     if elt = @elts[id]
-      @root.removeChild elt
+      elt.remove()
       delete @elts[id]
       delete @transforms[id]
   resize: ->
-    @board.svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
+    #@board.svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
     @retransform()
   retransform: ->
     for id, transform of @transforms

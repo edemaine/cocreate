@@ -1,6 +1,5 @@
-import {mainBoard, historyBoard} from './DrawApp'
-import {currentColor, currentFill, currentFillOn} from './tools/color'
-import {currentTool, drawingTools, tools} from './tools/tools'
+import {mainBoard, historyBoard, currentTool, currentColor, currentFill, currentFillOn} from './AppState'
+import {drawingTools, tools} from './tools/tools'
 import {dark, fancyCursor} from './tools/settings'
 import icons from './lib/icons'
 

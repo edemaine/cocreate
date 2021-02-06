@@ -1,9 +1,10 @@
-import React, {useEffect} from 'react'
+import React from 'react'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {currentTool, tools, toolsByCategory, clickTool} from './tools/tools'
+import {currentTool} from './AppState'
+import {tools, toolsByCategory, clickTool} from './tools/tools'
 import icons from './lib/icons'
 
 export ToolCategory = React.memo ({category, ...rest}) ->
@@ -39,7 +40,7 @@ export Tool = React.memo ({tool, placement}) ->
   div =
     <div className={className} data-tool={tool} onClick={onClick}>
       {icon}
-      {toolSpec.dom?()}
+      {toolSpec.portal?()}
     </div>
   return div unless toolSpec.help?
   <OverlayTrigger placement={placement} overlay={(props) ->

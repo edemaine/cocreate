@@ -1,7 +1,7 @@
 ## See modes.coffee for the image mode that uses this.
 
 import {validUrl, proxyUrl} from '/lib/url'
-import {currentRoom, currentPage} from '../DrawApp'
+import {currentRoom, currentPage} from '../AppState'
 import {undoStack} from '../UndoStack'
 
 export tryAddImage = (items, options) ->

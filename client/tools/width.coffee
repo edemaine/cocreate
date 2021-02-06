@@ -3,7 +3,7 @@ import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
-import {currentBoard} from '../Board'
+import {currentBoard} from '../AppState'
 
 export widths = [
   1
@@ -14,7 +14,7 @@ export widths = [
   6
   7
 ]
-currentWidth = new ReactiveVar 5
+export currentWidth = new ReactiveVar 5
 
 widthSize = 22
 

@@ -403,7 +403,7 @@ export class RenderObjects
     id = @id obj
     unless @dom[id]?
       return console.warn "Attempt to delete unknown object ID #{id}?!"
-    @root.removeChild @dom[id]
+    @dom[id].remove()
     delete @dom[id]
     tools.text.stop() if id == pointers.text
     @texDelete id if @texById[id]?

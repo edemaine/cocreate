@@ -1,5 +1,5 @@
 import {defineTool} from './defineTool'
-import {currentBoard} from '../DrawApp'
+import {currentBoard} from '../AppState'
 
 steppedZoom = (delta) ->
   board = currentBoard()

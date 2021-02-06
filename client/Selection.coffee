@@ -81,7 +81,7 @@ export class Highlighter
     selected
   clear: ->
     if @highlighted?
-      @board.root.removeChild @highlighted
+      @highlighted.remove()
       @target = @highlighted = @id = null
 
 export highlighterClear = ->
@@ -100,8 +100,8 @@ export class Selection
     @selected[id] = highlighter.select()
     @outline()
   addId: (id) ->
-    if target = document.querySelector \
-         """#board > g > [data-id="#{CSS.escape id}"]"""
+    if target = @board.svg.querySelector \
+         """svg > g > [data-id="#{CSS.escape id}"]"""
       @rehighlighter.highlight target
       @selected[id] = @rehighlighter.select()
       @outline()
@@ -111,13 +111,13 @@ export class Selection
       @selected[id] = true
   redraw: (id, target) ->
     unless @selected[id] == true  # added via `addId`
-      @board.root.removeChild @selected[id]
+      @selected[id].remove()
     @rehighlighter.highlight target
     @selected[id] = @rehighlighter.select()
     @outline()
   remove: (id) ->
     unless @selected[id] == true  # added via `addId`
-      @board.root.removeChild @selected[id]
+      @selected[id].remove()
     delete @selected[id]
     @outline()
   clear: ->
@@ -150,6 +150,7 @@ export class Selection
     objs =
       for id in @ids()
         obj = Objects.findOne id
+        continue unless obj?
         switch attrib
           when 'width'
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse']

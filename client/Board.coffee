@@ -4,7 +4,7 @@
 
 import dom from './lib/dom'
 import {Selection} from './Selection'
-import {currentBoard} from './DrawApp'
+import {currentBoard} from './AppState'
 
 nonrenderedClasses =
   highlight: true

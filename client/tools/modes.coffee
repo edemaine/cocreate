@@ -2,13 +2,12 @@ import React from 'react'
 import debounce from 'debounce'
 
 import {defineTool} from './defineTool'
-import {currentColor, currentFill, currentFillOn} from './color'
 import {tryAddImageUrl} from './image'
 import {snapPoint} from './settings'
 import {tools} from './tools'
 import {currentWidth} from './width'
 import {currentFontSize} from './font'
-import {currentBoard, mainBoard, currentRoom, currentPage} from '../DrawApp'
+import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn} from '../AppState'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
 import {Ctrl, Alt, firefox} from '../lib/platform'
@@ -59,9 +58,8 @@ defineTool
   hotkey: 's'
   start: ->
     pointers.objects = {}
-  stop: selectHighlightReset = (nextTool) ->
-    mainBoard.selection.clear() unless nextTool in ['text', 'image']
-    highlighterClear()
+  stop: ->
+    delete pointers.objects
   down: (e) ->
     selection = mainBoard.selection
     pointers[e.pointerId] ?= new Highlighter currentBoard()
@@ -275,25 +273,18 @@ symmetricPoint = (pt, origin) ->
   x: 2*origin.x - pt.x
   y: 2*origin.y - pt.y
 
-defineTool
-  name: 'rect'
-  category: 'mode'
-  icon: 'rect'
-  iconFill: 'rect-fill'
-  hotspot: [0.0625, 0.883]
-  help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point.</>
-  hotkey: 'r'
+rectLikeTool = (type) ->
   down: (e) ->
     return if pointers[e.pointerId]
     origin = snapPoint currentBoard().eventToPoint e
     object =
       room: currentRoom.get().id
       page: currentPage.get().id
-      type: 'rect'
+      type: type
       pts: [origin, origin]
       color: currentColor.get()
       width: currentWidth.get()
-    object.fill = currentFill if currentFillOn
+    object.fill = currentFill.get() if currentFillOn.get()
     pointers[e.pointerId] =
       origin: origin
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
@@ -305,7 +296,7 @@ defineTool
       type: 'new'
       obj: Objects.findOne pointers[e.pointerId].id
     delete pointers[e.pointerId]
-  move: rectMove = (e) ->
+  move: (e) ->
     return unless pointers[e.pointerId]
     {id, origin, alt, last, edit} = pointers[e.pointerId]
     pts =
@@ -322,7 +313,16 @@ defineTool
       id: id
       pts: pts
 
-defineTool
+defineTool Object.assign rectLikeTool('rect'),
+  name: 'rect'
+  category: 'mode'
+  icon: 'rect'
+  iconFill: 'rect-fill'
+  hotspot: [0.0625, 0.883]
+  help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point.</>
+  hotkey: 'r'
+
+defineTool Object.assign rectLikeTool('ellipse'),
   name: 'ellipse'
   category: 'mode'
   icon: 'ellipse'
@@ -330,29 +330,6 @@ defineTool
   hotspot: [0.201888, 0.75728]
   help: <>Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to circle, <kbd>{Alt}</kbd> to center at first point.</>
   hotkey: 'o'
-  down: (e) ->
-    return if pointers[e.pointerId]
-    origin = snapPoint currentBoard().eventToPoint e
-    object =
-      room: currentRoom.get().id
-      page: currentPage.get().id
-      type: 'ellipse'
-      pts: [origin, origin]
-      color: currentColor.get()
-      width: currentWidth.get()
-    object.fill = currentFill if currentFillOn
-    pointers[e.pointerId] =
-      origin: origin
-      id: Meteor.apply 'objectNew', [object], returnStubValue: true
-      edit: throttle.method 'objectEdit'
-  up: (e) ->
-    return unless pointers[e.pointerId]
-    pointers[e.pointerId].edit.flush()
-    undoStack.push
-      type: 'new'
-      obj: Objects.findOne pointers[e.pointerId].id
-    delete pointers[e.pointerId]
-  move: rectMove
 
 defineTool
   name: 'eraser'
@@ -361,7 +338,6 @@ defineTool
   hotspot: [0.4, 0.9]
   help: 'Erase entire objects: click for one object, drag for multiple objects'
   hotkey: 'x'
-  stop: -> selectHighlightReset()
   down: (e) ->
     pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
@@ -411,14 +387,14 @@ defineTool
   hotspot: [.77, .89]
   help: <>Type text (click location or existing text, then type at bottom), including Markdown *<i>italic</i>*, **<b>bold</b>**, ***<b><i>bold italic</i></b>***, `<code>code</code>`, ~~<s>strike</s>~~, and LaTeX $math$, $$displaymath$$</>
   hotkey: 't'
-  init: ->
-    return #xxx
-    input = document.getElementById 'textInput'
+  startEffect: ->
+    @resetInput true
     updateTextCursor = (e) ->
       setTimeout ->
         return unless pointers.text?
-        currentPage().render.render Objects.findOne(pointers.text), text: true
+        currentPage.get().render.render Objects.findOne(pointers.text), text: true
       , 0
+    input = document.getElementById 'textInput'
     dom.listen input,
       keydown: (e) ->
         e.stopPropagation() # avoid hotkeys
@@ -446,21 +422,9 @@ defineTool
               pointers.undoable.after.text = text
   start: ->
     pointers.highlight = new Highlighter currentBoard(), 'text'
-    if (ids = mainBoard.selection.ids()).length == 1 and
-        (obj = Objects.findOne(ids[0]))?.type == 'text'
-      pointers.text = obj._id
-      input = document.getElementById 'textInput'
-      input.value = obj.text ? ''
-      input.disabled = false
-      setTimeout (-> input.focus()), 0  # wait for input to show
-    else
-      tools.text.stop()
-  stop: (nextTool, keepHighlight) ->
-    input = document.getElementById 'textInput'
-    input.value = ''
-    input.disabled = true
-    mainBoard.selection.clear() unless nextTool == 'select'
-    pointers.highlight?.clear() unless keepHighlight
+    pointers.undoable = null
+    pointers.text = null
+  stop: ->
     pointers.cursor?.remove()
     pointers.cursor = null
     return unless (id = pointers.text)?
@@ -473,7 +437,8 @@ defineTool
   up: (e) ->
     return unless e.type == 'pointerup' # ignore pointerleave
     ## Stop editing any previous text object.
-    tools.text.stop null, true
+    tools.text.stop()
+    mainBoard.selection.clear()
     ## In future, may support dragging a rectangular container for text,
     ## but maybe only after SVG 2's <text> flow support...
     h = pointers.highlight
@@ -499,10 +464,7 @@ defineTool
       undoStack.push pointers.undoable =
         type: 'new'
         obj: Objects.findOne pointers.text
-    input = document.getElementById 'textInput'
-    input.value = text
-    input.disabled = false
-    input.focus()
+    @resetInput true, text
   move: (e) ->
     h = pointers.highlight
     target = h.eventTop e
@@ -510,20 +472,28 @@ defineTool
       h.highlight target
     else
       h.clear()
-    select: (ids) ->
-      return unless ids.length == 1
-      return if pointers.text == ids[0]
-      obj = Objects.findOne ids[0]
-      return unless obj?.type == 'text'
-      tools.text.stop()
-      pointers.text = obj._id
-      mainBoard.selection.addId pointers.text
-      input = document.getElementById 'textInput'
-      input.value = obj.text
+  select: (ids) ->
+    return unless ids.length == 1
+    return if pointers.text == ids[0]
+    obj = Objects.findOne ids[0]
+    return unless obj?.type == 'text'
+    tools.text.stop()
+    mainBoard.selection.clear()
+    pointers.text = obj._id
+    mainBoard.selection.addId pointers.text
+    ## Giving the input focus makes it hard to do repeated global undo/redo;
+    ## instead the text-entry box does its own undo/redo.
+    @resetInput false, obj.text
+  resetInput: (focus, text) ->
+    input = document.getElementById 'textInput'
+    return unless input?
+    if pointers.text?
+      input.value = text ? Objects.findOne(pointers.text)?.text
       input.disabled = false
-      ## Giving the input focus makes it hard to do repeated global undo/redo;
-      ## instead the text-entry box does its own undo/redo.
-      #input.focus()
+      input.focus() if focus
+    else
+      input.value = ''
+      input.disabled = true
 
 defineTool
   name: 'image'
@@ -531,8 +501,8 @@ defineTool
   icon: 'image'
   hotspot: [0.21875, 0.34375]
   help: 'Embed image (SVG, JPG, PNG, etc.) on web by entering its URL at bottom. Click on existing image to modify URL, or a point to specify location. You can also paste an image URL from the clipboard, or drag an image from a webpage (without needing this tool).'
-  init: ->
-    return #xxx
+  startEffect: ->
+    @resetInput true
     input = document.getElementById 'urlInput'
     dom.listen input,
       keydown: (e) ->
@@ -582,21 +552,10 @@ defineTool
       , 50
   start: ->
     pointers.highlight = new Highlighter currentBoard(), 'image'
-    if (ids = mainBoard.selection.ids()).length == 1 and
-        (obj = Objects.findOne(ids[0]))?.type == 'image'
-      pointers.image = obj._id
-      input = document.getElementById 'urlInput'
-      input.value = obj.url ? ''
-      input.className = ''
-      setTimeout (-> input.focus()), 0  # wait for input to show
-    else
-      tools.image.stop()
-  stop: (nextTool, keepHighlight) ->
-    input = document.getElementById 'urlInput'
-    input.value = ''
-    input.className = ''
-    mainBoard.selection.clear() unless nextTool == 'select'
-    pointers.highlight?.clear() unless keepHighlight
+    pointers.undoable = null
+    pointers.image = null
+    pointers.point = null
+  stop: ->
     return unless (id = pointers.image)?
     if (object = Objects.findOne id)?
       unless object.url
@@ -604,11 +563,11 @@ defineTool
         Meteor.call 'objectDel', id
     pointers.undoable = null
     pointers.image = null
-    pointers.point = null
   up: (e) ->
     return unless e.type == 'pointerup' # ignore pointerleave
     ## Stop editing any previous image object.
-    tools.image.stop null, true
+    tools.image.stop()
+    mainBoard.selection.clear()
     h = pointers.highlight
     unless h.id?
       if (target = h.eventTop e)?
@@ -621,10 +580,7 @@ defineTool
     else
       pointers.point = snapPoint currentBoard().eventToPoint e
       url = ''
-    input = document.getElementById 'urlInput'
-    input.value = url
-    input.className = ''
-    input.focus()
+    @resetInput true, url
   move: (e) ->
     h = pointers.highlight
     target = h.eventTop e
@@ -638,10 +594,21 @@ defineTool
     obj = Objects.findOne ids[0]
     return unless obj?.type == 'image'
     tools.image.stop()
+    mainBoard.selection.clear()
     pointers.image = obj._id
     mainBoard.selection.addId pointers.image
+    ## Giving the input focus makes it hard to do repeated global undo/redo;
+    ## instead the text-entry box does its own undo/redo.
+    @resetInput false, obj.url
+  resetInput: (focus, url) ->
     input = document.getElementById 'urlInput'
-    input.value = obj.url
+    return unless input?
+    if pointers.image?
+      input.value = url ? Objects.findOne(pointers.image)?.url
+    else
+      input.value = ''
+    input.focus() if focus
+    input.className = ''
 
 ## Resets the selection, and if the current tool supports selection,
 ## sets the selection to the specified array of object IDs
@@ -649,5 +616,6 @@ defineTool
 ## Does nothing if `objIds` is undefined (as when `undo` or `redo` failed).
 export setSelection = (objIds) ->
   return unless objIds?
-  selectHighlightReset()
+  mainBoard.selection.clear()
+  highlighterClear()
   tools[currentTool.get()]?.select? objIds

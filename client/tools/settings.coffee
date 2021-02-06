@@ -1,7 +1,7 @@
 import {Tracker} from 'meteor/tracker'
 
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage} from '../DrawApp'
+import {currentRoom, currentPage} from '../AppState'
 import {gridSize} from '../Grid'
 import {updateCursor} from '../cursor'
 import dom from '../lib/dom'

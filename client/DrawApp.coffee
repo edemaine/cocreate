@@ -2,17 +2,15 @@ import React, {useEffect, useLayoutEffect, useRef, useState} from 'react'
 import {useParams} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 import {Tracker} from 'meteor/tracker'
-import {ReactiveVar} from 'meteor/reactive-var'
 
+import {mainBoard, historyBoard, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
 import {Board} from './Board'
 import {Name, name} from './Name'
 import {Page} from './Page'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
-import {currentTool, lastTool, selectTool, clickTool, stopTool, resumeTool, tools, toolsByHotkey, HistorySlider, restrictTouch} from './tools/tools'
-import {currentColor, currentFill, currentFillOn} from './tools/color'
-import {currentFontSize} from './tools/font'
+import {lastTool, selectTool, clickTool, stopTool, resumeTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
 import {tryAddImage} from './tools/image'
 import {pointers, setSelection} from './tools/modes'
 import {snapPoint} from './tools/settings'
@@ -21,34 +19,30 @@ import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
 
-export currentRoom = new ReactiveVar
-export currentPage = new ReactiveVar
-export mainBoard = null
-export historyBoard = null
-
-export currentBoard = ->
-  if currentTool.get() == 'history'
-    historyBoard
-  else
-    mainBoard
-
 export setPageId = null
+
+onResize = ->
+  mainBoard.resize()
+  historyBoard.resize()
+  currentPage.get()?.resize()
+  undefined
 
 export DrawApp = React.memo ->
   ## Board data structures
   mainBoardRef = useRef()
   historyBoardRef = useRef()
   useEffect ->
-    mainBoard = new Board mainBoardRef.current
-    historyBoard = new Board historyBoardRef.current
-    onResize = ->
-      mainBoard.resize()
-      historyBoard.resize()
-      currentPage.get()?.resize()
+    setMainBoard new Board mainBoardRef.current
+    setHistoryBoard new Board historyBoardRef.current, true  # read-only
     onResize()
     window.addEventListener 'resize', onResize
+    #observer = new ResizeObserver onResize
+    #observer.observe mainBoardRef.current
+    #observer.observe historyBoardRef.current
+    #observer.observe document.getElementById('center')
     ->
       window.removeEventListener 'resize', onResize
+      #observer.disconnect()
       historyBoard.destroy()
       mainBoard.destroy()
   , []
@@ -98,16 +92,15 @@ export DrawApp = React.memo ->
 
   ## Page info
   {page, pageNum, numPages} = useTracker ->
-    page = currentPage.get()
-    index = room?.pageIndex page
-    page: page
+    cPage = currentPage.get()
+    index = room?.pageIndex cPage
+    page: cPage
     pageNum: if index? then index + 1 else '?'
     numPages: room?.numPages() ? '?'
   , [room]
-
-  tool = useTracker ->
-    currentTool.get()
-  , []
+  useEffect ->
+    pageNumRef.current.value = pageNum
+  , [pageNum]
 
   ## Horizontal scroll wheel behavior
   topRef = useRef()
@@ -177,7 +170,6 @@ export DrawApp = React.memo ->
         ## with e.g. drawing.
         e.preventDefault()
       wheel: (e) ->
-        console.log 'wheel'
         e.preventDefault()
         transform = currentBoard().transform
         {deltaX, deltaY} = e
@@ -240,16 +232,17 @@ export DrawApp = React.memo ->
     oldPointers = null
     dom.listen window,
       keydown: (e) ->
+        return if e.target.classList.contains 'modal'
         switch e.key
           when 'z', 'Z'
             if e.ctrlKey or e.metaKey
               if e.shiftKey
-                tools.redo.once()
+                tools.redo.click()
               else
-                tools.undo.once()
+                tools.undo.click()
           when 'y', 'Y'
             if e.ctrlKey or e.metaKey
-              tools.redo.once()
+              tools.redo.click()
           when 'Delete', 'Backspace'
             currentBoard()?.selection?.delete()
           when ' '  ## pan via space-drag
@@ -269,7 +262,7 @@ export DrawApp = React.memo ->
           else
             ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
             ## triggering width 1 hotkey.
-            return if e.ctrlKey or e.metaKey
+            return if e.ctrlKey or e.metaKey or e.altKey
             if e.key of toolsByHotkey
               clickTool toolsByHotkey[e.key]
             else
@@ -289,7 +282,7 @@ export DrawApp = React.memo ->
         e.clipboardData.setData 'application/cocreate-objects',
           currentBoard().selection.json()
         e.clipboardData.setData 'image/svg+xml',
-          tools.downloadSVG.once null, false
+          tools.downloadSVG.click null, false
         true
       cut: (e) ->
         if onCopy e
@@ -304,8 +297,8 @@ export DrawApp = React.memo ->
               delete obj._id
               delete obj.created
               delete obj.updated
-              obj.room = room.id
-              obj.page = room.page
+              obj.room = currentRoom.get().id
+              obj.page = currentPage.get().id
               obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
               obj
           undoStack.push
@@ -362,6 +355,15 @@ export DrawApp = React.memo ->
     toolSpec.init?() for tool, toolSpec of tools
   , []
 
+  ## Tool-specific effect hook
+  tool = useTracker ->
+    currentTool.get()
+  , []
+  useEffect ->
+    tools[tool].startEffect?()
+  , [tool]
+  useEffect onResize, [tool]  # text and image tools affect layout
+
   return <BadRoom/> if bad and not loading
 
   <div id="container">
@@ -378,8 +380,7 @@ export DrawApp = React.memo ->
     <div id="pages" className="top horizontal palette" ref={topRef}>
       <div id="pageNumbers">
         {'page '}
-        <input id="pageNum" type="text" defaultValue={pageNum}
-         ref={pageNumRef}/>
+        <input id="pageNum" type="text" defaultValue="?" ref={pageNumRef}/>
         {' of '}
         <span id="numPages">{numPages}</span>
       </div>
@@ -396,7 +397,7 @@ export DrawApp = React.memo ->
       }
       {if tool == 'history'
         <div id="history" className="horizontal palette">
-          <HistorySlider/>
+          <tools.history.Slider/>
         </div>
       else if tool == 'image'
         <div id="imageUrl" className="horizontal palette">
