@@ -394,6 +394,7 @@ defineTool
     , 0
   startEffect: ->
     @resetInput true
+    @updateTextCursor()
     input = document.getElementById 'textInput'
     dom.listen input,
       keydown: (e) =>

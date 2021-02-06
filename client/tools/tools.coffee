@@ -39,7 +39,7 @@ export selectTool = (tool, options) ->
   if tool == previous == 'history'  # treat history as a toggle
     tool = lastTool
   return if tool == previous
-  stopTool options
+  selected = stopTool options
   document.body.classList.remove "tool-#{previous}" if previous
   if tool?  # tool == null means initialize already set currentTool
     lastTool = previous
@@ -75,6 +75,7 @@ export stopTool = (options) ->
     selected = mainBoard.selection.ids()
     mainBoard.selection.clear()
     highlighterClear()
+    selected
 
 export resumeTool = (options) ->
   tools[currentTool.get()]?.start?() unless options?.noStart
