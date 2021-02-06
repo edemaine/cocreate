@@ -40,7 +40,7 @@ export selectTool = (tool, options) ->
     tool = lastTool
   return if tool == previous
   stopTool options
-  ocument.body.classList.remove "tool-#{previous}" if previous
+  document.body.classList.remove "tool-#{previous}" if previous
   if tool?  # tool == null means initialize already set currentTool
     lastTool = previous
     currentTool.set tool
