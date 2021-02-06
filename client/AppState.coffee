@@ -13,6 +13,9 @@ export currentColor = new ReactiveVar
 export currentFill = new ReactiveVar
 export currentFillOn = new ReactiveVar
 
+## Initialized in ./tools/font.coffee:
+export currentFontSize = new ReactiveVar
+
 export mainBoard = null
 export historyBoard = null
 

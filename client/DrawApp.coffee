@@ -324,8 +324,8 @@ export DrawApp = React.memo ->
             undoStack.pushAndDo
               type: 'new'
               obj: obj =
-                room: room.id
-                page: room.page
+                room: currentRoom.get().id
+                page: currentPage.get().id
                 type: 'text'
                 text: text
                 pts: obj.pts
