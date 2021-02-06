@@ -8,17 +8,17 @@ export tryAddImage = (items, options) ->
   ## HTML <img> tag (as from dragging images) or <a href> tag
   ## (without nested <a> links, as from dragging links)
   ## are highest priority.
-  for item in items when item.type == 'text/html'
+  for item in items when item?.type == 'text/html'
     html = await new Promise (done) -> item.getAsString done
-    match = ///^\s* <img\b [^<>]* \b src \s*=\s* ("[^"]*"|'[^']*')
-                      [^<>]*> \s*$///i.exec(html) or
-    ///^\s* <a\b [^<>]* \b href \s*=\s* ("[^"]*"|'[^']*')
-              [^<>]*> ([^]*) </a> \s*$///i.exec(html)
+    match = /// <img\b [^<>]* \b src \s*=\s* ("[^"]*"|'[^']*')
+                  [^<>]*> ///i.exec(html) or
+    /// <a\b [^<>]* \b href \s*=\s* ("[^"]*"|'[^']*')
+          [^<>]*> ([^]*) </a> ///i.exec(html)
     if match? and not (match[2] and ///</a>///i.test match[2])
       url = match[1][1...match[1].length-1]
       return image if image = await tryAddImageUrl url, options
   ## Next check for plain text that consists solely of a URL
-  for item in items when item.type == 'text/plain'
+  for item in items when item?.type == 'text/plain'
     text = await new Promise (done) -> item.getAsString done
     text = text.trim()
     return image if image = await tryAddImageUrl text, options

@@ -223,7 +223,7 @@ export DrawApp = React.memo ->
         dragDepth = 0
         document.getElementById('dragzone').classList.remove 'drag'
         tryAddImage e.dataTransfer.items,
-          pts: [currentBoard().snapPoint currentBoard().eventToPoint e]
+          pts: [snapPoint currentBoard().eventToPoint e]
   , []
 
   ## Keyboard and copy/paste
