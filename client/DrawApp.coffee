@@ -7,6 +7,7 @@ import {mainBoard, historyBoard, setMainBoard, setHistoryBoard, currentBoard, cu
 import {Board} from './Board'
 import {Name, name} from './Name'
 import {Page} from './Page'
+import {PageList} from './PageList'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
@@ -89,18 +90,6 @@ export DrawApp = React.memo ->
       Tracker.nonreactive ->
         setPageId pages[0]
   , [pageId?, room]
-
-  ## Page info
-  {page, pageNum, numPages} = useTracker ->
-    cPage = currentPage.get()
-    index = room?.pageIndex cPage
-    page: cPage
-    pageNum: if index? then index + 1 else '?'
-    numPages: room?.numPages() ? '?'
-  , [room]
-  useEffect ->
-    pageNumRef.current.value = pageNum
-  , [pageNum]
 
   ## Horizontal scroll wheel behavior
   topRef = useRef()
@@ -334,22 +323,6 @@ export DrawApp = React.memo ->
             setSelection [obj._id]
   , []
 
-  ## Manual page number typing
-  pageNumRef = useRef()
-  useEffect ->
-    dom.listen pageNumRef.current,
-      keydown: (e) ->
-        e.stopPropagation() # avoid width setting hotkey
-      change: (e) ->
-        return unless (pages = currentRoom.get()?.data()?.pages)?.length
-        page = parseInt pageNumRef.current.value
-        if isNaN page
-          pageNumRef.current.value = pageNum
-        else
-          page = Math.min pages.length, Math.max 1, page
-          setPageId pages[page-1]
-  , []
-
   ## Initialize tools (after boards are created)
   useEffect ->
     toolSpec.init?() for tool, toolSpec of tools
@@ -378,14 +351,10 @@ export DrawApp = React.memo ->
       <ToolCategory category="link" placement="right"/>
     </div>
     <div id="pages" className="top horizontal palette" ref={topRef}>
-      <div id="pageNumbers">
-        {'page '}
-        <input id="pageNum" type="text" defaultValue="?" ref={pageNumRef}/>
-        {' of '}
-        <span id="numPages">{numPages}</span>
-      </div>
-      <ToolCategory category="page" placement="bottom"/>
       <ToolCategory category="zoom" placement="bottom"/>
+      <div className="spacer"/>
+      <PageList/>
+      <ToolCategory category="page" placement="bottom"/>
       <div className="spacer"/>
       <Name/>
     </div>

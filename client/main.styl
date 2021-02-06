@@ -146,31 +146,14 @@ html, body, #react-root, #container
 
 #textInput, #urlInput
   height: var(--palette-size)
-#pageNumbers
-  display: flex
-  align-items: baseline
-  padding: 0px 8px
-  #pageNum
-    width: 2em
-    height: 100%
-    margin: 0 0.3em
-  #numPages
-    margin-left: 0.3em
 #name
   width: 8em
 
-.tool, .attrib
-  flex: none
-  width: var(--palette-size)
-  height: var(--palette-size)
-  flex-basis: var(--palette-size)
+button(activeBorder)
   border: var(--palette-border) outset
   cursor: pointer
-  overflow: hidden
-  position: relative
-
   &.selected, &.active
-    --palette-border: 3px
+    --palette-border: activeBorder
     background: rgba(0,0,0,0.2)
     border: var(--palette-border) inset rgba(0,0,0,0.2)
     /.dark &
@@ -180,11 +163,29 @@ html, body, #react-root, #container
       /.dark &
         border: var(--palette-border) inset rgba(255,255,255,0.3)
   &:active
-    --palette-border: 3px
+    --palette-border: activeBorder
     background: rgba(0,0,0,0.4)
     border: var(--palette-border) inset rgba(0,0,0,0.4)
     /.dark &
       border: var(--palette-border) inset rgba(0,0,0,1)
+
+.pageList
+  display: flex
+.page
+  height: var(--palette-size)
+  padding: 2px 0.3em
+  border-radius: 25% 25% 0 0
+  border-bottom: none !important
+  button(2px)
+
+.tool, .attrib
+  flex: none
+  width: var(--palette-size)
+  height: var(--palette-size)
+  flex-basis: var(--palette-size)
+  overflow: hidden
+  position: relative
+  button(3px)
 
 .tool
   padding: 2px
@@ -277,6 +278,7 @@ html, body, #react-root, #container
 .spacer
   flex-basis: 100%
   min-height: calc(var(--palette-size)/2)
+  min-width: calc(var(--palette-size)/2)
 
 svg
   .highlight
