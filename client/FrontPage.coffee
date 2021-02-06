@@ -20,8 +20,8 @@ export FrontPage = React.memo ->
   if error?
     <div className="modal error">
       <h1>Failed to Create Room</h1>
-      <p>Perhaps you're disconnected from the network?  Error message:</p>
-      <pre>{error}</pre>
+      <p>Perhaps you're disconnected from the network?</p>
+      <pre>{error.toString()}</pre>
       <p><a href={Meteor.absoluteUrl()}>Try again to create a new room</a></p>
     </div>
   else
