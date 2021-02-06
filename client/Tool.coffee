@@ -2,6 +2,7 @@ import React, {useEffect, useRef} from 'react'
 import Overlay from 'react-bootstrap/Overlay'
 import Tooltip from 'react-bootstrap/Tooltip'
 import {useTracker} from 'meteor/react-meteor-data'
+import {ReactiveVar} from 'meteor/reactive-var'
 
 import {currentTool} from './AppState'
 import {tools, toolsByCategory, clickTool} from './tools/tools'

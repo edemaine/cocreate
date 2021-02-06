@@ -1,5 +1,4 @@
 import React from 'react'
-import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
 import {currentBoard, currentFontSize} from '../AppState'
