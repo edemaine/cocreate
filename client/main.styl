@@ -47,7 +47,6 @@ kbd
 body
   font-family: 'Roboto Slab', serif
   touch-action: none  // Prevent mobile zooming
-  margin: 0
   background: #fff
   &.dark
     color: #aaa
@@ -74,6 +73,10 @@ input, textarea
     /.dark &
       background-color: hsl(134, 62%, 15%)
 
+html, body, #react-root, #container
+  width: 100%
+  height: 100%
+  margin: 0
 #container
   display: grid
   grid-template-areas: "left top" \
@@ -81,8 +84,6 @@ input, textarea
                        "left bottom"
   grid-template-columns: auto 1fr
   grid-template-rows: auto 1fr auto
-  width: 100vw
-  height: 100vh
 #tools
   grid-area: left
 #pages
