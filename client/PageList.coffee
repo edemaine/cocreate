@@ -30,12 +30,12 @@ export PageList = React.memo ->
         page: true
     .observe
       added: add = (remote) ->
-        return if remote._id == remotes.id  # ignore self
+        #return if remote._id == remotes.id  # ignore self
         remotesByPage.current[remote.page] ?= {}
         remotesByPage.current[remote.page][remote._id] = remote
         setCounter increment
       removed: remove = (remote) ->
-        return if remote.id == remotes.id  # ignore self
+        #return if remote.id == remotes.id  # ignore self
         delete remotesByPage.current[remote.page]?[remote._id]
         setCounter increment
       changed: (remote, oldRemote) ->
