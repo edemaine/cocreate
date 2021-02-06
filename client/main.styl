@@ -172,11 +172,17 @@ button(activeBorder)
 .pageList
   display: flex
 .page
+  display: flex
   height: var(--palette-size)
   padding: 2px 0.3em
   border-radius: 25% 25% 0 0
   border-bottom: none !important
   button(2px)
+  .icon
+    display: inline-block
+    margin-right: 2px
+    svg
+      height: 12px
 
 .tool, .attrib
   flex: none
