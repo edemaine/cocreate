@@ -387,21 +387,21 @@ defineTool
   hotspot: [.77, .89]
   help: <>Type text (click location or existing text, then type at bottom), including Markdown *<i>italic</i>*, **<b>bold</b>**, ***<b><i>bold italic</i></b>***, `<code>code</code>`, ~~<s>strike</s>~~, and LaTeX $math$, $$displaymath$$</>
   hotkey: 't'
+  updateTextCursor: ->
+    setTimeout ->
+      return unless pointers.text?
+      currentPage.get().render.render Objects.findOne(pointers.text), text: true
+    , 0
   startEffect: ->
     @resetInput true
-    updateTextCursor = (e) ->
-      setTimeout ->
-        return unless pointers.text?
-        currentPage.get().render.render Objects.findOne(pointers.text), text: true
-      , 0
     input = document.getElementById 'textInput'
     dom.listen input,
-      keydown: (e) ->
+      keydown: (e) =>
         e.stopPropagation() # avoid hotkeys
         e.target.blur() if e.key == 'Escape'
-        updateTextCursor e
-      click: updateTextCursor
-      paste: updateTextCursor
+        @updateTextCursor e
+      click: => @updateTextCursor()
+      paste: => @updateTextCursor()
       input: (e) ->
         return unless pointers.text?
         text = input.value
@@ -465,6 +465,7 @@ defineTool
         type: 'new'
         obj: Objects.findOne pointers.text
     @resetInput true, text
+    @updateTextCursor()
   move: (e) ->
     h = pointers.highlight
     target = h.eventTop e
