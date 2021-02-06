@@ -125,7 +125,7 @@ export class RenderRemotes
       delete @elts[id]
       delete @transforms[id]
   resize: ->
-    #@board.svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
+    #@svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
     @retransform()
   retransform: ->
     for id, transform of @transforms
