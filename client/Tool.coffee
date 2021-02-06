@@ -31,7 +31,7 @@ export Tool = React.memo ({tool, placement}) ->
   useEffect ->
     dom.listen divRef.current,
       pointerenter: -> showTooltip.set tool
-      pointerleave: -> showTooltip.set tool
+      pointerleave: -> showTooltip.set null
 
   className = toolSpec.className ? 'tool'
   className += ' selected' if selected
