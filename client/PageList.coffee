@@ -4,7 +4,9 @@ import {useTracker} from 'meteor/react-meteor-data'
 import {currentRoom, currentPage} from './AppState'
 import DrawApp from './DrawApp'
 import {Icon} from './lib/icons'
-import remotes from './lib/remotes'
+#import remotes from './lib/remotes'
+
+### eslint no-unused-vars: ['error', {varsIgnorePattern: 'counter'}] ###
 
 export PageList = React.memo ->
   room = useTracker ->
