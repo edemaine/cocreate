@@ -75,9 +75,9 @@ export DrawApp = React.memo ->
   , [room]
   remotesRef = useRef()
   useEffect -> # wait for mainBoard to be set
-    if pageId?
-      currentPage.set new Page pageId, room, mainBoard, remotesRef.current
-      resumeTool()
+    return unless pageId?
+    currentPage.set new Page pageId, room, mainBoard, remotesRef.current
+    resumeTool()
     ->
       stopTool()  # stop current tool
       currentPage.get()?.stop()
