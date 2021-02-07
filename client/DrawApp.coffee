@@ -67,8 +67,12 @@ export DrawApp = React.memo ->
 
   ## Page data structure, and stop/resume current tool
   pageId = useTracker ->
-    currentPageId.get()
-  , []
+    id = currentPageId.get()
+    ## Auto load first page
+    if not id and (pages = room?.data()?.pages)?.length
+      currentPageId.set pages[0]
+    id
+  , [room]
   remotesRef = useRef()
   useEffect -> # wait for mainBoard to be set
     if pageId?
@@ -79,13 +83,6 @@ export DrawApp = React.memo ->
       currentPage.get()?.stop()
       currentPage.set null
   , [room, pageId, mainBoard]
-
-  ## Auto load first page
-  useTracker ->
-    return if pageId?
-    if (pages = room?.data()?.pages)?.length
-      currentPageId.set pages[0]
-  , [pageId?, room]
 
   ## Horizontal scroll wheel behavior
   topRef = useRef()
