@@ -64,8 +64,8 @@ defineTool
     lastTarget = useRef null
     historyRender = useRef null
     historyObjects = useRef {}
-    onChange = (e) ->
-      target = parseInt e.target.value
+    tools.history.onChange = onChange = ->
+      target = parseInt ref.current.value
       ## Re-use last object set and render if just increasing in time.
       if lastTarget.current? and target >= lastTarget.current
         apply = diffs[lastTarget...target]

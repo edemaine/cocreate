@@ -1,4 +1,4 @@
-import {defineTool} from './defineTool'
+import {defineTool, tools} from './defineTool'
 import {setSelection} from './modes'
 import {currentTool} from '../AppState'
 import {Ctrl} from '../lib/platform'
@@ -32,6 +32,4 @@ historyAdvance = (delta) ->
   range = document.getElementById 'historyRange'
   value = parseInt range.value
   range.value = value + delta
-  event = document.createEvent 'HTMLEvents'
-  event.initEvent 'change', false, true
-  range.dispatchEvent event
+  tools.history.onChange()
