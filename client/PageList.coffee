@@ -66,7 +66,7 @@ export PageList = React.memo ->
               <>
                 <hr/>
                 {(for remoteId, remote of pageRemotes
-                  remote.name ? '(anonymous)'
+                  remote.name or '(anonymous)'
                 ).join ', '}
               </>
             }
