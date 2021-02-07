@@ -24,7 +24,7 @@ Meteor.methods
       tool: String
       color: String
       fill: Match.Optional String
-      cursor:
+      cursor: Match.Optional
         x: Number
         y: Number
         w: Match.Optional Number

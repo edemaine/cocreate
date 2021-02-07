@@ -108,22 +108,29 @@ export DrawApp = React.memo ->
   , []
 
   ## Update our remote cursor
+  updateRemote = (e) ->
+    remote =
+      name: name.get().trim()
+      room: currentRoom.get().id
+      page: currentPage.get().id
+      tool: currentTool.get()
+      color: currentColor.get()
+    remote.cursor = currentBoard().eventToPointW e if e?
+    remote.fill = currentFill.get() if currentFillOn.get()
+    remotes.update remote
   useEffect ->
     dom.listen mainBoardRef.current, pointermove: (e) ->
-      return unless currentRoom.get()?
-      return unless currentPage.get()?
+      return unless currentRoom.get()? and currentPage.get()?
       return unless currentBoard() == mainBoard
       return if restrictTouch e
-      remote =
-        name: name.get().trim()
-        room: currentRoom.get().id
-        page: currentPage.get().id
-        tool: currentTool.get()
-        color: currentColor.get()
-        cursor: currentBoard().eventToPointW e
-      remote.fill = currentFill.get() if currentFillOn.get()
-      remotes.update remote
+      updateRemote e
   , []
+  ## Cursorless update when page changes
+  useEffect ->
+    return unless room? and pageId?
+    updateRemote()
+    undefined
+  , [room, pageId]
 
   ## Pointer event handlers used on both boards
   useEffect ->

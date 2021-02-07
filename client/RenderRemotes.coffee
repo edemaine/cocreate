@@ -51,13 +51,13 @@ export class RenderRemotes
     text = elt.childNodes[1]
     unless remote.name == oldRemote.name
       text.innerHTML = dom.escape remote.name ? ''
-    ###
-    elt.style.visibility =
-      if remote.page == currentPage.get().id
-        'visible'
-      else
-        'hidden'
-    ###
+    visible = remote.cursor? # and remote.page == currentPage.get().id
+    if visible
+      elt.style.visibility = null
+    else
+      elt.style.visibility = 'hidden'
+      delete @transforms[id]
+      return
     elt.style.opacity = 1 -
       (timesync.remoteNow() - @updated[id]) / 1000 / remotes.fade
     hotspot = tools[remote.tool]?.hotspot ? [0,0]
