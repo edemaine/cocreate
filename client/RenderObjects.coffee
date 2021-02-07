@@ -208,7 +208,8 @@ export class RenderObjects
         .replace /\$MATH(\d+)\$/g, (match, i) ->
           maths[i].out
         ## Multiline support: if text has newlines, split into multiple <tspan>s
-        ## that duplicate font changes as necessary.
+        ## that duplicate font changes as necessary.  Add a space to blank lines
+        ## to ensure that they render (SVG doesn't render blank <tspan>s).
         if 0 <= text.indexOf '\n'
           tspans = []  # currently unclosed font-changing <tspan>s
           text = (
@@ -228,7 +229,7 @@ export class RenderObjects
                 tspans.push match
                 ''
               line = resume + line + ("</tspan>" for tspan in tspans).join ''
-              line = """<tspan x="0" dy="1.25em">#{line}</tspan>""" unless i == 0
+              line = """<tspan x="0" dy="1.25em">#{line or '&nbsp;'}</tspan>""" unless i == 0
               line
           ).join '\n'
         text
