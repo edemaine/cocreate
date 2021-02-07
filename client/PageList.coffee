@@ -61,7 +61,9 @@ export PageList = React.memo ->
         <SoloTooltip key={pageId} id="page:#{pageId}" placement="bottom"
          overlay={(props) ->
           <Tooltip {...props}>
-            <b>Page {index+1} {if active then '(this page)'}</b>
+            <div className="pageHeader">
+              Page {index+1} {if active then '(this page)'}
+            </div>
             {if pageRemotesCount
               <>
                 <hr/>
