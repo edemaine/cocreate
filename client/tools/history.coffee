@@ -80,7 +80,9 @@ defineTool
       for diff in apply
         switch diff.type
           when 'pen', 'poly', 'rect', 'ellipse', 'text', 'image'
-            obj = diff
+            ## Duplicate diff to form object, to avoid clobbering by updates.
+            obj = Object.assign {}, diff
+            obj.pts = obj.pts[..] if obj.pts?
             historyObjects.current[obj.id] = obj
             historyRender.current.render obj
           when 'push'
