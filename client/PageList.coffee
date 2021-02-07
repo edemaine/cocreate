@@ -1,8 +1,10 @@
 import React, {useRef, useState} from 'react'
+import Tooltip from 'react-bootstrap/Tooltip'
 import {useTracker} from 'meteor/react-meteor-data'
 
 import {currentRoom, currentPage} from './AppState'
 import DrawApp from './DrawApp'
+import {SoloTooltip} from './SoloTooltip'
 import {Icon} from './lib/icons'
 #import remotes from './lib/remotes'
 
@@ -30,6 +32,7 @@ export PageList = React.memo ->
     ,
       fields:
         page: true
+        name: true
     .observe
       added: add = (remote) ->
         #return if remote._id == remotes.id  # ignore self
@@ -55,20 +58,37 @@ export PageList = React.memo ->
           (key for key of pageRemotes).length
         else
           0
-      do (pageId) ->
-        <div key={pageId} className="page #{if active then 'active' else ''}"
-         onClick={-> DrawApp.setPageId pageId}>
-          {switch pageRemotesCount
-            when 0
-              null
-            when 1
-              <Icon className="icon" icon="user" fill="currentColor"/>
-            when 2
-              <Icon className="icon" icon="user-friends" fill="currentColor"/>
-            else
-              <Icon className="icon" icon="users" fill="currentColor"/>
-          }
-          {index+1}
-        </div>
+      do (pageId, index, active, pageRemotes, pageRemotesCount) ->
+        <SoloTooltip key={pageId} id="page:#{pageId}" placement="bottom"
+         overlay={(props) ->
+          <Tooltip {...props}>
+            <b>Page {index+1} {if active then '(this page)'}</b>
+            {if pageRemotesCount
+              <>
+                <hr/>
+                {(for remoteId, remote of pageRemotes
+                  remote.name ? '(anonymous)'
+                ).join ', '}
+              </>
+            }
+          </Tooltip>
+        }>
+          <div className="page #{if active then 'active' else ''}"
+          onClick={-> DrawApp.setPageId pageId}>
+            {switch pageRemotesCount
+              when 0
+                null
+              when 1
+                <Icon className="icon" icon="user" fill="currentColor"/>
+              when 2
+                <Icon className="icon" icon="user-friends" fill="currentColor"/>
+              else
+                <Icon className="icon" icon="users" fill="currentColor"/>
+            }
+            {index+1}
+          </div>
+        </SoloTooltip>
     }
   </div>
+
+PageList.displayName = 'PageList'

@@ -1,20 +1,16 @@
-import React, {useEffect, useRef} from 'react'
-import Overlay from 'react-bootstrap/Overlay'
+import React from 'react'
 import Tooltip from 'react-bootstrap/Tooltip'
 import {useTracker} from 'meteor/react-meteor-data'
-import {ReactiveVar} from 'meteor/reactive-var'
 
 import {currentTool} from './AppState'
+import {SoloTooltip, closeTooltip} from './SoloTooltip'
 import {tools, toolsByCategory, clickTool} from './tools/tools'
-import dom from './lib/dom'
 import icons from './lib/icons'
 
 export ToolCategory = React.memo ({category, ...rest}) ->
   for tool of toolsByCategory[category]
     <Tool key={tool} tool={tool} {...rest}/>
 ToolCategory.displayName = 'ToolCategory'
-
-showTooltip = new ReactiveVar
 
 export Tool = React.memo ({tool, placement}) ->
   toolSpec = tools[tool]
@@ -23,16 +19,6 @@ export Tool = React.memo ({tool, placement}) ->
   , [tool]
   if toolSpec.active
     active = useTracker toolSpec.active, []
-
-  ## Tooltip triggers
-  divRef = useRef()
-  show = useTracker ->
-    showTooltip.get() == tool
-  , []
-  useEffect ->
-    dom.listen divRef.current,
-      pointerenter: -> showTooltip.set tool
-      pointerleave: -> showTooltip.set null
 
   className = toolSpec.className ? 'tool'
   className += ' selected' if selected
@@ -50,34 +36,31 @@ export Tool = React.memo ({tool, placement}) ->
     icon = <span dangerouslySetInnerHTML={__html: icons.svgIcon icon}/>
 
   onClick = (e) ->
+    closeTooltip()
     clickTool toolSpec, e
-    showTooltip.set null
 
   div =
-    <div className={className} data-tool={tool} onClick={onClick} ref={divRef}>
+    <div className={className} data-tool={tool} onClick={onClick}>
       {icon}
       {toolSpec.portal?()}
     </div>
   return div unless toolSpec.help?
-  <>
-    {div}
-    <Overlay target={divRef.current} placement={placement} show={show}>
-      {(props) ->
-        <Tooltip {...props}>
-          {toolSpec.help}
-          {if toolSpec.hotkey.length
-            <>
-              <span className="hotkeys">
-                {for hotkey in toolSpec.hotkey
-                  <kbd key={hotkey} className="hotkey">{hotkey}</kbd>
-                }
-              </span>
-              <div className="clear"/>
-            </>
-          }
-        </Tooltip>
+  <SoloTooltip id="tool:#{tool}" placement={placement} overlay={(props) ->
+    <Tooltip {...props}>
+      {toolSpec.help}
+      {if toolSpec.hotkey.length
+        <>
+          <span className="hotkeys">
+            {for hotkey in toolSpec.hotkey
+              <kbd key={hotkey} className="hotkey">{hotkey}</kbd>
+            }
+          </span>
+          <div className="clear"/>
+        </>
       }
-    </Overlay>
-  </>
+    </Tooltip>
+  }>
+    {div}
+  </SoloTooltip>
 
 Tool.displayName = 'Tool'
