@@ -1,9 +1,8 @@
-import React, {useEffect, useLayoutEffect, useRef, useState} from 'react'
+import React, {useEffect, useLayoutEffect, useRef} from 'react'
 import {useParams} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
-import {Tracker} from 'meteor/tracker'
 
-import {mainBoard, historyBoard, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
+import {mainBoard, historyBoard, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
 import {Board} from './Board'
 import {Name, name} from './Name'
 import {Page} from './Page'
@@ -19,8 +18,6 @@ import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
-
-export setPageId = null
 
 onResize = ->
   mainBoard.resize()
@@ -52,7 +49,7 @@ export DrawApp = React.memo ->
   {roomId} = useParams()
   useLayoutEffect ->
     currentRoom.set new Room roomId
-    setPageId null  # reset currentPage
+    currentPageId.set null  # reset currentPage
     ->
       currentRoom.get().stop()
       currentRoom.set null
@@ -69,26 +66,25 @@ export DrawApp = React.memo ->
   , [room]
 
   ## Page data structure, and stop/resume current tool
-  [pageId, setPageId] = useState()
+  pageId = useTracker ->
+    currentPageId.get()
+  , []
   remotesRef = useRef()
   useEffect -> # wait for mainBoard to be set
     if pageId?
-      Tracker.nonreactive ->
-        currentPage.set new Page pageId, room, mainBoard, remotesRef.current
-        resumeTool()
+      currentPage.set new Page pageId, room, mainBoard, remotesRef.current
+      resumeTool()
     ->
-      Tracker.nonreactive ->
-        stopTool()  # stop current tool
-        currentPage.get()?.stop()
-        currentPage.set null
+      stopTool()  # stop current tool
+      currentPage.get()?.stop()
+      currentPage.set null
   , [room, pageId, mainBoard]
 
   ## Auto load first page
   useTracker ->
     return if pageId?
     if (pages = room?.data()?.pages)?.length
-      Tracker.nonreactive ->
-        setPageId pages[0]
+      currentPageId.set pages[0]
   , [pageId?, room]
 
   ## Horizontal scroll wheel behavior
