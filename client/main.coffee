@@ -18,10 +18,8 @@ Meteor.startup ->
       return unless e.data?.coop
       if typeof e.data.user?.fullName == 'string'
         name.setTemp e.data.user.fullName
-        name.update()
       if typeof e.data.theme?.dark == 'boolean'
         dark.setTemp e.data.theme.dark
-        dark.update()
   ## window.opener can be null, but window.parent defaults to window
   parent = window.opener ? window.parent
   if parent? and parent != window
