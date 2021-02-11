@@ -67,9 +67,12 @@ export PageList = React.memo ->
             {if pageRemotesCount
               <>
                 <hr/>
-                {(for remoteId, remote of pageRemotes
-                  remote.name or '(anonymous)'
-                ).join ', '}
+                {for remoteId, remote of pageRemotes
+                  <span className="user">
+                    <Icon className="icon" icon="user" fill="currentColor"/>
+                    {remote.name}
+                  </span>
+                }
               </>
             }
           </Tooltip>
