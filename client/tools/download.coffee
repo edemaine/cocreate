@@ -1,5 +1,5 @@
 import {defineTool} from './defineTool'
-import {currentBoard, currentRoom} from '../AppState'
+import {currentBoard, currentPage, currentRoom} from '../AppState'
 import dom from '../lib/dom'
 
 defineTool
@@ -9,6 +9,7 @@ defineTool
   help: 'Download/export selection or entire drawing as an SVG file'
   click: (e, download = true) ->
     board = currentBoard()
+    grid = currentPage.get()?.grid
     ## Temporarily remove transform for export
     root = board.root # <g>
     oldTransform = root.getAttribute 'transform'
@@ -21,9 +22,9 @@ defineTool
     ## Compute bounding box using SVG's getBBox() and getCTM()
     bbox = board.renderedBBox elts
     ## Temporarily make grid span entire drawing
-    if board.grid?
-      board.grid.update bbox
-      elts.splice 0, 0, board.grid.grid
+    if grid?
+      grid.update bbox
+      elts.splice 0, 0, grid.grid
     ## Convert everything to SVG
     svg = (elt.outerHTML for elt in elts).join '\n'
     .replace /&nbsp;/g, '\u00a0' # SVG doesn't support &nbsp;
@@ -36,7 +37,7 @@ defineTool
       }\""
     ## Reset transform and grid
     root.setAttribute 'transform', oldTransform if oldTransform?
-    board.grid?.update()
+    grid?.update()
     ## Create SVG header
     fonts = ''
     if /<text/.test svg
