@@ -5,6 +5,7 @@ import {useTracker} from 'meteor/react-meteor-data'
 import {mainBoard, historyBoard, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
 import {Board} from './Board'
 import {Name, name} from './Name'
+import {RoomName} from './RoomName'
 import {Page} from './Page'
 import {PageList} from './PageList'
 import {Room} from './Room'
@@ -353,6 +354,7 @@ export DrawApp = React.memo ->
     <div id="pages" className="top horizontal palette" ref={topRef}>
       <ToolCategory category="zoom" placement="bottom"/>
       <div className="spacer"/>
+      <RoomName/>
       <PageList/>
       <ToolCategory category="page" placement="bottom"/>
       <div className="spacer"/>

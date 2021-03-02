@@ -29,3 +29,9 @@ Meteor.methods
     pageId = Meteor.apply 'pageNew', [page], returnStubValue: true
     room: roomId
     page: pageId
+  roomSetName: (roomId, name) ->
+    check roomId, String
+    check name, String
+    room = checkRoom roomId
+    Rooms.update room,
+      $set: name: name
