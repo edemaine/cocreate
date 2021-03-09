@@ -184,7 +184,6 @@ button(activeBorder)
   button(2px)
 .icon
   display: inline-block
-  margin-right: 0.125em
   svg
     height: 0.75em
 .pageHeader
@@ -192,6 +191,10 @@ button(activeBorder)
   font-weight: bold
 .user
   margin-right: 0.5em
+  // Comingle styling of .presence:
+  white-space: nowrap  // prevent line break between icon and name
+  > span
+    white-space: normal  // allow line break within name
 
 .tool, .attrib
   flex: none

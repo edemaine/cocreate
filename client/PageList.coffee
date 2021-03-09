@@ -70,7 +70,8 @@ export PageList = React.memo ->
                 {for remoteId, remote of pageRemotes
                   <span className="user">
                     <Icon className="icon" icon="user" fill="currentColor"/>
-                    {remote.name}
+                    &nbsp;
+                    <span>{remote.name}</span>
                   </span>
                 }
               </>
@@ -89,6 +90,7 @@ export PageList = React.memo ->
               else
                 <Icon className="icon" icon="users" fill="currentColor"/>
             }
+            &nbsp;
             {index+1}
           </div>
         </SoloTooltip>
