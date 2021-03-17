@@ -333,6 +333,10 @@ To write multiple lines of text, add manual line breaks via the
 within math mode: any math within `$`s renders on a single line,
 even if it contains newlines.
 
+You can use the <kbd>Tab</key> key to enter tab characters, which currently
+render as large spaces (without any magic alignment).  If you want to cycle
+to the next element via keyboard navigation, use <kbd>Escape</kbd> first.
+
 When you're done typing in a text object, press the <kbd>Escape</kbd> key.
 This won't deselect the object, but it will defocus the text entry field,
 allowing you to press other keyboard shortcuts to use other tools.

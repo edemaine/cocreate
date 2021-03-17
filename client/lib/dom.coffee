@@ -156,8 +156,11 @@ export escape = (text) ->
   .replace /</g, '&lt;'
   .replace />/g, '&gt;'
   .replace /[ ]/g, '\u00a0'
+  .replace /\t/g, '\u2003' # em-space
 export unescape = (text) ->
   text
+  .replace /\u2003/g, '\t'
+  .replace /\u00a0/g, ' '
   .replace /&gt;/g, '>'
   .replace /&lt;/g, '<'
   .replace /&amp;/g, '&'

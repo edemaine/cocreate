@@ -397,12 +397,23 @@ defineTool
     input = document.getElementById 'textInput'
     dom.listen input,
       keydown: (e) =>
+        if e.key == 'Tab'  # insert tab symbol instead of going to next element
+          e.preventDefault()
+          unless document.execCommand 'insertText', false, '\t'
+            ## Firefox doesn't support execCommand 'insertText' in textarea.
+            ## [https://bugzilla.mozilla.org/show_bug.cgi?id=1220696]
+            ## Simulate the effect, but mess up the undo stack.
+            pos = input.selectionStart
+            input.value = input.value[...pos] + '\t' +
+                          input.value[input.selectionEnd..]
+            input.selectionStart = input.selectionEnd = pos + 1
+          onInput()
         e.stopPropagation() # avoid hotkeys
         e.target.blur() if e.key == 'Escape'
         @updateTextCursor e
       click: => @updateTextCursor()
       paste: => @updateTextCursor()
-      input: (e) ->
+      input: onInput = (e) ->
         return unless pointers.text?
         text = input.value
         if text != (oldText = Objects.findOne(pointers.text).text)
