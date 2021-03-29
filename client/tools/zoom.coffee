@@ -1,5 +1,6 @@
 import {defineTool} from './defineTool'
 import {currentBoard} from '../AppState'
+import {defaultTransform} from '../Board'
 
 steppedZoom = (delta) ->
   board = currentBoard()
@@ -25,6 +26,7 @@ defineTool
   hotkey: ['+', '=']
   click: -> steppedZoom +1
 
+###
 defineTool
   name: 'pageZoomReset'
   category: 'zoom'
@@ -33,6 +35,16 @@ defineTool
   hotkey: '0'
   click: ->
     currentBoard().setScaleFixingCenter 1
+###
+
+defineTool
+  name: 'pageZoomReset'
+  category: 'zoom'
+  icon: 'search-one'
+  help: 'Reset view to the origin at 100% zoom'
+  hotkey: '0'
+  click: ->
+    currentBoard().setTransform defaultTransform()
 
 defineTool
   name: 'pageZoomFit'

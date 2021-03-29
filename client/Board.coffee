@@ -20,13 +20,15 @@ pressureW = (e) -> 0.5 + e.pressure
 #  t = e.pressure ** 3
 #  0.5 + (1.5 - 0.5) * t
 
+export defaultTransform = ->
+  x: 0
+  y: 0
+  scale: 1
+
 export class Board
   constructor: (@svg, @readonly) ->
     @svg.appendChild @root = dom.create 'g'
-    @transform =
-      x: 0
-      y: 0
-      scale: 1
+    @transform = defaultTransform()
     @selection = new Selection @ unless @readonly
     ## Can't call @resize() until mainBoard gets set, after this constructor
   clear: ->

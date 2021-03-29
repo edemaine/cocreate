@@ -141,9 +141,17 @@ two-finger dragging) also pans the canvas.
 
 Related, if you want to zoom into or out of the page, check out the
 [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out /
-<img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In buttons](#-zoom-out---zoom-in).
+<img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
+or
+[<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit)
+buttons.
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
+
+Cocreate remembers your last view (pan and zoom) of each page that you visit (via the
+browser's local storage), so that you can easily pick up where you left off.
+Use [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset)
+to go back to the default initial view.
 
 ### <img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool
 
@@ -466,6 +474,10 @@ dragging to get them back into perfect alignment with the original.
 Selecting objects (by clicking on them or dragging a rectangle)
 is unaffected by grid snapping.
 
+Cocreate remembers the last choice you made for this setting on each board
+(via the browser's local storage), so you can quickly resume drawing in the
+same style as before.
+
 ### <img src="icons/clipboard-link.svg" width="18" alt="Share Link Icon"> Share Link
 
 This button aims to make it easy to share the link to this Cocreate
@@ -623,8 +635,10 @@ or using a touchpad's zoom gesture (typically two-finger pinching).
 
 ### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
 
-This button resets the zoom level to 100%, the same as when you first load
-Cocreate.  This is helpful if you get lost zooming in or out.
+This button resets the zoom level to 100% and pans to put the origin at the
+top-left corner, the same as when you first load a Cocreate page.
+This is helpful if you get lost zooming in or out, or if you want to see what
+other people would see when first loading the page.
 
 ### <img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
 
