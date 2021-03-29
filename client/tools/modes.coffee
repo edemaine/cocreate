@@ -42,11 +42,9 @@ defineTool
     return unless start = pointers[e.pointerId]
     board = currentBoard()
     current = board.eventToRawPoint e
-    board.transform.x = start.transform.x +
-      (current.x - start.x) / board.transform.scale
-    board.transform.y = start.transform.y +
-      (current.y - start.y) / board.transform.scale
-    board.retransform()
+    board.setTransform
+      x: start.transform.x + (current.x - start.x) / board.transform.scale
+      y: start.transform.y + (current.y - start.y) / board.transform.scale
 
 defineTool
   name: 'select'

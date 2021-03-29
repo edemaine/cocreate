@@ -31,6 +31,7 @@ export class Board
     ## Can't call @resize() until mainBoard gets set, after this constructor
   clear: ->
     @root.innerHTML = ''
+    @setTransform {}
   destroy: ->
     @root.remove()
   resize: ->
@@ -99,10 +100,10 @@ export class Board
          = fixed.x / newScale - fixed.x / transform.scale + transform.x
          = fixed.x * (1 / newScale - 1 / transform.scale) + transform.x
     ###
-    @transform.x += fixed.x * (1/newScale - 1/@transform.scale)
-    @transform.y += fixed.y * (1/newScale - 1/@transform.scale)
-    @transform.scale = newScale
-    @retransform()
+    @setTransform
+      x: @transform.x + fixed.x * (1/newScale - 1/@transform.scale)
+      y: @transform.y + fixed.y * (1/newScale - 1/@transform.scale)
+      scale: newScale
   zoomToFit: ({min, max}, extra = 0.05) ->
     ## Change transform to fit on screen the rectangle bounded by (min, max),
     ## as output by renderedBBox() or dom.unionSvgExtremes(), plus 5%.
@@ -118,10 +119,10 @@ export class Board
     # Center the content
     targetx = midx - 0.5*@bbox.width/newScale
     targety = midy - 0.5*@bbox.height/newScale
-    @transform.x = -targetx
-    @transform.y = -targety
-    @transform.scale = newScale
-    @retransform()
+    @setTransform
+      x: -targetx
+      y: -targety
+      scale: newScale
   setScaleFixingCenter: (newScale) ->
     ###
     Maintain center point (bbox.width/2, bbox.height/2)
@@ -129,7 +130,21 @@ export class Board
     @setScaleFixingPoint newScale,
       x: @bbox.width/2
       y: @bbox.height/2
-  retransform: ->
+  ## @transform should not be changed directly; instead, call @setTransform
+  ## with any key/value pairs you want to change.  Checks for errors and
+  ## triggers an update to the SVG transform attribute.
+  setTransform: (newTransform) ->
+    ## Check for invalid transforms before setting anything.
+    for own key, value of newTransform
+      unless value? and typeof value == 'number' and isFinite(value) and
+             not value.toString().includes 'e'
+        return console.warn "Attempt to set transform to #{JSON.stringify newTransform} with invalid #{key}"
+    if newTransform.scale? and newTransform.scale <= 0
+      return console.warn "Attempt to set transform to #{newTransform} with negative scale"
+    ## Copy all key/values over (but allow specifying only some keys).
+    for own key, value of newTransform
+      @transform[key] = value
+    ## Update SVG transform attribute
     @root.setAttribute 'transform',
       "scale(#{@transform.scale}) translate(#{@transform.x} #{@transform.y})"
     @onRetransform?()

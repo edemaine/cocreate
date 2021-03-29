@@ -28,11 +28,9 @@ defineTool
   move: (e) ->
     return unless start = pointers[e.pointerId]
     current = currentBoard().eventToRawPoint e
-    historyBoard.transform.x = start.transform.x +
-      (current.x - start.x) / historyBoard.transform.scale
-    historyBoard.transform.y = start.transform.y +
-      (current.y - start.y) / historyBoard.transform.scale
-    historyBoard.retransform()
+    historyBoard.setTransform
+      x: start.transform.x + (current.x - start.x) / historyBoard.transform.scale
+      y: start.transform.y + (current.y - start.y) / historyBoard.transform.scale
   Slider: React.memo ->
     [diffs, setDiffs] = useState []
     {room, page} = useTracker ->
@@ -71,7 +69,6 @@ defineTool
         apply = diffs[lastTarget...target]
       else
         historyBoard.clear()
-        historyBoard.retransform()
         historyObjects.current = {}
         historyRender.current = new RenderObjects historyBoard
         apply = diffs[...target]
