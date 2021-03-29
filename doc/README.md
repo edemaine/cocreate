@@ -594,10 +594,18 @@ when you want to start a fresh idea, problem, etc.
 It's also a good idea, for higher performance, to use more pages
 with less information on them.
 
-### Manual Page Number Entry
+### Page Numbers
 
-To jump to a distant page, you can edit the page number (before "of").
-Press <kbd>Enter</kbd> when you've finished typing.
+To jump to a page, just click on the corresponding page number.
+
+You can see which users have people viewing them by the people icons:
+if there are 1, 2, or 3+ users on a page, you'll see
+<img src="icons/user.svg" height="18" alt="1 User Icon">,
+<img src="icons/user-friends.svg" height="18" alt="3+ Users Icon">, or
+<img src="icons/users.svg" height="18" alt="2 Users Icon">
+respectively.
+Hovering on the page number shows a tooltip
+with the names of users on that page.
 
 ### <img src="icons/chevron-left-square.svg" width="18" alt="Previous Page Icon"> Previous / <img src="icons/chevron-right-square.svg" width="18" alt="Next Page Icon"> Next Page
 
