@@ -405,6 +405,36 @@ two situations that require a second try:
   the image through its
   [CORS Anywhere](https://github.com/Rob--W/cors-anywhere) proxy.
 
+### <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
+
+Time Travel is a toggling mode that lets you look at the history of past
+versions of the current page.
+It replaces the attribute palette at the bottom of the window
+with a slider which starts at the far left (the beginning of time).
+As a result, you'll see a blank screen.
+By dragging the slider to different points in the timeline,
+you'll see the evolution of the page.
+
+While in Time Travel mode, you can do the following:
+
+* Use the
+[<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
+buttons to take single steps backward or forward in the timeline.
+* Drag on the page to pan around (like the
+[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
+or pan using a scroll wheel or touchpad pan gesture.
+* [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
+using the buttons, using a scroll wheel while holding
+<kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
+* [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit).
+* [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
+
+The tool palettes switch to a sepia tone to indicate you're time traveling.
+You can't make any changes or see others' cursors while time traveling.
+You can leave Time Travel mode by clicking
+<img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
+again, or by selecting another mode from the left palette.
+
 ### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
 
 This button toggles whether Cocreate will allow drawing via touchscreen.
@@ -502,36 +532,6 @@ This button creates a new Cocreate room/board, with a new URL,
 in a new browser tab.  You can achieve the same effect by removing the
 last part of the URL (`r/gLoBaLlYuNiQuEiD7`), but this button saves that work.
 
-### <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
-
-Time Travel is a toggling mode that lets you look at the history of past
-versions of the current page.
-It replaces the attribute palette at the bottom of the window
-with a slider which starts at the far left (the beginning of time).
-As a result, you'll see a blank screen.
-By dragging the slider to different points in the timeline,
-you'll see the evolution of the page.
-
-While in Time Travel mode, you can do the following:
-
-* Use the
-[<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
-buttons to take single steps backward or forward in the timeline.
-* Drag on the page to pan around (like the
-[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
-or pan using a scroll wheel or touchpad pan gesture.
-* [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
-using the buttons, using a scroll wheel while holding
-<kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
-* [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit).
-* [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
-
-The tool palettes switch to a sepia tone to indicate you're time traveling.
-You can't make any changes or see others' cursors while time traveling.
-You can leave Time Travel mode by clicking
-<img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
-again, or by selecting another mode from the left palette.
-
 ### <img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG
 
 This button exports either the current selection or the entire current page to
@@ -594,38 +594,6 @@ when you want to start a fresh idea, problem, etc.
 It's also a good idea, for higher performance, to use more pages
 with less information on them.
 
-### Page Numbers
-
-To jump to a page, just click on the corresponding page number.
-
-You can see which users have people viewing them by the people icons:
-if there are 1, 2, or 3+ users on a page, you'll see
-<img src="icons/user.svg" height="18" alt="1 User Icon">,
-<img src="icons/user-friends.svg" height="18" alt="3+ Users Icon">, or
-<img src="icons/users.svg" height="18" alt="2 Users Icon">
-respectively.
-Hovering on the page number shows a tooltip
-with the names of users on that page.
-
-### <img src="icons/chevron-left-square.svg" width="18" alt="Previous Page Icon"> Previous / <img src="icons/chevron-right-square.svg" width="18" alt="Next Page Icon"> Next Page
-
-These buttons navigate your view to the previous or next page.
-They affect only your view, not other users.
-If you're meeting with others, communicate what page you're looking at.
-
-### <img src="icons/plus-square.svg" width="18" alt="New Page Icon"> New Page
-
-This button creates a new blank page immediately after the current page,
-and goes to that page.  If you were on page 6, this button will create and
-go to a new blank page 7, shifting all later pages up in page number.
-
-### <img src="icons/clone.svg" width="18" alt="Duplicate Page Icon"> Duplicate Page
-
-This button duplicates the current page into a new page immediately after,
-and goes to that new page.  If you were on page 6, this button will create and
-go to a new page 7 with the same objects as page 6 (but without the history
-of changes), shifting all later pages up in page number.
-
 ### <img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In
 
 These buttons change your view of the current page, zooming out or in by 20%.
@@ -660,6 +628,38 @@ You can also
 a subset of objects and then
 <img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
 the selection to the screen.
+
+### Page Numbers
+
+To jump to a page, just click on the corresponding page number.
+
+You can see which users have people viewing them by the people icons:
+if there are 1, 2, or 3+ users on a page, you'll see
+<img src="icons/user.svg" height="18" alt="1 User Icon">,
+<img src="icons/user-friends.svg" height="18" alt="3+ Users Icon">, or
+<img src="icons/users.svg" height="18" alt="2 Users Icon">
+respectively.
+Hovering on the page number shows a tooltip
+with the names of users on that page.
+
+### <img src="icons/chevron-left-square.svg" width="18" alt="Previous Page Icon"> Previous / <img src="icons/chevron-right-square.svg" width="18" alt="Next Page Icon"> Next Page
+
+These buttons navigate your view to the previous or next page.
+They affect only your view, not other users.
+If you're meeting with others, communicate what page you're looking at.
+
+### <img src="icons/plus-square.svg" width="18" alt="New Page Icon"> New Page
+
+This button creates a new blank page immediately after the current page,
+and goes to that page.  If you were on page 6, this button will create and
+go to a new blank page 7, shifting all later pages up in page number.
+
+### <img src="icons/clone.svg" width="18" alt="Duplicate Page Icon"> Duplicate Page
+
+This button duplicates the current page into a new page immediately after,
+and goes to that new page.  If you were on page 6, this button will create and
+go to a new page 7 with the same objects as page 6 (but without the history
+of changes), shifting all later pages up in page number.
 
 ### Your Name
 
