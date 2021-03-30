@@ -101,7 +101,7 @@ export svgExtremes = (svg, elt, relative) ->
   transform = elt.getCTM()
   if relative?
     relative = relative.getCTM().inverse() if relative.getCTM?
-    transform = transform.multiply relative
+    transform = relative.multiply transform
   ## Look for stroke of first child if element is a group
   if elt.tagName == 'g'
     elt = elt.firstChild
