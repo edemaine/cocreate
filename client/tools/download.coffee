@@ -102,7 +102,8 @@ defineTool
       return match unless image?
       match
       .replace ///crossorigin="([^"]*)"///, ''
-      .replace ///href="(https?://[^"]*)"///, "href=\"#{image}\""
+      .replace ///href="(https?://[^"]*)"///,
+        "href=\"#{image}\" xlink:href=\"#{image}\""
     ## Download file
     if download
       download = document.getElementById 'download'
