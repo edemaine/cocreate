@@ -99,10 +99,10 @@ defineTool
     count = 0
     svg = svg.replace ///<image\b([^<>]*)>///g, (match, attrs) ->
       image = images[count++]
-      return match unless image?
       match
       .replace ///crossorigin="([^"]*)"///, ''
-      .replace ///href="(https?://[^"]*)"///, "xlink:href=\"#{image}\""
+      .replace ///href="([^"]*)"///, (href, url) ->
+        "xlink:href=\"#{image ? url}\""
     ## Download file
     if download
       download = document.getElementById 'download'
