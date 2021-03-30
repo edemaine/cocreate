@@ -6,6 +6,9 @@ export gridSize = 37.76
 
 export gridDefault = true
 
+## Scale down visibility of grid lines when zoomed out by more than this factor
+gridScaleDown = 10
+
 export class Grid
   constructor: (@page) ->
     @page.board.root.appendChild @grid = dom.create 'g', class: 'grid'
@@ -16,23 +19,26 @@ export class Grid
     bounds ?=
       min: dom.svgPoint board.svg, board.bbox.left, board.bbox.top, @grid
       max: dom.svgPoint board.svg, board.bbox.right, board.bbox.bottom, @grid
+    visibleGridSize = gridSize
+    if @page.board.transform.scale < 1/gridScaleDown
+      visibleGridSize *= Math.round 1 / (gridScaleDown * @page.board.transform.scale)
     margin = gridSize
     switch @page.gridMode
       when true
         ### eslint-disable no-unused-vars ###
         range = (xy) ->
-          [Math.floor(bounds.min[xy] / gridSize) .. \
-           Math.ceil bounds.max[xy] / gridSize]
+          [Math.floor(bounds.min[xy] / visibleGridSize) .. \
+           Math.ceil bounds.max[xy] / visibleGridSize]
         ### eslint-enable no-unused-vars ###
         for i in range 'x'
-          x = i * gridSize
+          x = i * visibleGridSize
           @grid.appendChild dom.create 'line',
             x1: x
             x2: x
             y1: bounds.min.y - margin
             y2: bounds.max.y + margin
         for j in range 'y'
-          y = j * gridSize
+          y = j * visibleGridSize
           @grid.appendChild dom.create 'line',
             y1: y
             y2: y
