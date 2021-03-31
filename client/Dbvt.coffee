@@ -16,8 +16,11 @@ export class Aabb
     ext = dom.svgExtremes svg, elt, svg_root
     new Aabb ext.min.x, ext.min.y, ext.max.x, ext.max.y
 
-  area: ->
-    (@max_x - @min_x) * (@max_y - @min_y)
+  area: -> (@max_x - @min_x) * (@max_y - @min_y)
+
+  perimeter: -> 2 * ((@max_x - @min_x) + (@max_y - @min_y))
+
+  cost: -> @perimeter()
 
   intersects: (other) ->
     @min_x <= other.max_x && @max_x >= other.min_x && @min_y <= other.max_y && @max_y >= other.min_y
@@ -70,17 +73,8 @@ class DbvtNode
 
   # Returns the new root if the root changed.
   insert: (node) ->
-    # When inserting a node, we can insert it as a child of this node
-    # or dig deeper. We need to find the cost of each.
-    # l = left child, r = right child, n = new node
-    lr = @aabb
-    ln = @children[0]?.aabb.union node.aabb
-    rn = @children[1]?.aabb.union node.aabb
-    lr_cost = lr.area()
-    ln_cost = ln?.area() ? Infinity
-    rn_cost = rn?.area() ? Infinity
-
-    if lr_cost <= ln_cost && lr_cost <= rn_cost
+    #if lr_cost <= ln_cost && lr_cost <= rn_cost
+    if @is_leaf()
       if @parent?
         side = @child_index()
       new_node = DbvtNode.parent @, node, @parent
@@ -93,6 +87,12 @@ class DbvtNode
         @parent.balance()
         null
     else
+      # l = left child, r = right child, n = new node
+      ln = @children[0].aabb.union node.aabb
+      rn = @children[1].aabb.union node.aabb
+      ln_cost = ln.cost() ? Infinity
+      rn_cost = rn.cost() ? Infinity
+
       @aabb = @aabb.union node.aabb
       if ln_cost <= rn_cost
         @children[0].insert node
@@ -124,9 +124,9 @@ class DbvtNode
       ls = @children[0].aabb.union sibling.aabb
       rs = @children[1].aabb.union sibling.aabb
 
-      lr_cost = Math.max lr.area(), sibling.aabb.area()
-      ls_cost = Math.max ls.area(), @children[1].aabb.area()
-      rs_cost = Math.max rs.area(), @children[0].aabb.area()
+      lr_cost = Math.max lr.cost(), sibling.aabb.cost()
+      ls_cost = Math.max ls.cost(), @children[1].aabb.cost()
+      rs_cost = Math.max rs.cost(), @children[0].aabb.cost()
 
       if lr_cost <= ls_cost && lr_cost <= rs_cost
         @aabb = lr
