@@ -5,15 +5,20 @@ import dom from './lib/dom'
 
 import {Tracker} from 'meteor/tracker'
 
+import {defaultTransform} from './Board'
 import {Grid} from './Grid'
 import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
 import {Aabb, Dbvt} from './Dbvt'
+import storage from './lib/storage'
 
 export class Page
   constructor: (@id, @room, @board, @remoteSVG) ->
     @board.clear()
     @dbvt = new Dbvt()
+    @transform = new storage.Variable "#{@room.id}.#{@id}.transform",
+      defaultTransform(), false
+    @board.setTransform @transform.get()
     @grid = new Grid @
     @observeObjects()
     @observeRemotes()
@@ -21,6 +26,8 @@ export class Page
       @remotesRender.retransform()
       ## Update grid after `transform` attribute gets rendered.
       Meteor.setTimeout (=> @grid.update()), 0
+      ## Save current view in localStorage
+      @transform.set @board.transform
     ## Automatically update grid
     @auto = Tracker.autorun =>
       unless @gridMode == (gridMode = @data()?.grid)

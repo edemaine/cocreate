@@ -153,7 +153,6 @@ export class RenderObjects
             .replace ///#{cursorRE}///, (match) ->
               out.push match
               ''
-            .replace /\u00a0/g, ' '  # undo dom.escape
             math.formula = dom.unescape math.formula
             out.push math.prefix if math.prefix?
             out.push "$MATH#{i}$"

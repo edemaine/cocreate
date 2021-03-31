@@ -141,9 +141,17 @@ two-finger dragging) also pans the canvas.
 
 Related, if you want to zoom into or out of the page, check out the
 [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out /
-<img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In buttons](#-zoom-out---zoom-in).
+<img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
+or
+[<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit)
+buttons.
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
+
+Cocreate remembers your last view (pan and zoom) of each page that you visit (via the
+browser's local storage), so that you can easily pick up where you left off.
+Use [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset)
+to go back to the default initial view.
 
 ### <img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool
 
@@ -333,6 +341,10 @@ To write multiple lines of text, add manual line breaks via the
 within math mode: any math within `$`s renders on a single line,
 even if it contains newlines.
 
+You can use the <kbd>Tab</kbd> key to enter tab characters, which currently
+render as large spaces (without any magic alignment).  If you want to cycle
+to the next element via keyboard navigation, use <kbd>Escape</kbd> first.
+
 When you're done typing in a text object, press the <kbd>Escape</kbd> key.
 This won't deselect the object, but it will defocus the text entry field,
 allowing you to press other keyboard shortcuts to use other tools.
@@ -392,6 +404,36 @@ two situations that require a second try:
   [properly configured](../INSTALL.md#cors-anywhere-proxy), then it will proxy
   the image through its
   [CORS Anywhere](https://github.com/Rob--W/cors-anywhere) proxy.
+
+### <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
+
+Time Travel is a toggling mode that lets you look at the history of past
+versions of the current page.
+It replaces the attribute palette at the bottom of the window
+with a slider which starts at the far left (the beginning of time).
+As a result, you'll see a blank screen.
+By dragging the slider to different points in the timeline,
+you'll see the evolution of the page.
+
+While in Time Travel mode, you can do the following:
+
+* Use the
+[<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
+buttons to take single steps backward or forward in the timeline.
+* Drag on the page to pan around (like the
+[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
+or pan using a scroll wheel or touchpad pan gesture.
+* [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
+using the buttons, using a scroll wheel while holding
+<kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
+* [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit).
+* [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
+
+The tool palettes switch to a sepia tone to indicate you're time traveling.
+You can't make any changes or see others' cursors while time traveling.
+You can leave Time Travel mode by clicking
+<img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
+again, or by selecting another mode from the left palette.
 
 ### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
 
@@ -462,6 +504,10 @@ dragging to get them back into perfect alignment with the original.
 Selecting objects (by clicking on them or dragging a rectangle)
 is unaffected by grid snapping.
 
+Cocreate remembers the last choice you made for this setting on each board
+(via the browser's local storage), so you can quickly resume drawing in the
+same style as before.
+
 ### <img src="icons/clipboard-link.svg" width="18" alt="Share Link Icon"> Share Link
 
 This button aims to make it easy to share the link to this Cocreate
@@ -485,36 +531,6 @@ presented as text and as a QR code.
 This button creates a new Cocreate room/board, with a new URL,
 in a new browser tab.  You can achieve the same effect by removing the
 last part of the URL (`r/gLoBaLlYuNiQuEiD7`), but this button saves that work.
-
-### <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
-
-Time Travel is a toggling mode that lets you look at the history of past
-versions of the current page.
-It replaces the attribute palette at the bottom of the window
-with a slider which starts at the far left (the beginning of time).
-As a result, you'll see a blank screen.
-By dragging the slider to different points in the timeline,
-you'll see the evolution of the page.
-
-While in Time Travel mode, you can do the following:
-
-* Use the
-[<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
-buttons to take single steps backward or forward in the timeline.
-* Drag on the page to pan around (like the
-[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
-or pan using a scroll wheel or touchpad pan gesture.
-* [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
-using the buttons, using a scroll wheel while holding
-<kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
-* [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit).
-* [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
-
-The tool palettes switch to a sepia tone to indicate you're time traveling.
-You can't make any changes or see others' cursors while time traveling.
-You can leave Time Travel mode by clicking
-<img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
-again, or by selecting another mode from the left palette.
 
 ### <img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG
 
@@ -578,10 +594,53 @@ when you want to start a fresh idea, problem, etc.
 It's also a good idea, for higher performance, to use more pages
 with less information on them.
 
-### Manual Page Number Entry
+### <img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In
 
-To jump to a distant page, you can edit the page number (before "of").
-Press <kbd>Enter</kbd> when you've finished typing.
+These buttons change your view of the current page, zooming out or in by 20%.
+They affect only your view, not other users.
+Click/tap a button multiple times to zoom out/in more.
+
+Each zoom operation is relative to the center of your current view.
+So if you want to zoom on something specific,
+[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan](#-pan-tool)
+to put it in the center of your view, and then
+<img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In.
+
+You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
+or using a touchpad's zoom gesture (typically two-finger pinching).
+
+### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
+
+This button resets the zoom level to 100% and pans to put the origin at the
+top-left corner, the same as when you first load a Cocreate page.
+This is helpful if you get lost zooming in or out, or if you want to see what
+other people would see when first loading the page.
+
+### <img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
+
+This button sets the zoom and pan so that all objects fit inside the display.
+This can be useful to get an overall picture of the page, and then
+zoom into a part of interest.  In particular, it can help you find
+parts of the page that are previously off-screen.
+
+You can also
+<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select
+a subset of objects and then
+<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
+the selection to the screen.
+
+### Page Numbers
+
+To jump to a page, just click on the corresponding page number.
+
+You can see which users have people viewing them by the people icons:
+if there are 1, 2, or 3+ users on a page, you'll see
+<img src="icons/user.svg" height="18" alt="1 User Icon">,
+<img src="icons/user-friends.svg" height="18" alt="3+ Users Icon">, or
+<img src="icons/users.svg" height="18" alt="2 Users Icon">
+respectively.
+Hovering on the page number shows a tooltip
+with the names of users on that page.
 
 ### <img src="icons/chevron-left-square.svg" width="18" alt="Previous Page Icon"> Previous / <img src="icons/chevron-right-square.svg" width="18" alt="Next Page Icon"> Next Page
 
@@ -601,39 +660,6 @@ This button duplicates the current page into a new page immediately after,
 and goes to that new page.  If you were on page 6, this button will create and
 go to a new page 7 with the same objects as page 6 (but without the history
 of changes), shifting all later pages up in page number.
-
-### <img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In
-
-These buttons change your view of the current page, zooming out or in by 20%.
-They affect only your view, not other users.
-Click/tap a button multiple times to zoom out/in more.
-
-Each zoom operation is relative to the center of your current view.
-So if you want to zoom on something specific,
-[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan](#-pan-tool)
-to put it in the center of your view, and then
-<img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In.
-
-You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
-or using a touchpad's zoom gesture (typically two-finger pinching).
-
-### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
-
-This button resets the zoom level to 100%, the same as when you first load
-Cocreate.  This is helpful if you get lost zooming in or out.
-
-### <img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
-
-This button sets the zoom and pan so that all objects fit inside the display.
-This can be useful to get an overall picture of the page, and then
-zoom into a part of interest.  In particular, it can help you find
-parts of the page that are previously off-screen.
-
-You can also
-<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select
-a subset of objects and then
-<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit
-the selection to the screen.
 
 ### Your Name
 

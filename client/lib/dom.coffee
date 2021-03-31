@@ -101,7 +101,6 @@ export svgExtremes = (svg, elt, relative) ->
   transform = elt.getCTM()
   if relative?
     relative = relative.getCTM().inverse() if relative.getCTM?
-    # TODO switching the order doesn't seem to break anything, but should double check.
     # The other should be such that parent_transform * relative_transform = transform,
     # so relative_transform = parent_transform.inverse * transform, not the other way around.
     transform = relative.multiply transform
@@ -159,8 +158,11 @@ export escape = (text) ->
   .replace /</g, '&lt;'
   .replace />/g, '&gt;'
   .replace /[ ]/g, '\u00a0'
+  .replace /\t/g, '\u2003' # em-space
 export unescape = (text) ->
   text
+  .replace /\u2003/g, '\t'
+  .replace /\u00a0/g, ' '
   .replace /&gt;/g, '>'
   .replace /&lt;/g, '<'
   .replace /&amp;/g, '&'

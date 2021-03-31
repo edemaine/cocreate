@@ -182,9 +182,9 @@ export DrawApp = React.memo ->
             x: e.offsetX
             y: e.offsetY
         else
-          transform.x -= deltaX / transform.scale
-          transform.y -= deltaY / transform.scale
-          currentBoard().retransform()
+          currentBoard().setTransform
+            x: transform.x - deltaX / transform.scale
+            y: transform.y - deltaY / transform.scale
   , []
 
   ## Drag and drop

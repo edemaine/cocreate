@@ -68,7 +68,7 @@ export PageList = React.memo ->
               <>
                 <hr/>
                 {for remoteId, remote of pageRemotes
-                  <span className="user">
+                  <span className="user" key={remoteId}>
                     <Icon className="icon" icon="user" fill="currentColor"/>
                     &nbsp;
                     <span>{remote.name}</span>
