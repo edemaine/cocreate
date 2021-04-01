@@ -42,11 +42,13 @@ export class Page
     @remotesObserver.stop()
   data: ->
     Pages.findOne @id
+  eltMap: ->
+    @render.dom
   observeObjects: ->
     @render = render = new RenderObjects @board
     dbvt = @dbvt
     board = @board
-    #dbvt_svg = dom.create 'g'
+    dbvt_svg = dom.create 'g'
     @objectsObserver = Objects.find
       room: @room.id
       page: @id
@@ -55,7 +57,7 @@ export class Page
         render.shouldNotExist obj
         render.render obj
         dbvt.insert obj._id, Aabb.from_obj obj, board.svg, board.root, render.dom
-        #board.root.appendChild dbvt.export_debug_svg dbvt_svg
+        board.root.appendChild dbvt.export_debug_svg dbvt_svg
       changed: (obj, old) ->
         options = {}
         if old.pts?
@@ -64,13 +66,12 @@ export class Page
         for own key of obj when key != 'pts'
           options[key] = obj[key] != old[key]
         render.render obj, options
-        dbvt.remove obj._id
-        dbvt.insert obj._id, Aabb.from_obj obj, board.svg, board.root, render.dom
-        #board.root.appendChild dbvt.export_debug_svg dbvt_svg
+        dbvt.move obj._id, Aabb.from_obj obj, board.svg, board.root, render.dom
+        board.root.appendChild dbvt.export_debug_svg dbvt_svg
       removed: (obj) ->
         render.delete obj
         dbvt.remove obj._id
-        #board.root.appendChild dbvt.export_debug_svg dbvt_svg
+        board.root.appendChild dbvt.export_debug_svg dbvt_svg
   observeRemotes: ->
     @remotesRender = remotesRender = new RenderRemotes @board, @remoteSVG
     @remotesObserver = Remotes.find

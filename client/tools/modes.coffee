@@ -12,6 +12,7 @@ import {undoStack} from '../UndoStack'
 import {Ctrl, Alt, firefox} from '../lib/platform'
 import dom from '../lib/dom'
 import throttle from '../lib/throttle'
+import {Aabb} from '../Dbvt'
 
 export pointers = {}   # maps pointerId to tool-specific data
 
@@ -105,34 +106,17 @@ defineTool
     h = pointers[e.pointerId]
     if h?.selector?
       board = currentBoard()
-      start = dom.svgTransformPoint board.svg, h.start, board.root
       here = board.eventToPoint e
-      here = dom.svgTransformPoint board.svg, here, board.root
-      rect = dom.pointsToSVGRect start, here, board.svg, board.root
-      matched = []
-      for elt in board.root.childNodes
-        continue if elt.classList.contains 'grid'
-        continue if elt.classList.contains 'selected'
-        continue if elt.classList.contains 'highlight'
-        continue unless elt.dataset.id
-        ## Check whether any descendant non-<g> element intersects.
-        ## (SVG.checkIntersection doesn't work for <g> elements.)
-        recurse = (part) ->
-          if part.tagName == 'g'
-            for subpart in part.childNodes
-              return true if recurse subpart
-          else if board.svg.checkIntersection? part, rect
-            return true
-          false
-        if recurse elt  # hit
-          matched.push elt
+      rect = dom.pointsToRect h.start, board.eventToPoint e
+
       ## Now that we've traversed the DOM, modify the selection
       selection = mainBoard.selection
-      for elt in matched
-        if selection.has elt.dataset.id  # Toggle selection
-          selection.remove elt.dataset.id
+      console.log h.start, board.eventToPoint e
+      for id from currentPage.get().dbvt.query Aabb.from_rect rect
+        if selection.has id  # Toggle selection
+          selection.remove id
         else
-          h.highlight elt
+          h.highlight currentPage.get().eltMap()[id]
           selection.add h
       selection.setAttributes()
       h.selector.remove()

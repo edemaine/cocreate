@@ -16,6 +16,9 @@ export class Aabb
     ext = dom.svgExtremes svg, elt, svg_root
     new Aabb ext.min.x, ext.min.y, ext.max.x, ext.max.y
 
+  ## Adds fat to the AABB to allow for constant-time small changes to the object's position
+  fattened: (fat) -> new Aabb (@min_x - fat), (@min_y - fat), (@max_x + fat), (@max_y + fat)
+
   area: -> (@max_x - @min_x) * (@max_y - @min_y)
 
   perimeter: -> 2 * ((@max_x - @min_x) + (@max_y - @min_y))
@@ -198,10 +201,16 @@ export class Dbvt
     # TODO: Remove
 
   insert: (id, aabb) ->
-    node = DbvtNode.leaf id, aabb
+    node = DbvtNode.leaf id, aabb.fattened(38)
     @nodes_by_id[id] = node
     @root = (@root?.insert node) ? @root ? node
     # TODO: Remove
+
+  move: (id, aabb) ->
+    node = @nodes_by_id[id]
+    if !node.aabb.contains aabb
+      @remove id
+      @insert id, aabb
 
   remove: (id) ->
     node = @nodes_by_id[id]
