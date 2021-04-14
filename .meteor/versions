@@ -28,7 +28,7 @@ ecmascript@0.14.3
 ecmascript-runtime@0.7.0
 ecmascript-runtime-client@0.11.0
 ecmascript-runtime-server@0.10.0
-edemaine:static-pug@0.0.0
+edemaine:static-pug@0.0.1
 ejson@1.1.1
 email@2.0.0
 es5-shim@4.8.0
