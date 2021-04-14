@@ -15,7 +15,7 @@ export tryAddImage = (items, options) ->
     /// <a\b [^<>]* \b href \s*=\s* ("[^"]*"|'[^']*')
           [^<>]*> ([^]*) </a> ///i.exec(html)
     if match? and not (match[2] and ///</a>///i.test match[2])
-      url = match[1][1...match[1].length-1]
+      url = match[1][1...-1]
       return image if image = await tryAddImageUrl url, options
   ## Next check for plain text that consists solely of a URL
   for item in items when item?.type == 'text/plain'
