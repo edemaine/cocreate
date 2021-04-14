@@ -176,6 +176,9 @@ is [Corsproxy](https://github.com/caltechlibrary/corsproxy) which has
 (for ports &ge; 1024, e.g., 8080), along with the accompanying
 [certbot letsencrypt installation instructions](https://certbot.eff.org/lets-encrypt/debiantesting-other)
 for SSL certificates.
+While it may be tempting to set `REQUIRED_HEADER="Origin"`,
+[Firefox won't send Origin headers for images](https://wiki.mozilla.org/Security/Origin#When_Origin_is_served_-9.72and_when_it_is_.22null.22.29)
+so it's best to leave it empty.
 
 If you omit the `cors-anywhere` setting, Cocreate will never attempt to proxy
 embedded images, so more images will fail to embed.
