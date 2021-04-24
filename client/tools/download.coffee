@@ -60,6 +60,7 @@ defineTool
       <svg xmlns="#{dom.SVGNS}" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="#{bbox.min.x} #{bbox.min.y} #{width} #{height}" width="#{width}px" height="#{height}px">
       <style>
       .pen line { stroke-linecap: round }
+      .pen polyline { stroke-linecap: round; stroke-linejoin: round; fill: none }
       .grid { stroke-width: 0.96; stroke: #c4e3f4 }
       #{fonts}</style>
       #{svg}

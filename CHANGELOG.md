@@ -9,6 +9,8 @@ instead of version numbers.
 
 ## 2021-04-24
 
+* Pen strokes render more efficiently, especially when not using a
+  pressure-sensitive pen, so should bog down a page less.
 * Rename main branch from `master` to `main`.  The link to the documentation
   and this Changelog have changed (but the old links redirect).
 

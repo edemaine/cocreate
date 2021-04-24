@@ -24,31 +24,56 @@ export class RenderObjects
     ###
     obj.id ? obj._id ? obj
   renderPen: (obj, options) ->
+    ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
     ## Redraw from scratch if no `start` specified, or if color or width changed
     start = 0
     if options?.start?
       start = options.start unless options.color or options.width
+    ## Choose between two rendering modes for this batch of points:
+    ## * "Simple" mode: when all points have w == 1, use a single <polyline>
+    ## * "Complex" mode: otherwise, use many <line>s
+    simple = true
+    if simple
+      for i in [start...obj.pts.length]
+        unless obj.pts[i].w == 1
+          simple = false
+          break
+    ## In complex mode, create a document fragment for adding several
+    ## <line> elements to the DOM tree at once.
     id = @id obj
     if exists = @dom[id]
       ## Destroy existing drawing if starting over
       exists.innerHTML = '' if start == 0
-      frag = document.createDocumentFragment()
+      if simple
+        frag = exists
+      else
+        frag = document.createDocumentFragment()
     else
       frag = dom.create 'g',
         class: 'pen'
       ,
         dataset: id: id
-    ## Draw an `edge` between consecutive dots.
-    ## (`dot` at each point replaced by stroke-linecap of `edge`.)
-    if start == 0
-      #frag.appendChild dot obj, obj.pts[0]
-      start = 1
-    for i in [start...obj.pts.length]
-      pt = obj.pts[i]
-      frag.appendChild edge obj, obj.pts[i-1], pt
-      #frag.appendChild dot obj, pt  # alternative to linecap: round
+    if simple
+      frag.appendChild dom.create 'polyline',
+        points: (
+          for i in [start - (start > 0)...obj.pts.length]
+            pt = obj.pts[i]
+            "#{pt.x},#{pt.y}"
+        ).join ' '
+        stroke: obj.color
+        'stroke-width': obj.width
+    else
+      ## Draw an `edge` between consecutive dots.
+      ## (`dot` at each point replaced by stroke-linecap of `edge`.)
+      if start == 0
+        #frag.appendChild dot obj, obj.pts[0]
+        start = 1
+      for i in [start...obj.pts.length]
+        pt = obj.pts[i]
+        frag.appendChild edge obj, obj.pts[i-1], pt
+        #frag.appendChild dot obj, pt  # alternative to linecap: round
     if exists
-      exists.appendChild frag
+      exists.appendChild frag unless simple
     else
       @root.appendChild @dom[id] = frag
     @dom[id]
