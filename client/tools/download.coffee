@@ -59,6 +59,7 @@ defineTool
       <?xml version="1.0" encoding="utf-8"?>
       <svg xmlns="#{dom.SVGNS}" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="#{bbox.min.x} #{bbox.min.y} #{width} #{height}" width="#{width}px" height="#{height}px">
       <style>
+      .pen line { stroke-linecap: round }
       .grid { stroke-width: 0.96; stroke: #c4e3f4 }
       #{fonts}</style>
       #{svg}

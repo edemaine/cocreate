@@ -34,15 +34,19 @@ export class RenderObjects
       exists.innerHTML = '' if start == 0
       frag = document.createDocumentFragment()
     else
-      frag = dom.create 'g', null, dataset: id: id
-    ## Draw a `dot` at each point, and an `edge` between consecutive dots
+      frag = dom.create 'g',
+        class: 'pen'
+      ,
+        dataset: id: id
+    ## Draw an `edge` between consecutive dots.
+    ## (`dot` at each point replaced by stroke-linecap of `edge`.)
     if start == 0
-      frag.appendChild dot obj, obj.pts[0]
+      #frag.appendChild dot obj, obj.pts[0]
       start = 1
     for i in [start...obj.pts.length]
       pt = obj.pts[i]
       frag.appendChild edge obj, obj.pts[i-1], pt
-      frag.appendChild dot obj, pt  # alternative to linecap: round
+      #frag.appendChild dot obj, pt  # alternative to linecap: round
     if exists
       exists.appendChild frag
     else
@@ -434,12 +438,14 @@ export class RenderObjects
       console.warn "Duplicate object with ID #{id}?!"
       delete @dom[id]
 
+###
 dot = (obj, p) ->
   dom.create 'circle',
     cx: p.x
     cy: p.y
     r: obj.width * p.w / 2
     fill: obj.color
+###
 edge = (obj, p1, p2) ->
   dom.create 'line',
     x1: p1.x
@@ -447,7 +453,9 @@ edge = (obj, p1, p2) ->
     x2: p2.x
     y2: p2.y
     stroke: obj.color
-    'stroke-width': obj.width * (p1.w + p2.w) / 2
-    #'stroke-linecap': 'round' # alternative to dot
+    #'stroke-width': obj.width * (p1.w + p2.w) / 2
+    'stroke-width': obj.width * p2.w
+    ## Replace `dot` with round linecap, now set in CSS.
+    #'stroke-linecap': 'round'
     ## Dots mode:
     #'stroke-width': 1
