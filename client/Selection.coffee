@@ -133,8 +133,17 @@ export class Selection
       return true
     false
   json: ->
-    JSON.stringify Objects.find(_id: $in: @ids()).fetch()
+    JSON.stringify(
+      if @board.objects?
+        for id in @ids() when id of @board.objects
+          @board.objects[id]
+      else
+        Objects.find
+          _id: $in: @ids()
+        .fetch()
+    )
   delete: ->
+    return if @board.readonly
     return unless @nonempty()
     ## The following is similar to eraser.up:
     undoStack.pushAndDo
@@ -147,6 +156,7 @@ export class Selection
     @clear()
     highlighterClear()
   edit: (attrib, value) ->
+    return if @board.readonly
     objs =
       for id in @ids()
         obj = Objects.findOne id
@@ -172,6 +182,7 @@ export class Selection
           before: "#{attrib}": obj[attrib] ? null
           after: "#{attrib}": value
   duplicate: ->
+    return if @board.readonly
     oldIds = @ids()
     newObjs =
       for id in oldIds

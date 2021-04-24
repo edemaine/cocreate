@@ -9,6 +9,9 @@ instead of version numbers.
 
 ## 2021-04-24
 
+* Time Travel is now a toggle/overlay mode supporting both Pan and Select
+  tools, enabling copying from the past and pasting into the present.
+  [[#174](https://github.com/edemaine/cocreate/issues/174)]
 * Pen strokes render more efficiently, especially when not using a
   pressure-sensitive pen, so should bog down a page less.
 * Rename main branch from `master` to `main`.  The link to the documentation

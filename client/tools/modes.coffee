@@ -58,7 +58,7 @@ defineTool
   stop: ->
     delete pointers.objects
   down: (e) ->
-    selection = mainBoard.selection
+    selection = currentBoard().selection
     pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
     return if h.down  # in case of repeat events
@@ -127,7 +127,7 @@ defineTool
         if recurse elt  # hit
           matched.push elt
       ## Now that we've traversed the DOM, modify the selection
-      selection = mainBoard.selection
+      selection = currentBoard().selection
       for elt in matched
         if selection.has elt.dataset.id  # Toggle selection
           selection.remove elt.dataset.id
@@ -178,7 +178,7 @@ defineTool
       else
         h.clear()
   select: (ids) ->
-    mainBoard.selection.addId id for id in ids
+    currentBoard().selection.addId id for id in ids
 
 defineTool
   name: 'pen'

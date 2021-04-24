@@ -10,6 +10,7 @@ export currentPage = new ReactiveVar  # Page object for current page
 export currentPageId = new ReactiveVar
 
 export currentTool = new ReactiveVar 'pan'
+export historyMode = new ReactiveVar false
 
 ## These colors are initialized in ./tools/color.coffee:
 export currentColor = new ReactiveVar
@@ -26,7 +27,7 @@ export setMainBoard = (board) -> mainBoard = board
 export setHistoryBoard = (board) -> historyBoard = board
 
 export currentBoard = ->
-  if currentTool.get() == 'history'
+  if historyMode.get()
     historyBoard
   else
     mainBoard

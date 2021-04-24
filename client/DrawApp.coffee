@@ -2,7 +2,7 @@ import React, {useEffect, useLayoutEffect, useRef} from 'react'
 import {useParams} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {mainBoard, historyBoard, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
+import {mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
 import {Board} from './Board'
 import {Name, name} from './Name'
 import {Page} from './Page'
@@ -235,7 +235,7 @@ export DrawApp = React.memo ->
           when 'Delete', 'Backspace'
             currentBoard()?.selection?.delete()
           when ' '  ## pan via space-drag
-            if currentTool.get() not in ['pan', 'history']
+            if currentTool.get() != 'pan'
               spaceDown = true
               oldPointers = {}
               oldPointers[key] = pointers[key] for own key of pointers
@@ -246,8 +246,8 @@ export DrawApp = React.memo ->
               e.preventDefault()  # ctrl-D bookmarks on Chrome
               currentBoard().selection.duplicate()
           when 'Escape'
-            if currentTool.get() == 'history'
-              selectTool 'history'  # escape history view by toggling
+            if historyMode.get()
+              historyMode.set false  # escape history view by toggling
           else
             ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
             ## triggering width 1 hotkey.
@@ -277,6 +277,7 @@ export DrawApp = React.memo ->
         if onCopy e
           currentBoard()?.selection?.delete()
       paste: (e) ->
+        return if currentBoard().readonly
         ## Ignore paste operations within text boxes
         return if e.target.tagName in ['INPUT', 'TEXTAREA']
         e.preventDefault()
@@ -284,6 +285,7 @@ export DrawApp = React.memo ->
           objects =
             for obj in JSON.parse json
               delete obj._id
+              delete obj.id  # object ID when pasting from history
               delete obj.created
               delete obj.updated
               obj.room = currentRoom.get().id
@@ -337,6 +339,20 @@ export DrawApp = React.memo ->
   , [tool]
   useEffect onResize, [tool]  # text and image tools affect layout
 
+  history = useTracker ->
+    historyMode.get()
+  , []
+  useLayoutEffect ->
+    ## Maintain history class on <body>, which adds sepia tone
+    dom.classSet document.body, 'history', history
+    ## Preserve transform between two boards when switching history mode
+    ->
+      if history
+        mainBoard.setTransform historyBoard.transform
+      else
+        historyBoard.setTransform mainBoard.transform
+  , [history]
+
   return <BadRoom/> if bad and not loading
 
   <div id="container">
@@ -364,7 +380,7 @@ export DrawApp = React.memo ->
           <textarea id="textInput" type="text" placeholder='(type text here)'/>
         </div>
       }
-      {if tool == 'history'
+      {if history
         <div id="history" className="horizontal palette">
           <tools.history.Slider/>
         </div>
@@ -392,16 +408,16 @@ export DrawApp = React.memo ->
     <div id="center" className={"nopage" unless pageId?}>
       {###touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
        ###}
-      <svg id="mainBoard" className="board historyHide" touch-action="none"
-       ref={mainBoardRef}>
+      <svg id="mainBoard" className="board" touch-action="none"
+       ref={mainBoardRef} style={display: 'none' if history}>
         <filter id="selectFilter">
           <feGaussianBlur stdDeviation="5"/>
         </filter>
       </svg>
       <svg id="historyBoard" className="board historyShow" touch-action="none"
-       ref={historyBoardRef}/>
-      <svg id="remotes" className="board overlay historyHide"
-       ref={remotesRef}/>
+       ref={historyBoardRef} style={display: 'none' unless history}/>
+      <svg id="remotes" className="board overlay"
+       ref={remotesRef} style={display: 'none' if history}/>
       <div id="dragzone" className="overlay"/>
     </div>
     {if loading
