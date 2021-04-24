@@ -574,14 +574,14 @@ copy the SVG directly to your clipboard using
 
 This button opens a new browser tab with Cocreate's
 [Github page](https://github.com/edemaine/cocreate/) where you can
-[read this documentation](https://github.com/edemaine/cocreate/blob/master/doc/README.md),
+[read this documentation](https://github.com/edemaine/cocreate/blob/main/doc/README.md),
 [read the source code](https://github.com/edemaine/cocreate/), and
 [report bugs and request features](https://github.com/edemaine/cocreate/issues).
 
 ### <img src="icons/question-circle.svg" width="18" alt="Help Icon"> Help Link
 
 This button opens a new browser tab with
-[this User Guide](https://github.com/edemaine/cocreate/blob/master/doc/README.md).
+[this User Guide](https://github.com/edemaine/cocreate/blob/main/doc/README.md).
 Perhaps it's how you got here?
 
 ## Page Tools (top palette)

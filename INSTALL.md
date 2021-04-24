@@ -1,7 +1,7 @@
 # Installing a Cocreate Server
 
 These instructions on based on the more complicated
-[installation instructions for Coauthor](https://github.com/edemaine/coauthor/blob/master/INSTALL.md).
+[installation instructions for Coauthor](https://github.com/edemaine/coauthor/blob/main/INSTALL.md).
 
 ## Test Server
 
