@@ -182,14 +182,13 @@ export class RenderObjects
           text
       ## Basic Markdown support based on CommonMark and loosely on Slimdown:
       ## https://gist.github.com/jbroadway/2836900
-      markdown = (text) ->
+      markdown = (text) -> # eslint-disable-next-line no-unused-vars
         ## See https://spec.commonmark.org/0.29/#code-spans
         text = text
         .replace /(^|[^\\`])(`+)((?!`)[^]*?[^`])\2(?!`)/g, (m, pre, left, inner) ->
           ## Strip one leading and trailling space
           inner = inner[1..] if inner.startsWith '\u00a0'
           inner = inner[...-1] if inner.endsWith '\u00a0'
-          console.log inner
           "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
         text = latex text
         .replace ///
