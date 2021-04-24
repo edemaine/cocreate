@@ -45,6 +45,9 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   you can have one interface with both your video conference and
   your shared Cocreate drawing (and any other web tools).
 
+To see what's changed in Cocreate recently, check out the
+[Changelog](CHANGELOG.md).
+
 There are
 [plans for many more features](https://github.com/edemaine/cocreate/issues).
 Short-term goals include:

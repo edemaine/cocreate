@@ -6,6 +6,9 @@ by yourself and working live with others (e.g., in a video conference).
 See [the feature list](https://github.com/edemaine/cocreate/#features)
 for a high-level overview.
 
+To see what's changed in Cocreate recently, check out the
+[Changelog](../CHANGELOG.md).
+
 <!-- markdownlint-disable line-length -->
 
 ## Getting Started
