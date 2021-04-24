@@ -31,12 +31,12 @@ export class RenderRemotes
     @updated[id] = remote.updated
     ## Omit this in case remoteNow() is inaccurate at startup:
     #return if (timesync.remoteNow() - @updated[id]) / 1000 > remotes.fade
-    unless elt = @elts[id]
+    unless (elt = @elts[id])?
       @elts[id] = elt = dom.create 'g'
       @root.appendChild elt
     unless remote.tool == oldRemote.tool and remote.color == oldRemote.color and
            remote.fill == oldRemote.fill
-      if icon = tools[remote.tool]?.icon
+      if (icon = tools[remote.tool]?.icon)?
         if remote.tool of drawingTools
           icon = drawingToolIcon remote.tool,
             (remote.color ? defaultColor), remote.fill
@@ -68,8 +68,8 @@ export class RenderRemotes
       maxY = @board.bbox.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
       x = (remote.cursor.x + @board.transform.x) * @board.transform.scale
       y = (remote.cursor.y + @board.transform.y) * @board.transform.scale
-      unless goodX = (minX <= x <= maxX) and
-             goodY = (minY <= y <= maxY)
+      unless (goodX = (minX <= x <= maxX)) and
+             (goodY = (minY <= y <= maxY))
         x1 = @board.bbox.width / 2
         y1 = @board.bbox.height / 2
         x2 = x
@@ -120,7 +120,7 @@ export class RenderRemotes
           'text-anchor': 'start'
   delete: (remote) ->
     id = remote._id ? remote
-    if elt = @elts[id]
+    if (elt = @elts[id])?
       elt.remove()
       delete @elts[id]
       delete @transforms[id]

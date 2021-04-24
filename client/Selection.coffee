@@ -24,7 +24,7 @@ export class Highlighter
   eventCoalescedTop: (e) ->
     ## Find first event in the coalesced sequence that hits an object
     for c in e.getCoalescedEvents?() ? [e]
-      if top = @eventTop c
+      if (top = @eventTop c)?
         return top
     undefined
   eventAll: (e) ->
@@ -100,8 +100,8 @@ export class Selection
     @selected[id] = highlighter.select()
     @outline()
   addId: (id) ->
-    if target = @board.svg.querySelector \
-         """svg > g > [data-id="#{CSS.escape id}"]"""
+    if (target = @board.svg.querySelector \
+         """svg > g > [data-id="#{CSS.escape id}"]""")?
       @rehighlighter.highlight target
       @selected[id] = @rehighlighter.select()
       @outline()
@@ -129,7 +129,7 @@ export class Selection
   count: ->
     @ids().length
   nonempty: ->
-    for id of @selected
+    for id of @selected  # eslint-disable-line coffee/no-unused-vars
       return true
     false
   json: ->

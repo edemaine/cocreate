@@ -25,7 +25,7 @@ onWheel = (e) ->
       Math.min elt.scrollWidth - elt.clientWidth,
       scrolling[elt.id].target + delta
     scrolling[elt.id].request ?= window.requestAnimationFrame \
-      frame = (ms) ->
+      frame = (ms) -> # eslint-disable-line coffee/no-unused-vars
         scrolling[elt.id].begin ?= ms
         frac = Math.min 1, (ms - scrolling[elt.id].begin) / scrollDuration
         elt.scrollLeft = (1-frac) * scrolling[elt.id].origin +

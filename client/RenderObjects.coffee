@@ -41,7 +41,7 @@ export class RenderObjects
     ## In complex mode, create a document fragment for adding several
     ## <line> elements to the DOM tree at once.
     id = @id obj
-    if exists = @dom[id]
+    if (exists = @dom[id])?
       ## Destroy existing drawing if starting over
       exists.innerHTML = '' if start == 0
       if simple
@@ -151,7 +151,7 @@ export class RenderObjects
         cursorRE = '<tspan\\s+class="cursor">[^<>]*<\\/tspan>'
         mathRE = /// \$(#{cursorRE})\$ | \$\$? | \\. | [{}] ///g
         math = null
-        while match = mathRE.exec text
+        while (match = mathRE.exec text)?
           if math?
             switch match[0]
               when '{'
@@ -191,7 +191,7 @@ export class RenderObjects
               out.push text[math.end...maths[i+1].start]
             else
               out.push text[math.end..]
-            if job = @tex[[math.formula, math.display]]
+            if (job = @tex[[math.formula, math.display]])?
               unless job.texts[id]?
                 job.texts[id] = true
                 jobs.push job
@@ -211,7 +211,7 @@ export class RenderObjects
           text
       ## Basic Markdown support based on CommonMark and loosely on Slimdown:
       ## https://gist.github.com/jbroadway/2836900
-      markdown = (text) -> # eslint-disable-next-line no-unused-vars
+      markdown = (text) ->
         ## See https://spec.commonmark.org/0.29/#code-spans
         text = text
         .replace /(^|[^\\`])(`+)((?!`)[^]*?[^`])\2(?!`)/g, (m, pre, left, inner) ->
@@ -260,7 +260,7 @@ export class RenderObjects
               unmatched.replace ///<tspan[^<>]*>///g, (match) ->
                 tspans.push match
                 ''
-              line = resume + line + ("</tspan>" for tspan in tspans).join ''
+              line = resume + line + ("</tspan>" for tspan in tspans).join '' # eslint-disable-line coffee/no-unused-vars
               line = """<tspan x="0" dy="1.25em">#{line or '&nbsp;'}</tspan>""" unless i == 0
               line
           ).join '\n'

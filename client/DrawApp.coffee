@@ -281,7 +281,7 @@ export DrawApp = React.memo ->
         ## Ignore paste operations within text boxes
         return if e.target.tagName in ['INPUT', 'TEXTAREA']
         e.preventDefault()
-        if json = e.clipboardData.getData 'application/cocreate-objects'
+        if (json = e.clipboardData.getData 'application/cocreate-objects')
           objects =
             for obj in JSON.parse json
               delete obj._id
@@ -307,7 +307,7 @@ export DrawApp = React.memo ->
           obj =
             pts: [snapPoint currentBoard().relativePoint 0.25, 0.25]
           ## First check for image paste
-          if image = await tryAddImage e.clipboardData.items, obj
+          if (image = await tryAddImage e.clipboardData.items, obj)?
             setSelection [image._id]
           ## On failure, paste text content as text object
           else if text

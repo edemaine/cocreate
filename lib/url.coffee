@@ -33,7 +33,7 @@ Meteor.startup ->
       console.log "Cannot use Cocreate's CORS Anywhere server in production for any server other than the intended one; modify settings.json to specify your CORS Anywhere server."
 
 export proxyUrl = (url) ->
-  if proxy = Meteor.settings.public['cors-anywhere']
+  if (proxy = Meteor.settings.public['cors-anywhere'])
     "#{proxy}#{if proxy.endsWith '/' then '' else '/'}#{url}"
   else
     url

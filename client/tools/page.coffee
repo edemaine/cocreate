@@ -35,7 +35,7 @@ defineTool
     Meteor.call 'pageNew',
       room: currentRoom.get().id
       grid:
-        if data = page.data()
+        if (data = page.data())?
           Boolean data.grid
         else
           gridDefault

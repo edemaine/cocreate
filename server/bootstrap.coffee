@@ -4,7 +4,7 @@ if process.env.COCREATE_SKIP_UPGRADE_DB
 ## 'push' diffs used to just list a single point, but arrays are more helpful
 ## to deal with coalesced events, so make them all arrays.
 ## This update is slow, so it's disabled by default.
-if false  # eslint-disable-line no-constant-condition
+if false  # eslint-disable-line coffee/no-constant-condition
   ObjectsDiff.find
     type: 'push'
     pts: $not: $type: 'array'

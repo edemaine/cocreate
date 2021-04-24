@@ -22,7 +22,7 @@ export PageList = React.memo ->
 
   ## Monitor state of remotes
   remotesByPage = useRef {}
-  [counter, setCounter] = useState 0
+  [, setCounter] = useState 0
   useTracker ->
     return unless room?
     increment = (c) -> if c >= Number.MAX_SAFE_INTEGER then 0 else c+1

@@ -39,7 +39,7 @@ defineTool
   up: (e) ->
     delete pointers[e.pointerId]
   move: (e) ->
-    return unless start = pointers[e.pointerId]
+    return unless (start = pointers[e.pointerId])?
     board = currentBoard()
     current = board.eventToRawPoint e
     board.setTransform
