@@ -10,9 +10,9 @@ import {PageList} from './PageList'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
-import {lastTool, selectTool, clickTool, stopTool, resumeTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
+import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
 import {tryAddImage} from './tools/image'
-import {pointers, setSelection} from './tools/modes'
+import {setSelection} from './tools/modes'
 import {snapPoint} from './tools/settings'
 import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
@@ -132,34 +132,34 @@ export DrawApp = React.memo ->
     undefined
   , [room, pageId]
 
-  ## Pointer event handlers used on both boards
   useEffect ->
-    middleDown = false
-    oldPointers = null
+    ## Pointer event handlers used on both boards
+    middleDown = null
+    spaceDown = null
     dom.listen [mainBoardRef.current, historyBoardRef.current],
       pointerdown: (e) ->
         e.preventDefault()
         return if restrictTouch e
         text.blur() for text in document.querySelectorAll 'input'
         window.focus()  # for getting keyboard focus when <iframe>d
-        if e.button == 1 and currentTool.get() != 'pan'
-          middleDown = true
-          oldPointers = {}
-          oldPointers[key] = pointers[key] for own key of pointers
-          selectTool 'pan', noStop: true
+        ## Pan via middle-button drag
+        if e.button == 1 and currentTool.get() != 'pan' and
+           not middleDown and not spaceDown
+          middleDown = pushTool 'pan'
         tools[currentTool.get()].down? e
       pointerenter: (e) ->
         e.preventDefault()
         return if restrictTouch e
+        ## Stop middle-button pan if we re-enter board with button released
+        if middleDown and (e.buttons & 4) == 0
+          middleDown = popTool middleDown
         tools[currentTool.get()].down? e if e.buttons
       pointerup: stop = (e) ->
         e.preventDefault()
         return if restrictTouch e
         tools[currentTool.get()].up? e
-        if e.button == 1 and middleDown
-          selectTool lastTool, noStart: true
-          pointers[key] = oldPointers[key] for own key of oldPointers
-          middleDown = false
+        if e.button == 1 and middleDown  ## end middle-button pan
+          middleDown = popTool middleDown
       pointerleave: stop
       pointermove: (e) ->
         e.preventDefault()
@@ -199,40 +199,7 @@ export DrawApp = React.memo ->
           currentBoard().setTransform
             x: transform.x - deltaX / transform.scale
             y: transform.y - deltaY / transform.scale
-  , []
-
-  ## Drag and drop
-  useEffect ->
-    dragDepth = 0
-    all = (e) ->
-      e.preventDefault()
-      e.dataTransfer.dropEffect = 'copy'
-    dom.listen mainBoardRef.current,
-      dragenter: (e) ->
-        all e
-        return if dragDepth++
-        ## Entering for the first time
-        document.getElementById('dragzone').classList.add 'drag'
-      dragover: (e) ->
-        all e
-        #return unless dragDepth
-      dragleave: (e) ->
-        all e
-        return if --dragDepth
-        ## Leaving for the last time
-        document.getElementById('dragzone').classList.remove 'drag'
-      drop: (e) ->
-        all e
-        dragDepth = 0
-        document.getElementById('dragzone').classList.remove 'drag'
-        tryAddImage e.dataTransfer.items,
-          pts: [snapPoint currentBoard().eventToPoint e]
-  , []
-
-  ## Keyboard and copy/paste
-  useEffect ->
-    spaceDown = false
-    oldPointers = null
+    ## Keyboard and copy/paste
     dom.listen window,
       keydown: (e) ->
         return if e.target.classList.contains 'modal'
@@ -249,11 +216,8 @@ export DrawApp = React.memo ->
           when 'Delete', 'Backspace'
             currentBoard()?.selection?.delete()
           when ' '  ## pan via space-drag
-            if currentTool.get() != 'pan'
-              spaceDown = true
-              oldPointers = {}
-              oldPointers[key] = pointers[key] for own key of pointers
-              selectTool 'pan', noStop: true
+            if currentTool.get() != 'pan' and not middleDown and not spaceDown 
+              spaceDown = pushTool 'pan'
           when 'd', 'D'  ## duplicate
             if (e.ctrlKey or e.metaKey) and
                currentBoard()?.selection?.nonempty()
@@ -274,9 +238,7 @@ export DrawApp = React.memo ->
         switch e.key
           when ' '  ## end of pan via space-drag
             if spaceDown
-              selectTool lastTool, noStart: true
-              pointers[key] = oldPointers[key] for own key of oldPointers
-              spaceDown = false
+              spaceDown = popTool spaceDown
       copy: onCopy = (e) ->
         ## Ignore paste operations within text boxes
         return if e.target.tagName in ['INPUT', 'TEXTAREA']
@@ -337,6 +299,34 @@ export DrawApp = React.memo ->
                 color: currentColor.get()
                 fontSize: currentFontSize.get()
             setSelection [obj._id]
+  , []
+
+  ## Drag and drop
+  useEffect ->
+    dragDepth = 0
+    all = (e) ->
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'copy'
+    dom.listen mainBoardRef.current,
+      dragenter: (e) ->
+        all e
+        return if dragDepth++
+        ## Entering for the first time
+        document.getElementById('dragzone').classList.add 'drag'
+      dragover: (e) ->
+        all e
+        #return unless dragDepth
+      dragleave: (e) ->
+        all e
+        return if --dragDepth
+        ## Leaving for the last time
+        document.getElementById('dragzone').classList.remove 'drag'
+      drop: (e) ->
+        all e
+        dragDepth = 0
+        document.getElementById('dragzone').classList.remove 'drag'
+        tryAddImage e.dataTransfer.items,
+          pts: [snapPoint currentBoard().eventToPoint e]
   , []
 
   ## Initialize tools (after boards are created)

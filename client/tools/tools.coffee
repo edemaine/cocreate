@@ -50,7 +50,7 @@ export selectTool = (tool, options) ->
   else
     tool = currentTool.get()
   updateCursor()
-  resumeTool()
+  resumeTool options
   ## Pass previous tool's selection into new tool for possible selection.
   ## Equivalent to `setSelection` at this point because we've already cleared.
   tools[tool]?.select? selected if selected?
@@ -87,3 +87,20 @@ export restrictTouch = (e) ->
   not allowTouch.get() and \
   e.pointerType == 'touch' and \
   currentTool.get() of drawingTools
+
+## Temporary tool activation, intended for excursions into 'pan' tool
+
+export pushTool = (tool) ->
+  oldTool = currentTool.get()
+  oldPointers = Object.assign {}, pointers
+  ## Leave existing pointer data for updating selection
+  #delete pointers[key] for key of pointers
+  selectTool tool, noStop: true
+  {oldTool, oldPointers}
+
+export popTool = ({oldTool, oldPointers}) ->
+  selectTool oldTool, noStart: true
+  ## Reset pointers to old state
+  delete pointers[key] for key of pointers
+  Object.assign pointers, oldPointers
+  null
