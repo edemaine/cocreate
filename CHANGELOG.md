@@ -7,6 +7,15 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-04-25
+
+* You can now pan the page around without switching to Pan mode
+  by dragging with the middle mouse button (in addition to the previous
+  method of dragging while holding <kbd>Spacebar</kbd>).
+  [[#174](https://github.com/edemaine/cocreate/issues/178)]
+* Middle click shouldn't accidentally paste on Linux anymore.
+  [[#166](https://github.com/edemaine/cocreate/issues/166)]
+
 ## 2021-04-24
 
 * Time Travel is now a toggle/overlay mode supporting both Pan and Select

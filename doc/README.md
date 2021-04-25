@@ -138,7 +138,8 @@ and it moves around as you'd expect.
 Panning is special because it's accessible in any mode
 by holding down either the <kbd>Space</kbd> key or the middle mouse button
 and then dragging the page.
-(This behavior matches that of many image editing tools.)
+(This behavior combines features common in many drawing tools such as
+Adobe Illustrator, Adobe Photoshop, GIMP, and Inkscape.)
 
 A scroll wheel or a touchpad's scroll gesture (typically
 two-finger dragging) also pans the canvas.
