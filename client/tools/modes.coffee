@@ -31,7 +31,7 @@ defineTool
   icon: 'arrows-alt'
   hotspot: [0.5, 0.5]
   help: 'Pan around the page by dragging'
-  hotkey: 'hold SPACE'
+  hotkey: 'hold SPACE or middle mouse button'
   down: (e) ->
     board = currentBoard()
     pointers[e.pointerId] = board.eventToRawPoint e
