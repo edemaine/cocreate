@@ -71,11 +71,13 @@ defineTool
       Object.assign older, newer
     ## Check for clicking on a selected object, to ensure dragging selection
     ## works even when another object is more topmost.
-    if (sel = h.eventSelected e, selection).length
-      h.highlight sel[0]
+    ## Also check for clicking within the selection outline.
+    {selected, outline} = h.eventSelected e, selection
+    if selected.length
+      h.highlight selected[0]
     ## Deselect existing selection unless requesting multiselect
     toggle = e.shiftKey or e.ctrlKey or e.metaKey
-    unless toggle or selection.has h.id
+    unless toggle or outline? or selection.has h.id
       selection.clear()
     ## Refresh previously selected objects, in particular so tx/ty up-to-date
     pointers.objects = {}
@@ -85,17 +87,25 @@ defineTool
       target = h.eventTop e
       if target?
         h.highlight target
-    if h.id?  # have something highlighted, possibly just now
+    ## If we clicked on an object or within the selection outline,
+    ## then we update the selection and prepare for dragging it,
+    ## except that selection outline doesn't count when we
+    ## shift/ctrl/meta-click (toggle)
+    if h.id? or (outline? and not toggle)
       h.start = snapPoint h.start  # don't snap selection rectangle
-      unless selection.has h.id
-        pointers.objects[h.id] = Objects.findOne h.id
-        selection.add h
-        selection.setAttributes() if selection.count() == 1
-      else
-        if toggle
+      if h.id?  # have something highlighted, possibly just now
+        unless selection.has h.id
+          pointers.objects[h.id] = Objects.findOne h.id
+          selection.add h
+          selection.setAttributes() if selection.count() == 1
+        else if toggle
           selection.remove h.id
           delete pointers.objects[h.id]
-        h.clear()
+          h.clear()
+          ## Prevent dragging after deselecting an object
+          h.start = null
+    ## If we click on blank space, or shift/ctrl/meta-click within the
+    ## selection rectangle, then we draw
     else  # click on blank space -> show selection rectangle
       currentBoard().root.appendChild h.selector = dom.create 'rect',
         class: 'selector'

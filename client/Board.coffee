@@ -9,6 +9,7 @@ import {currentBoard} from './AppState'
 nonrenderedClasses =
   highlight: true
   selected: true
+  selector: true
   outline: true
   grid: true
 

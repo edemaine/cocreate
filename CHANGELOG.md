@@ -9,6 +9,11 @@ instead of version numbers.
 
 ## 2021-04-25
 
+* You can now drag the selection by dragging from anywhere within the
+  selection rectangle, making it much easier to drag the current selection.
+  <kbd>Shift</kbd>-clicking behaves as before (toggle an item or start a
+  toggle rectangle), so you can still easily modify the selection.
+  [[#170](https://github.com/edemaine/cocreate/issues/170)]
 * You can now pan the page around without switching to Pan mode
   by dragging with the middle mouse button (in addition to the previous
   method of dragging while holding <kbd>Spacebar</kbd>).

@@ -28,13 +28,19 @@ export class Highlighter
         return top
     undefined
   eventAll: (e) ->
-    for elt in document.elementsFromPoint e.clientX, e.clientY
-      elt = @findGroup elt
-      continue unless elt?
-      elt
+    elts =
+      for elt in document.elementsFromPoint e.clientX, e.clientY
+        if elt.getAttribute('class') == 'outline'
+          outline = elt
+          continue
+        elt = @findGroup elt
+        continue unless elt?
+        elt
+    {elts, outline}
   eventSelected: (e, selection) ->
-    return [] unless selection?
-    target for target in @eventAll e when selection.has target.dataset.id
+    {elts, outline} = @eventAll e
+    selected: (target for target in elts when selection?.has target.dataset.id)
+    outline: outline
   findGroup: (target) ->
     while target? and not target.dataset?.id?
       return if target.classList?.contains 'board'
