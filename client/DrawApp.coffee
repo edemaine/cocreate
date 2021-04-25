@@ -169,6 +169,9 @@ export DrawApp = React.memo ->
         ## Prevent right click from bringing up context menu, as it interferes
         ## with e.g. drawing.
         e.preventDefault()
+      auxclick: (e) ->
+        ## Prevent middle click from pasting in X-windows.
+        e.preventDefault()
       wheel: (e) ->
         e.preventDefault()
         transform = currentBoard().transform
