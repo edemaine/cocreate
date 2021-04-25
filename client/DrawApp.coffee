@@ -134,12 +134,19 @@ export DrawApp = React.memo ->
 
   ## Pointer event handlers used on both boards
   useEffect ->
+    middleDown = false
+    oldPointers = null
     dom.listen [mainBoardRef.current, historyBoardRef.current],
       pointerdown: (e) ->
         e.preventDefault()
         return if restrictTouch e
         text.blur() for text in document.querySelectorAll 'input'
         window.focus()  # for getting keyboard focus when <iframe>d
+        if e.button == 1 and currentTool.get() != 'pan'
+          middleDown = true
+          oldPointers = {}
+          oldPointers[key] = pointers[key] for own key of pointers
+          selectTool 'pan', noStop: true
         tools[currentTool.get()].down? e
       pointerenter: (e) ->
         e.preventDefault()
@@ -149,6 +156,10 @@ export DrawApp = React.memo ->
         e.preventDefault()
         return if restrictTouch e
         tools[currentTool.get()].up? e
+        if e.button == 1 and middleDown
+          selectTool lastTool, noStart: true
+          pointers[key] = oldPointers[key] for own key of oldPointers
+          middleDown = false
       pointerleave: stop
       pointermove: (e) ->
         e.preventDefault()

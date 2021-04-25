@@ -135,9 +135,10 @@ This tool does one thing: scroll around the page.
 To use it, drag the page as you would a physical piece of paper,
 and it moves around as you'd expect.
 
-Panning is special because it's accessible in any mode (if you have a keyboard)
-by holding down the <kbd>Space</kbd> key and then dragging the page.
-(This behavior matches Adobe Creative Suite.)
+Panning is special because it's accessible in any mode
+by holding down either the <kbd>Space</kbd> key or the middle mouse button
+and then dragging the page.
+(This behavior matches that of many image editing tools.)
 
 A scroll wheel or a touchpad's scroll gesture (typically
 two-finger dragging) also pans the canvas.
