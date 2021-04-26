@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-04-26
+
+* Custom scrollbars should look nicer especially in dark mode.
+
 ## 2021-04-25
 
 * You can now drag the selection by dragging from anywhere within the
