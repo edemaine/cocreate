@@ -35,6 +35,8 @@ defineTool
       .replace /</g, '&lt;'
       .replace />/g, '&gt;'
       }\""
+    ## Compress using SVG's self-closing tags
+    .replace ///(<(\w+)\b[^<>]*)> \s* </\2>///g, '$1/>'
     ## Reset transform and grid
     root.setAttribute 'transform', oldTransform if oldTransform?
     grid?.update()
