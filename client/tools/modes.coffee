@@ -101,9 +101,9 @@ defineTool
         else if toggle
           selection.remove h.id
           delete pointers.objects[h.id]
-          h.clear()
           ## Prevent dragging after deselecting an object
           h.start = null
+        h.clear()  # avoid leftover shadow when dragging
     ## If we click on blank space, or shift/ctrl/meta-click within the
     ## selection rectangle, then we draw
     else  # click on blank space -> show selection rectangle

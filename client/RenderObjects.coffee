@@ -128,10 +128,12 @@ export class RenderObjects
         dom.create 'g', null,
           dataset: id: id
       wrapper.appendChild g = dom.create 'g'
+      g.appendChild rect = dom.create 'rect',
+        class: 'bbox'
       g.appendChild text = dom.create 'text'
     else
       g = wrapper.firstChild
-      text = g.firstChild
+      [rect, text] = g.childNodes
     dom.attr g,
       transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
@@ -301,6 +303,11 @@ export class RenderObjects
       text.innerHTML = content
       for {job, id} in readyJobs
         @texRender job, id
+    ## Update bounding box of text
+    x = y = width = height = 0
+    dom.attr rect, {x, y, width, height}
+    {x, y, width, height} = g.getBBox()
+    dom.attr rect, {x, y, width, height}
     wrapper
   texInit: ->
     return if @tex2svg?
@@ -349,7 +356,7 @@ export class RenderObjects
     return unless object
     fontSize = object.fontSize
     g = @dom[id].firstChild
-    text = g.firstChild
+    [rect, text] = g.childNodes
     dx = job.width * fontSize
     ## Roboto Slab in https://opentype.js.org/font-inspector.html:
     #unitsPerEm = 1000 # Font Header table
@@ -381,6 +388,12 @@ export class RenderObjects
         svgG = job2.texts[id][i]
         svgG.setAttribute 'transform', svgG.getAttribute('transform').replace \
           /translate\([\-\.\d]+/, "translate(#{x}"
+    ## Update bounding box of text
+    x = y = width = height = 0
+    dom.attr rect, {x, y, width, height}
+    {x, y, width, height} = g.getBBox()
+    dom.attr rect, {x, y, width, height}
+    ## Update selected copies
     @board.selection.redraw id, @dom[id] if @board.selection?.has id
     pointers.cursorUpdate?() if id == pointers.text
   texJob: ->

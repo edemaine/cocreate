@@ -14,10 +14,15 @@ instead of version numbers.
   <kbd>Shift</kbd>-clicking behaves as before (toggle an item or start a
   toggle rectangle), so you can still easily modify the selection.
   [[#170](https://github.com/edemaine/cocreate/issues/170)]
+* You can now select a text object (e.g., to edit it with the text tool)
+  by clicking anywhere within its bounding box, instead of having to click
+  exactly on the letters.
+  [[#171](https://github.com/edemaine/cocreate/issues/171)]
 * You can now pan the page around without switching to Pan mode
   by dragging with the middle mouse button (in addition to the previous
   method of dragging while holding <kbd>Spacebar</kbd>).
   [[#174](https://github.com/edemaine/cocreate/issues/178)]
+* Exported SVG files should be slightly smaller.
 * Middle click shouldn't accidentally paste on Linux anymore.
   [[#166](https://github.com/edemaine/cocreate/issues/166)]
 
