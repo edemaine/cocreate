@@ -24,12 +24,16 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   * **Text** tool with **LaTeX math**<sup>★</sup> support
     (via [MathJax](https://www.mathjax.org/))
     and basic **Markdown formatting**<sup>★</sup>
+  * **Image** (PNG/JPG/GIF/SVG) embedding from other websites
+    (e.g., Imgur or Coauthor) for drawing on top of images
   * Other basic tools: pan, zoom, eraser
   * Basic settings: line thickness (scaling correctly with zoom),
     color palette, fill, font size
 * **Vector** representation:
   * **Select, edit, move, duplicate<sup>★</sup>, delete** existing objects,
     including **rectangular select**<sup>★</sup>
+  * **Copy/paste**, including between pages or boards, and copying from the
+    past and pasting into the present
   * Export as **SVG**<sup>★</sup>
 * **Multiple pages**<sup>★</sup>
   * **Page duplication**<sup>★</sup> (for animation or exploring alternatives)
@@ -40,6 +44,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
 * **Minimalist** user interface leaves lots of room for drawing,
   without hiding features behind dropdowns,
   while tooltips explain the many buttons
+  * **Dark mode**<sup>★</sup>
 * **Free/open source**<sup>★</sup> ([MIT license](LICENSE))
 * Via [Comingle](https://github.com/edemaine/comingle),
   you can have one interface with both your video conference and
@@ -52,7 +57,8 @@ There are
 [plans for many more features](https://github.com/edemaine/cocreate/issues).
 Short-term goals include:
 
-* [Uploading images/SVG/PDF to annotate](https://github.com/edemaine/cocreate/issues/22)
+* [Re-ordering/archiving pages](https://github.com/edemaine/cocreate/issues/137)
+* [Resizing objects](https://github.com/edemaine/cocreate/issues/17)
 
 Feel free to help by submitting a pull request!
 
