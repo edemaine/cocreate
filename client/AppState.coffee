@@ -14,7 +14,6 @@ export currentPageId = new ReactiveVar
 
 export setPageId = (id) ->
   return if id == currentPageId.get()
-  console.log routerHistory.location
   routerHistory.push "#{routerHistory.location.pathname}##{id}"
 
 export currentTool = new ReactiveVar 'pan'

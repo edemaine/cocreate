@@ -659,6 +659,12 @@ respectively.
 Hovering on the page number shows a tooltip
 with the names of users on that page.
 
+Page buttons are regular links, so you can right click on a page number to
+copy the link location to your clipboard (to link to a specific page), or
+to open the page in a new browser tab.  When you click on a page, the URL
+changes to include the unique page ID after a `#` mark.  This makes it easy
+to link to the specific page you're viewing.
+
 ### <img src="icons/chevron-left-square.svg" width="18" alt="Previous Page Icon"> Previous / <img src="icons/chevron-right-square.svg" width="18" alt="Next Page Icon"> Next Page
 
 These buttons navigate your view to the previous or next page.
