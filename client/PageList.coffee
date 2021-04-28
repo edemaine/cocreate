@@ -2,7 +2,7 @@ import React, {useRef, useState} from 'react'
 import Tooltip from 'react-bootstrap/Tooltip'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {currentRoom, currentPage, currentPageId} from './AppState'
+import {currentRoom, currentPage} from './AppState'
 import {SoloTooltip} from './SoloTooltip'
 import {Icon} from './lib/icons'
 #import remotes from './lib/remotes'
@@ -78,8 +78,8 @@ export PageList = React.memo ->
             }
           </Tooltip>
         }>
-          <div className="page #{if active then 'active' else ''}"
-          onClick={-> currentPageId.set pageId}>
+          <a className="page #{if active then 'active' else ''}"
+           href="##{pageId}">
             {switch pageRemotesCount
               when 0
                 null
@@ -92,7 +92,7 @@ export PageList = React.memo ->
             }
             &nbsp;
             {index+1}
-          </div>
+          </a>
         </SoloTooltip>
     }
   </div>

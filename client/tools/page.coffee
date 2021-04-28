@@ -1,5 +1,5 @@
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage, currentPageId} from '../AppState'
+import {currentRoom, currentPage, setPageId} from '../AppState'
 import {gridDefault} from '../Grid'
 
 defineTool
@@ -10,7 +10,7 @@ defineTool
   hotkey: 'Page Up'
   click: ->
     pageId = currentRoom.get()?.pageDelta currentPage.get(), -1
-    currentPageId.set pageId if pageId?
+    setPageId pageId if pageId?
 
 defineTool
   name: 'pageNext'
@@ -20,7 +20,7 @@ defineTool
   hotkey: 'Page Down'
   click: ->
     pageId = currentRoom.get()?.pageDelta currentPage.get(), +1
-    currentPageId.set pageId if pageId?
+    setPageId pageId if pageId?
 
 defineTool
   name: 'pageNew'
@@ -43,7 +43,7 @@ defineTool
     , (error, pageId) ->
       if error?
         return console.error "Failed to create new page on server: #{error}"
-      currentPageId.set pageId
+      setPageId pageId
 
 defineTool
   name: 'pageDup'
@@ -54,4 +54,4 @@ defineTool
     Meteor.call 'pageDup', currentPage.get().id, (error, pageId) ->
       if error?
         return console.error "Failed to duplicate page on server: #{error}"
-      currentPageId.set pageId
+      setPageId pageId

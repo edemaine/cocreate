@@ -7,6 +7,13 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-04-28
+
+* You can now link to a specific page of a Cocreate board.  You can copy the
+  link location (or open a new tab) by right clicking on a page button.
+  The webpage URL also automatically updates when you click on a page button.
+  [[#164](https://github.com/edemaine/cocreate/issues/164)]
+
 ## 2021-04-26
 
 * Custom scrollbars should look nicer especially in dark mode.

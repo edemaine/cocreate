@@ -1,8 +1,8 @@
 import React, {useEffect, useLayoutEffect, useRef} from 'react'
-import {useParams} from 'react-router-dom'
+import {useParams, useHistory, useLocation} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
+import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
 import {Board} from './Board'
 import {Name, name} from './Name'
 import {Page} from './Page'
@@ -66,13 +66,25 @@ export DrawApp = React.memo ->
   , [room]
 
   ## Page data structure, and stop/resume current tool
+  location = useLocation()
+  locationHistory = useHistory()
+  setRouterHistory locationHistory
   pageId = useTracker ->
     id = currentPageId.get()
-    ## Auto load first page
-    if not id and (pages = room?.data()?.pages)?.length
+    hashId = location.hash?[1..]
+    pages = room?.data()?.pages
+    ## Check for initial or changed hash indicating page ID
+    if hashId
+      if id != hashId and pages?
+        if hashId in pages
+          currentPageId.set hashId
+        else if not loading ## Invalid page hash: redirect to remove from URL
+          Meteor.defer -> locationHistory.replace location.path
+    else if not id and pages?.length
+      ## Auto load first page by default
       currentPageId.set pages[0]
     id
-  , [room]
+  , [room, location.hash, loading]
   remotesRef = useRef()
   useEffect -> # wait for mainBoard to be set
     return unless pageId?
