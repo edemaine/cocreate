@@ -13,6 +13,9 @@ instead of version numbers.
   link location (or open a new tab) by right clicking on a page button.
   The webpage URL also automatically updates when you click on a page button.
   [[#164](https://github.com/edemaine/cocreate/issues/164)]
+* Cocreate now remembers the last page you viewed on each board, and starts
+  there if the URL didn't specify a specific page to start on.  (This is useful
+  in the context of Comingle, where the entry URL usually remains fixed.)
 
 ## 2021-04-26
 

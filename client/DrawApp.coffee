@@ -78,11 +78,17 @@ export DrawApp = React.memo ->
       if id != hashId and pages?
         if hashId in pages
           currentPageId.set hashId
+          window?.localStorage?.setItem? "#{roomId}.page", hashId
         else if not loading ## Invalid page hash: redirect to remove from URL
           Meteor.defer -> locationHistory.replace location.path
     else if not id and pages?.length
-      ## Auto load first page by default
-      currentPageId.set pages[0]
+      ## Use last page recorded in localStorage if there is one.
+      if (storageId = window?.localStorage?.getItem? "#{roomId}.page") and
+         storageId in pages
+        currentPageId.set storageId
+      else
+        ## Auto load first page by default
+        currentPageId.set pages[0]
     id
   , [room, location.hash, loading]
   remotesRef = useRef()
