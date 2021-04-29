@@ -24,17 +24,23 @@ export class Highlighter
   eventCoalescedTop: (e) ->
     ## Find first event in the coalesced sequence that hits an object
     for c in e.getCoalescedEvents?() ? [e]
-      if top = @eventTop c
+      if (top = @eventTop c)?
         return top
     undefined
   eventAll: (e) ->
-    for elt in document.elementsFromPoint e.clientX, e.clientY
-      elt = @findGroup elt
-      continue unless elt?
-      elt
+    elts =
+      for elt in document.elementsFromPoint e.clientX, e.clientY
+        if elt.getAttribute('class') == 'outline'
+          outline = elt
+          continue
+        elt = @findGroup elt
+        continue unless elt?
+        elt
+    {elts, outline}
   eventSelected: (e, selection) ->
-    return [] unless selection?
-    target for target in @eventAll e when selection.has target.dataset.id
+    {elts, outline} = @eventAll e
+    selected: (target for target in elts when selection?.has target.dataset.id)
+    outline: outline
   findGroup: (target) ->
     while target? and not target.dataset?.id?
       return if target.classList?.contains 'board'
@@ -100,8 +106,8 @@ export class Selection
     @selected[id] = highlighter.select()
     @outline()
   addId: (id) ->
-    if target = @board.svg.querySelector \
-         """svg > g > [data-id="#{CSS.escape id}"]"""
+    if (target = @board.svg.querySelector \
+         """svg > g > [data-id="#{CSS.escape id}"]""")?
       @rehighlighter.highlight target
       @selected[id] = @rehighlighter.select()
       @outline()
@@ -129,12 +135,21 @@ export class Selection
   count: ->
     @ids().length
   nonempty: ->
-    for id of @selected
+    for id of @selected  # eslint-disable-line coffee/no-unused-vars
       return true
     false
   json: ->
-    JSON.stringify Objects.find(_id: $in: @ids()).fetch()
+    JSON.stringify(
+      if @board.objects?
+        for id in @ids() when id of @board.objects
+          @board.objects[id]
+      else
+        Objects.find
+          _id: $in: @ids()
+        .fetch()
+    )
   delete: ->
+    return if @board.readonly
     return unless @nonempty()
     ## The following is similar to eraser.up:
     undoStack.pushAndDo
@@ -147,6 +162,7 @@ export class Selection
     @clear()
     highlighterClear()
   edit: (attrib, value) ->
+    return if @board.readonly
     objs =
       for id in @ids()
         obj = Objects.findOne id
@@ -172,6 +188,7 @@ export class Selection
           before: "#{attrib}": obj[attrib] ? null
           after: "#{attrib}": value
   duplicate: ->
+    return if @board.readonly
     oldIds = @ids()
     newObjs =
       for id in oldIds

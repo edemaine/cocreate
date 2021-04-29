@@ -182,6 +182,9 @@ button(activeBorder)
   border-radius: 25% 25% 0 0
   border-bottom: none !important
   button(2px)
+  // Avoid link styling
+  color: inherit
+  text-decoration: inherit
 .icon
   display: inline-block
   svg
@@ -316,11 +319,14 @@ svg
     stroke: rgba(0,0,0,0.5)
     stroke-width: 3
     stroke-dasharray: 6
+    pointer-events: none  // avoid .outline flickering as we drag over it
   .outline
-    fill: none
+    fill: rgba(0,0,0,0.05)
     stroke: rgba(0,0,0,0.5)
     stroke-width: 2
     stroke-dasharray: 2
+    &:hover
+      fill: rgba(0,0,0,0.15)
   tspan.code
     font-family: 'Roboto Mono', monospace
   tspan.emph
@@ -329,16 +335,13 @@ svg
     font-weight: bold
   tspan.strike
     text-decoration: line-through
+  .bbox
+    fill: rgba(0,0,0,0)
 
-body:not(.tool-history)
-  .historyShow
-    display: none
-body.tool-history
+body.history
   --palette-color: hsl(32,40%,73%)  // sepia-like
   &.dark
     --palette-color: hsl(32,40%,20%)
-  .historyHide
-    display: none
 
 .loading
   position: fixed
@@ -398,6 +401,16 @@ body.tool-history
 
 .center
   text-align: center
+
+// Drawing
+
+.pen
+  line
+    stroke-linecap: round
+  polyline
+    stroke-linecap: round
+    stroke-linejoin: round
+    fill: none
 
 .grid
   stroke-width: 0.96

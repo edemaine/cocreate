@@ -33,7 +33,7 @@ defineTool
   icon: 'arrows-alt'
   hotspot: [0.5, 0.5]
   help: 'Pan around the page by dragging'
-  hotkey: 'hold SPACE'
+  hotkey: 'hold SPACE or middle mouse button'
   down: (e) ->
     board = currentBoard()
     pointers[e.pointerId] = board.eventToRawPoint e
@@ -41,7 +41,7 @@ defineTool
   up: (e) ->
     delete pointers[e.pointerId]
   move: (e) ->
-    return unless start = pointers[e.pointerId]
+    return unless (start = pointers[e.pointerId])?
     board = currentBoard()
     current = board.eventToRawPoint e
     board.setTransform
@@ -60,7 +60,7 @@ defineTool
   stop: ->
     delete pointers.objects
   down: (e) ->
-    selection = mainBoard.selection
+    selection = currentBoard().selection
     pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
     return if h.down  # in case of repeat events
@@ -73,11 +73,13 @@ defineTool
       Object.assign older, newer
     ## Check for clicking on a selected object, to ensure dragging selection
     ## works even when another object is more topmost.
-    if (sel = h.eventSelected e, selection).length
-      h.highlight sel[0]
+    ## Also check for clicking within the selection outline.
+    {selected, outline} = h.eventSelected e, selection
+    if selected.length
+      h.highlight selected[0]
     ## Deselect existing selection unless requesting multiselect
     toggle = e.shiftKey or e.ctrlKey or e.metaKey
-    unless toggle or selection.has h.id
+    unless toggle or outline? or selection.has h.id
       selection.clear()
     ## Refresh previously selected objects, in particular so tx/ty up-to-date
     pointers.objects = {}
@@ -87,17 +89,25 @@ defineTool
       target = h.eventTop e
       if target?
         h.highlight target
-    if h.id?  # have something highlighted, possibly just now
+    ## If we clicked on an object or within the selection outline,
+    ## then we update the selection and prepare for dragging it,
+    ## except that selection outline doesn't count when we
+    ## shift/ctrl/meta-click (toggle)
+    if h.id? or (outline? and not toggle)
       h.start = snapPoint h.start  # don't snap selection rectangle
-      unless selection.has h.id
-        pointers.objects[h.id] = Objects.findOne h.id
-        selection.add h
-        selection.setAttributes() if selection.count() == 1
-      else
-        if toggle
+      if h.id?  # have something highlighted, possibly just now
+        unless selection.has h.id
+          pointers.objects[h.id] = Objects.findOne h.id
+          selection.add h
+          selection.setAttributes() if selection.count() == 1
+        else if toggle
           selection.remove h.id
           delete pointers.objects[h.id]
-        h.clear()
+          ## Prevent dragging after deselecting an object
+          h.start = null
+        h.clear()  # avoid leftover shadow when dragging
+    ## If we click on blank space, or shift/ctrl/meta-click within the
+    ## selection rectangle, then we draw
     else  # click on blank space -> show selection rectangle
       currentBoard().root.appendChild h.selector = dom.create 'rect',
         class: 'selector'
@@ -111,7 +121,7 @@ defineTool
       rect = dom.pointsToRect h.start, board.eventToPoint e
 
       ## Now that we've traversed the DOM, modify the selection
-      selection = mainBoard.selection
+      selection = currentBoard().selection
       query_aabb = Aabb.from_rect rect
       for id from currentPage.get().dbvt.query query_aabb
         if intersects query_aabb, currentPage.get().objMap()[id]
@@ -164,7 +174,7 @@ defineTool
       else
         h.clear()
   select: (ids) ->
-    mainBoard.selection.addId id for id in ids
+    currentBoard().selection.addId id for id in ids
 
 defineTool
   name: 'pen'

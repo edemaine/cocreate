@@ -1,4 +1,4 @@
-import {mainBoard, historyBoard, currentTool, currentColor, currentFill, currentFillOn} from './AppState'
+import {currentBoard, currentTool, currentColor, currentFill, currentFillOn} from './AppState'
 import {drawingTools, tools} from './tools/tools'
 import {dark, fancyCursor} from './tools/settings'
 import icons from './lib/icons'
@@ -16,15 +16,12 @@ export updateCursor = ->
   tool = currentTool.get()
   if tool of drawingTools
     ## Drawing tools' cursors depend on the current color
-    setCursor mainBoard.svg,
+    setCursor currentBoard().svg,
       drawingToolIcon(tool, currentColor.get(),
         if currentFillOn.get() then currentFill.get()),
       ...tools[tool].hotspot
-  else if tool == 'history'
-    setCursor historyBoard.svg,
-      tools['pan'].icon, ...tools['pan'].hotspot
   else
-    setCursor mainBoard.svg, tools[tool].icon, ...tools[tool].hotspot
+    setCursor currentBoard().svg, tools[tool].icon, ...tools[tool].hotspot
 
 export drawingToolIcon = (tool, color, fill) ->
   icon = tools[tool]?.icon

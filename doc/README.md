@@ -6,6 +6,9 @@ by yourself and working live with others (e.g., in a video conference).
 See [the feature list](https://github.com/edemaine/cocreate/#features)
 for a high-level overview.
 
+To see what's changed in Cocreate recently, check out the
+[Changelog](../CHANGELOG.md).
+
 <!-- markdownlint-disable line-length -->
 
 ## Getting Started
@@ -132,9 +135,11 @@ This tool does one thing: scroll around the page.
 To use it, drag the page as you would a physical piece of paper,
 and it moves around as you'd expect.
 
-Panning is special because it's accessible in any mode (if you have a keyboard)
-by holding down the <kbd>Space</kbd> key and then dragging the page.
-(This behavior matches Adobe Creative Suite.)
+Panning is special because it's accessible in any mode
+by holding down either the <kbd>Space</kbd> key or the middle mouse button
+and then dragging the page.
+(This behavior combines features common in many drawing tools such as
+Adobe Illustrator, Adobe Photoshop, GIMP, and Inkscape.)
 
 A scroll wheel or a touchpad's scroll gesture (typically
 two-finger dragging) also pans the canvas.
@@ -407,8 +412,8 @@ two situations that require a second try:
 
 ### <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
 
-Time Travel is a toggling mode that lets you look at the history of past
-versions of the current page.
+Time Travel is a toggling/overlay mode that lets you look at the history of
+past versions of the current page.
 It replaces the attribute palette at the bottom of the window
 with a slider which starts at the far left (the beginning of time).
 As a result, you'll see a blank screen.
@@ -417,23 +422,35 @@ you'll see the evolution of the page.
 
 While in Time Travel mode, you can do the following:
 
+* Using the
+  [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool),
+  drag on the page to pan around.
+* Using the
+  [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool),
+  select objects and copy them to the clipboard via
+  <kbd>Ctrl-C</kbd> or <kbd>Command-C</kbd> on a Mac.
+  (Paste is disabled while in Time Travel, but you can paste into the present,
+  via <kbd>Ctrl-V</kbd> or <kbd>Command-V</kbd> on a Mac,
+  after exiting Time Travel.)
 * Use the
-[<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
-buttons to take single steps backward or forward in the timeline.
-* Drag on the page to pan around (like the
-[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)),
-or pan using a scroll wheel or touchpad pan gesture.
+  [<img src="icons/undo.svg" width="18" alt="Undo Icon"> Undo / <img src="icons/redo.svg" width="18" alt="Undo Icon"> Redo](#-undo---redo)
+  buttons to take single steps backward or forward in the timeline.
 * [<img src="icons/search-minus.svg" width="18" alt="Zoom Out Icon"> Zoom Out / <img src="icons/search-plus.svg" width="18" alt="Zoom In Icon"> Zoom In](#-zoom-out---zoom-in)
-using the buttons, using a scroll wheel while holding
-<kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
+  using the buttons, using a scroll wheel while holding
+  <kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
 * [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit).
-* [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg) for the currently viewed version.
+* [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg)
+  for the currently viewed page or selection.
 
 The tool palettes switch to a sepia tone to indicate you're time traveling.
 You can't make any changes or see others' cursors while time traveling.
 You can leave Time Travel mode by clicking
 <img src="icons/history.svg" width="18" alt="Time Travel Icon"> Time Travel
-again, or by selecting another mode from the left palette.
+again, or by selecting a tool other than
+[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool)
+or
+[<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool)
+from the left palette.
 
 ### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
 
@@ -574,14 +591,14 @@ copy the SVG directly to your clipboard using
 
 This button opens a new browser tab with Cocreate's
 [Github page](https://github.com/edemaine/cocreate/) where you can
-[read this documentation](https://github.com/edemaine/cocreate/blob/master/doc/README.md),
+[read this documentation](https://github.com/edemaine/cocreate/blob/main/doc/README.md),
 [read the source code](https://github.com/edemaine/cocreate/), and
 [report bugs and request features](https://github.com/edemaine/cocreate/issues).
 
 ### <img src="icons/question-circle.svg" width="18" alt="Help Icon"> Help Link
 
 This button opens a new browser tab with
-[this User Guide](https://github.com/edemaine/cocreate/blob/master/doc/README.md).
+[this User Guide](https://github.com/edemaine/cocreate/blob/main/doc/README.md).
 Perhaps it's how you got here?
 
 ## Page Tools (top palette)
@@ -641,6 +658,12 @@ if there are 1, 2, or 3+ users on a page, you'll see
 respectively.
 Hovering on the page number shows a tooltip
 with the names of users on that page.
+
+Page buttons are regular links, so you can right click on a page number to
+copy the link location to your clipboard (to link to a specific page), or
+to open the page in a new browser tab.  When you click on a page, the URL
+changes to include the unique page ID after a `#` mark.  This makes it easy
+to link to the specific page you're viewing.
 
 ### <img src="icons/chevron-left-square.svg" width="18" alt="Previous Page Icon"> Previous / <img src="icons/chevron-right-square.svg" width="18" alt="Next Page Icon"> Next Page
 

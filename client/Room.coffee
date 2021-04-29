@@ -27,12 +27,12 @@ export class Room
     @data()?.pages?.length
   pageIndex: (page) ->
     return unless page?
-    return unless pages = @data()?.pages
+    return unless (pages = @data()?.pages)?
     index = pages.indexOf (page.id ? page)
     return if index < 0
     index
   pageDelta: (page, delta) ->
-    return unless pages = @data()?.pages
+    return unless (pages = @data()?.pages)?
     index = pages.indexOf (page.id ? page)
     return if index < 0
     index += delta

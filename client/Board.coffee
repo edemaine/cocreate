@@ -9,6 +9,7 @@ import {currentBoard} from './AppState'
 nonrenderedClasses =
   highlight: true
   selected: true
+  selector: true
   outline: true
   grid: true
 
@@ -29,7 +30,8 @@ export class Board
   constructor: (@svg, @readonly) ->
     @svg.appendChild @root = dom.create 'g'
     @transform = defaultTransform()
-    @selection = new Selection @ unless @readonly
+    @selection = new Selection @
+    ## historyBoard additionally sets @objects to mapping of ids to objects.
     ## Can't call @resize() until mainBoard gets set, after this constructor
   clear: ->
     @root.innerHTML = ''

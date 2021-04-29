@@ -1,6 +1,6 @@
 import {defineTool, tools} from './defineTool'
 import {setSelection} from './modes'
-import {currentTool} from '../AppState'
+import {historyMode} from '../AppState'
 import {Ctrl} from '../lib/platform'
 import {undoStack} from '../UndoStack'
 
@@ -8,10 +8,14 @@ defineTool
   name: 'undo'
   category: 'undo'
   icon: 'undo'
-  help: 'Undo the last operation you did'
+  help: ->
+    if historyMode.get()
+      'Time travel back one step into the past'
+    else
+      'Undo the last operation you did'
   hotkey: "#{Ctrl}-Z"
   click: ->
-    if currentTool.get() == 'history'
+    if historyMode.get()
       historyAdvance -1
     else
       setSelection undoStack.undo()
@@ -20,10 +24,14 @@ defineTool
   name: 'redo'
   category: 'undo'
   icon: 'redo'
-  help: 'Redo: Undo the last undo you did (if you did no operations since)'
+  help: ->
+    if historyMode.get()
+      'Time travel forward one step into the future'
+    else
+      'Redo: Undo the last undo you did (if you did no operations since)'
   hotkey: ["#{Ctrl}-Y", "#{Ctrl}-Shift-Z"]
   click: ->
-    if currentTool.get() == 'history'
+    if historyMode.get()
       historyAdvance +1
     else
       setSelection undoStack.redo()

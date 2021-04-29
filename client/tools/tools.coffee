@@ -20,7 +20,7 @@ export {toolsByCategory, toolsByHotkey} from './defineTool'
 
 import {pointers} from './modes'
 import {allowTouch} from './settings'
-import {mainBoard, currentTool} from '../AppState'
+import {mainBoard, historyMode, currentTool} from '../AppState'
 import {highlighterClear} from '../Selection'
 import {updateCursor} from '../cursor'
 
@@ -32,26 +32,29 @@ export drawingTools =
   rect: true
   ellipse: true
   text: true
+export historyTools =
+  pan: true
+  select: true
 
 export lastTool = null
 export selectTool = (tool, options) ->
   previous = currentTool.get()
-  if tool == previous == 'history'  # treat history as a toggle
-    tool = lastTool
   return if tool == previous
   selected = stopTool options
-  document.body.classList.remove "tool-#{previous}" if previous
+  if historyMode.get() and not historyTools[tool]
+    historyMode.set false
+  #document.body.classList.remove "tool-#{previous}" if previous
   if tool?  # tool == null means initialize already set currentTool
     lastTool = previous
     currentTool.set tool
   else
     tool = currentTool.get()
   updateCursor()
-  resumeTool()
+  resumeTool options
   ## Pass previous tool's selection into new tool for possible selection.
   ## Equivalent to `setSelection` at this point because we've already cleared.
   tools[tool]?.select? selected if selected?
-  document.body.classList.add "tool-#{tool}"
+  #document.body.classList.add "tool-#{tool}"
   lastDrawingTool = tool if tool of drawingTools
 
 export selectDrawingTool = ->
@@ -84,3 +87,20 @@ export restrictTouch = (e) ->
   not allowTouch.get() and \
   e.pointerType == 'touch' and \
   currentTool.get() of drawingTools
+
+## Temporary tool activation, intended for excursions into 'pan' tool
+
+export pushTool = (tool) ->
+  oldTool = currentTool.get()
+  oldPointers = Object.assign {}, pointers
+  ## Leave existing pointer data for updating selection
+  #delete pointers[key] for key of pointers
+  selectTool tool, noStop: true
+  {oldTool, oldPointers}
+
+export popTool = ({oldTool, oldPointers}) ->
+  selectTool oldTool, noStart: true
+  ## Reset pointers to old state
+  delete pointers[key] for key of pointers
+  Object.assign pointers, oldPointers
+  null

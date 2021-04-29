@@ -69,7 +69,7 @@ defineTool
   hotkey: '#'
   active: -> currentRoom.get()?.gridSnap.get()
   click: ->
-    return unless room = currentRoom.get()
+    return unless (room = currentRoom.get())?
     room.gridSnap.set not room.gridSnap.get()
 
 export snapPoint = (pt) ->

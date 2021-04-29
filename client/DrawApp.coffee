@@ -1,8 +1,8 @@
 import React, {useEffect, useLayoutEffect, useRef} from 'react'
-import {useParams} from 'react-router-dom'
+import {useParams, useHistory, useLocation} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {mainBoard, historyBoard, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
+import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
 import {Board} from './Board'
 import {Name, name} from './Name'
 import {Page} from './Page'
@@ -10,9 +10,9 @@ import {PageList} from './PageList'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
-import {lastTool, selectTool, clickTool, stopTool, resumeTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
+import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
 import {tryAddImage} from './tools/image'
-import {pointers, setSelection} from './tools/modes'
+import {setSelection} from './tools/modes'
 import {snapPoint} from './tools/settings'
 import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
@@ -66,13 +66,31 @@ export DrawApp = React.memo ->
   , [room]
 
   ## Page data structure, and stop/resume current tool
+  location = useLocation()
+  locationHistory = useHistory()
+  setRouterHistory locationHistory
   pageId = useTracker ->
     id = currentPageId.get()
-    ## Auto load first page
-    if not id and (pages = room?.data()?.pages)?.length
-      currentPageId.set pages[0]
+    hashId = location.hash?[1..]
+    pages = room?.data()?.pages
+    ## Check for initial or changed hash indicating page ID
+    if hashId
+      if id != hashId and pages?
+        if hashId in pages
+          currentPageId.set hashId
+          window?.localStorage?.setItem? "#{roomId}.page", hashId
+        else if not loading ## Invalid page hash: redirect to remove from URL
+          Meteor.defer -> locationHistory.replace location.path
+    else if not id and pages?.length
+      ## Use last page recorded in localStorage if there is one.
+      if (storageId = window?.localStorage?.getItem? "#{roomId}.page") and
+         storageId in pages
+        currentPageId.set storageId
+      else
+        ## Auto load first page by default
+        currentPageId.set pages[0]
     id
-  , [room]
+  , [room, location.hash, loading]
   remotesRef = useRef()
   useEffect -> # wait for mainBoard to be set
     return unless pageId?
@@ -132,23 +150,34 @@ export DrawApp = React.memo ->
     undefined
   , [room, pageId]
 
-  ## Pointer event handlers used on both boards
   useEffect ->
+    ## Pointer event handlers used on both boards
+    middleDown = null
+    spaceDown = null
     dom.listen [mainBoardRef.current, historyBoardRef.current],
       pointerdown: (e) ->
         e.preventDefault()
         return if restrictTouch e
         text.blur() for text in document.querySelectorAll 'input'
         window.focus()  # for getting keyboard focus when <iframe>d
+        ## Pan via middle-button drag
+        if e.button == 1 and currentTool.get() != 'pan' and
+           not middleDown and not spaceDown
+          middleDown = pushTool 'pan'
         tools[currentTool.get()].down? e
       pointerenter: (e) ->
         e.preventDefault()
         return if restrictTouch e
+        ## Stop middle-button pan if we re-enter board with button released
+        if middleDown and (e.buttons & 4) == 0
+          middleDown = popTool middleDown
         tools[currentTool.get()].down? e if e.buttons
       pointerup: stop = (e) ->
         e.preventDefault()
         return if restrictTouch e
         tools[currentTool.get()].up? e
+        if e.button == 1 and middleDown  ## end middle-button pan
+          middleDown = popTool middleDown
       pointerleave: stop
       pointermove: (e) ->
         e.preventDefault()
@@ -157,6 +186,9 @@ export DrawApp = React.memo ->
       contextmenu: (e) ->
         ## Prevent right click from bringing up context menu, as it interferes
         ## with e.g. drawing.
+        e.preventDefault()
+      auxclick: (e) ->
+        ## Prevent middle click from pasting in X-windows.
         e.preventDefault()
       wheel: (e) ->
         e.preventDefault()
@@ -185,6 +217,106 @@ export DrawApp = React.memo ->
           currentBoard().setTransform
             x: transform.x - deltaX / transform.scale
             y: transform.y - deltaY / transform.scale
+    ## Keyboard and copy/paste
+    dom.listen window,
+      keydown: (e) ->
+        return if e.target.classList.contains 'modal'
+        switch e.key
+          when 'z', 'Z'
+            if e.ctrlKey or e.metaKey
+              if e.shiftKey
+                tools.redo.click()
+              else
+                tools.undo.click()
+          when 'y', 'Y'
+            if e.ctrlKey or e.metaKey
+              tools.redo.click()
+          when 'Delete', 'Backspace'
+            currentBoard()?.selection?.delete()
+          when ' '  ## pan via space-drag
+            if currentTool.get() != 'pan' and not middleDown and not spaceDown 
+              spaceDown = pushTool 'pan'
+          when 'd', 'D'  ## duplicate
+            if (e.ctrlKey or e.metaKey) and
+               currentBoard()?.selection?.nonempty()
+              e.preventDefault()  # ctrl-D bookmarks on Chrome
+              currentBoard().selection.duplicate()
+          when 'Escape'
+            if historyMode.get()
+              historyMode.set false  # escape history view by toggling
+          else
+            ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
+            ## triggering width 1 hotkey.
+            return if e.ctrlKey or e.metaKey or e.altKey
+            if e.key of toolsByHotkey
+              clickTool toolsByHotkey[e.key]
+            else
+              clickTool toolsByHotkey[e.key.toLowerCase()]
+      keyup: (e) ->
+        switch e.key
+          when ' '  ## end of pan via space-drag
+            if spaceDown
+              spaceDown = popTool spaceDown
+      copy: onCopy = (e) ->
+        ## Ignore paste operations within text boxes
+        return if e.target.tagName in ['INPUT', 'TEXTAREA']
+        return unless currentBoard()?.selection?.nonempty()
+        e.preventDefault()
+        e.clipboardData.setData 'application/cocreate-objects',
+          currentBoard().selection.json()
+        e.clipboardData.setData 'image/svg+xml',
+          tools.downloadSVG.click null, false
+        true
+      cut: (e) ->
+        if onCopy e
+          currentBoard()?.selection?.delete()
+      paste: (e) ->
+        return if currentBoard().readonly
+        ## Ignore paste operations within text boxes
+        return if e.target.tagName in ['INPUT', 'TEXTAREA']
+        e.preventDefault()
+        if (json = e.clipboardData.getData 'application/cocreate-objects')
+          objects =
+            for obj in JSON.parse json
+              delete obj._id
+              delete obj.id  # object ID when pasting from history
+              delete obj.created
+              delete obj.updated
+              obj.room = currentRoom.get().id
+              obj.page = currentPage.get().id
+              obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
+              obj
+          undoStack.push
+            type: 'multi'
+            ops:
+              for obj in objects
+                type: 'new'
+                obj: obj
+          selectTool 'select'  # usually want to move pasted objects
+          setSelection (obj._id for obj in objects)
+        else
+          ## Cache text content in case we want to paste it later; walking
+          ## through all items during `tryAddImage` seems to clear text content.
+          text = e.clipboardData.getData 'text/plain'
+          obj =
+            pts: [snapPoint currentBoard().relativePoint 0.25, 0.25]
+          ## First check for image paste
+          if (image = await tryAddImage e.clipboardData.items, obj)?
+            setSelection [image._id]
+          ## On failure, paste text content as text object
+          else if text
+            selectTool 'text'
+            undoStack.pushAndDo
+              type: 'new'
+              obj: obj =
+                room: currentRoom.get().id
+                page: currentPage.get().id
+                type: 'text'
+                text: text
+                pts: obj.pts
+                color: currentColor.get()
+                fontSize: currentFontSize.get()
+            setSelection [obj._id]
   , []
 
   ## Drag and drop
@@ -215,114 +347,6 @@ export DrawApp = React.memo ->
           pts: [snapPoint currentBoard().eventToPoint e]
   , []
 
-  ## Keyboard and copy/paste
-  useEffect ->
-    spaceDown = false
-    oldPointers = null
-    dom.listen window,
-      keydown: (e) ->
-        return if e.target.classList.contains 'modal'
-        switch e.key
-          when 'z', 'Z'
-            if e.ctrlKey or e.metaKey
-              if e.shiftKey
-                tools.redo.click()
-              else
-                tools.undo.click()
-          when 'y', 'Y'
-            if e.ctrlKey or e.metaKey
-              tools.redo.click()
-          when 'Delete', 'Backspace'
-            currentBoard()?.selection?.delete()
-          when ' '  ## pan via space-drag
-            if currentTool.get() not in ['pan', 'history']
-              spaceDown = true
-              oldPointers = {}
-              oldPointers[key] = pointers[key] for own key of pointers
-              selectTool 'pan', noStop: true
-          when 'd', 'D'  ## duplicate
-            if (e.ctrlKey or e.metaKey) and
-               currentBoard()?.selection?.nonempty()
-              e.preventDefault()  # ctrl-D bookmarks on Chrome
-              currentBoard().selection.duplicate()
-          when 'Escape'
-            if currentTool.get() == 'history'
-              selectTool 'history'  # escape history view by toggling
-          else
-            ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
-            ## triggering width 1 hotkey.
-            return if e.ctrlKey or e.metaKey or e.altKey
-            if e.key of toolsByHotkey
-              clickTool toolsByHotkey[e.key]
-            else
-              clickTool toolsByHotkey[e.key.toLowerCase()]
-      keyup: (e) ->
-        switch e.key
-          when ' '  ## end of pan via space-drag
-            if spaceDown
-              selectTool lastTool, noStart: true
-              pointers[key] = oldPointers[key] for own key of oldPointers
-              spaceDown = false
-      copy: onCopy = (e) ->
-        ## Ignore paste operations within text boxes
-        return if e.target.tagName in ['INPUT', 'TEXTAREA']
-        return unless currentBoard()?.selection?.nonempty()
-        e.preventDefault()
-        e.clipboardData.setData 'application/cocreate-objects',
-          currentBoard().selection.json()
-        e.clipboardData.setData 'image/svg+xml',
-          tools.downloadSVG.click null, false
-        true
-      cut: (e) ->
-        if onCopy e
-          currentBoard()?.selection?.delete()
-      paste: (e) ->
-        ## Ignore paste operations within text boxes
-        return if e.target.tagName in ['INPUT', 'TEXTAREA']
-        e.preventDefault()
-        if json = e.clipboardData.getData 'application/cocreate-objects'
-          objects =
-            for obj in JSON.parse json
-              delete obj._id
-              delete obj.created
-              delete obj.updated
-              obj.room = currentRoom.get().id
-              obj.page = currentPage.get().id
-              obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
-              obj
-          undoStack.push
-            type: 'multi'
-            ops:
-              for obj in objects
-                type: 'new'
-                obj: obj
-          selectTool 'select'  # usually want to move pasted objects
-          setSelection (obj._id for obj in objects)
-        else
-          ## Cache text content in case we want to paste it later; walking
-          ## through all items during `tryAddImage` seems to clear text content.
-          text = e.clipboardData.getData 'text/plain'
-          obj =
-            pts: [snapPoint currentBoard().relativePoint 0.25, 0.25]
-          ## First check for image paste
-          if image = await tryAddImage e.clipboardData.items, obj
-            setSelection [image._id]
-          ## On failure, paste text content as text object
-          else if text
-            selectTool 'text'
-            undoStack.pushAndDo
-              type: 'new'
-              obj: obj =
-                room: currentRoom.get().id
-                page: currentPage.get().id
-                type: 'text'
-                text: text
-                pts: obj.pts
-                color: currentColor.get()
-                fontSize: currentFontSize.get()
-            setSelection [obj._id]
-  , []
-
   ## Initialize tools (after boards are created)
   useEffect ->
     toolSpec.init?() for tool, toolSpec of tools
@@ -336,6 +360,20 @@ export DrawApp = React.memo ->
     tools[tool].startEffect?()
   , [tool]
   useEffect onResize, [tool]  # text and image tools affect layout
+
+  history = useTracker ->
+    historyMode.get()
+  , []
+  useLayoutEffect ->
+    ## Maintain history class on <body>, which adds sepia tone
+    dom.classSet document.body, 'history', history
+    ## Preserve transform between two boards when switching history mode
+    ->
+      if history
+        mainBoard.setTransform historyBoard.transform
+      else
+        historyBoard.setTransform mainBoard.transform
+  , [history]
 
   return <BadRoom/> if bad and not loading
 
@@ -364,7 +402,7 @@ export DrawApp = React.memo ->
           <textarea id="textInput" type="text" placeholder='(type text here)'/>
         </div>
       }
-      {if tool == 'history'
+      {if history
         <div id="history" className="horizontal palette">
           <tools.history.Slider/>
         </div>
@@ -392,16 +430,16 @@ export DrawApp = React.memo ->
     <div id="center" className={"nopage" unless pageId?}>
       {###touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
        ###}
-      <svg id="mainBoard" className="board historyHide" touch-action="none"
-       ref={mainBoardRef}>
+      <svg id="mainBoard" className="board" touch-action="none"
+       ref={mainBoardRef} style={display: 'none' if history}>
         <filter id="selectFilter">
           <feGaussianBlur stdDeviation="5"/>
         </filter>
       </svg>
       <svg id="historyBoard" className="board historyShow" touch-action="none"
-       ref={historyBoardRef}/>
-      <svg id="remotes" className="board overlay historyHide"
-       ref={remotesRef}/>
+       ref={historyBoardRef} style={display: 'none' unless history}/>
+      <svg id="remotes" className="board overlay"
+       ref={remotesRef} style={display: 'none' if history}/>
       <div id="dragzone" className="overlay"/>
     </div>
     {if loading

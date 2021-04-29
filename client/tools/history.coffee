@@ -1,9 +1,9 @@
-import React, {useEffect, useRef, useState} from 'react'
+import React, {useEffect, useLayoutEffect, useRef, useState} from 'react'
 import {useTracker} from 'meteor/react-meteor-data'
 
 import {defineTool, tools} from './defineTool'
-import {pointers} from './modes'
-import {currentBoard, historyBoard, currentRoom, currentPage} from '../AppState'
+import {selectTool, historyTools} from './tools'
+import {currentTool, historyBoard, historyMode, currentRoom, currentPage} from '../AppState'
 import {RenderObjects} from '../RenderObjects'
 import {setCursor} from '../cursor'
 import {meteorCallPromise} from '/lib/meteorPromise'
@@ -14,23 +14,11 @@ defineTool
   icon: 'history'
   hotspot: [0.5, 0.5]
   help: 'Time travel to the past (by dragging the bottom slider)'
-  start: ->
-    ## Handled by HistorySlider
-  stop: ->
-    document.getElementById('historyRange').removeEventListener 'change', pointers.listen
-    historyBoard.clear()
-  down: (e) ->
-    pointers[e.pointerId] = currentBoard().eventToRawPoint e
-    pointers[e.pointerId].transform =
-      Object.assign {}, historyBoard.transform
-  up: (e) ->
-    delete pointers[e.pointerId]
-  move: (e) ->
-    return unless start = pointers[e.pointerId]
-    current = currentBoard().eventToRawPoint e
-    historyBoard.setTransform
-      x: start.transform.x + (current.x - start.x) / historyBoard.transform.scale
-      y: start.transform.y + (current.y - start.y) / historyBoard.transform.scale
+  active: ->
+    historyMode.get()
+  click: ->
+    historyMode.set not historyMode.get()
+    selectTool 'pan' unless historyTools[currentTool.get()]
   Slider: React.memo ->
     [diffs, setDiffs] = useState []
     {room, page} = useTracker ->
@@ -50,6 +38,15 @@ defineTool
       ref.current.value = 0
       undefined
     , [room, page]
+    ## Clear board when entering or exiting mode and when switching pages
+    useLayoutEffect ->
+      historyBoard.clear()
+      historyBoard.objects = {}
+      lastTarget.current = null
+      ->
+        historyBoard.clear()
+        historyBoard.objects = {}
+    , [room, page]
 
     ## Set cursor
     ref = useRef()
@@ -61,7 +58,6 @@ defineTool
     ## Rendering
     lastTarget = useRef null
     historyRender = useRef null
-    historyObjects = useRef {}
     tools.history.onChange = onChange = ->
       target = parseInt ref.current.value
       ## Re-use last object set and render if just increasing in time.
@@ -69,7 +65,7 @@ defineTool
         apply = diffs[lastTarget...target]
       else
         historyBoard.clear()
-        historyObjects.current = {}
+        historyBoard.objects = {}
         historyRender.current = new RenderObjects historyBoard
         apply = diffs[...target]
       return if apply.length == 0
@@ -80,16 +76,16 @@ defineTool
             ## Duplicate diff to form object, to avoid clobbering by updates.
             obj = Object.assign {}, diff
             obj.pts = obj.pts[..] if obj.pts?
-            historyObjects.current[obj.id] = obj
+            historyBoard.objects[obj.id] = obj
             historyRender.current.render obj
           when 'push'
-            obj = historyObjects.current[diff.id]
+            obj = historyBoard.objects[diff.id]
             obj.pts.push ...diff.pts
             historyRender.current.render obj,
               start: obj.pts.length - diff.pts.length
               translate: false
           when 'edit'
-            obj = historyObjects.current[diff.id]
+            obj = historyBoard.objects[diff.id]
             for key, value of diff when key not in ['id', 'type']
               switch key
                 when 'pts'
@@ -100,7 +96,7 @@ defineTool
             historyRender.current.render obj
           when 'del'
             historyRender.current.delete diff
-            delete historyObjects.current[diff.id]
+            delete historyBoard.objects[diff.id]
 
     <input id="historyRange" className="history" type="range"
       min="0" max={diffs.length} title="Drag to time travel through history"

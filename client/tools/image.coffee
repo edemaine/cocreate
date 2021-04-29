@@ -15,13 +15,13 @@ export tryAddImage = (items, options) ->
     /// <a\b [^<>]* \b href \s*=\s* ("[^"]*"|'[^']*')
           [^<>]*> ([^]*) </a> ///i.exec(html)
     if match? and not (match[2] and ///</a>///i.test match[2])
-      url = match[1][1...match[1].length-1]
-      return image if image = await tryAddImageUrl url, options
+      url = match[1][1...-1]
+      return image if (image = await tryAddImageUrl url, options)?
   ## Next check for plain text that consists solely of a URL
   for item in items when item?.type == 'text/plain'
     text = await new Promise (done) -> item.getAsString done
     text = text.trim()
-    return image if image = await tryAddImageUrl text, options
+    return image if (image = await tryAddImageUrl text, options)?
   false
 
 ## Asynchronously try to verify URL points to an image, and if so,

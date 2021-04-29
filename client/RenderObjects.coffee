@@ -24,27 +24,56 @@ export class RenderObjects
     ###
     obj.id ? obj._id ? obj
   renderPen: (obj, options) ->
+    ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
     ## Redraw from scratch if no `start` specified, or if color or width changed
     start = 0
     if options?.start?
       start = options.start unless options.color or options.width
+    ## Choose between two rendering modes for this batch of points:
+    ## * "Simple" mode: when all points have w == 1, use a single <polyline>
+    ## * "Complex" mode: otherwise, use many <line>s
+    simple = true
+    if simple
+      for i in [start...obj.pts.length]
+        unless obj.pts[i].w == 1
+          simple = false
+          break
+    ## In complex mode, create a document fragment for adding several
+    ## <line> elements to the DOM tree at once.
     id = @id obj
-    if exists = @dom[id]
+    if (exists = @dom[id])?
       ## Destroy existing drawing if starting over
       exists.innerHTML = '' if start == 0
-      frag = document.createDocumentFragment()
+      if simple
+        frag = exists
+      else
+        frag = document.createDocumentFragment()
     else
-      frag = dom.create 'g', null, dataset: id: id
-    ## Draw a `dot` at each point, and an `edge` between consecutive dots
-    if start == 0
-      frag.appendChild dot obj, obj.pts[0]
-      start = 1
-    for i in [start...obj.pts.length]
-      pt = obj.pts[i]
-      frag.appendChild edge obj, obj.pts[i-1], pt
-      frag.appendChild dot obj, pt  # alternative to linecap: round
+      frag = dom.create 'g',
+        class: 'pen'
+      ,
+        dataset: id: id
+    if simple
+      frag.appendChild dom.create 'polyline',
+        points: (
+          for i in [start - (start > 0)...obj.pts.length]
+            pt = obj.pts[i]
+            "#{pt.x},#{pt.y}"
+        ).join ' '
+        stroke: obj.color
+        'stroke-width': obj.width
+    else
+      ## Draw an `edge` between consecutive dots.
+      ## (`dot` at each point replaced by stroke-linecap of `edge`.)
+      if start == 0
+        #frag.appendChild dot obj, obj.pts[0]
+        start = 1
+      for i in [start...obj.pts.length]
+        pt = obj.pts[i]
+        frag.appendChild edge obj, obj.pts[i-1], pt
+        #frag.appendChild dot obj, pt  # alternative to linecap: round
     if exists
-      exists.appendChild frag
+      exists.appendChild frag unless simple
     else
       @root.appendChild @dom[id] = frag
     @dom[id]
@@ -99,10 +128,12 @@ export class RenderObjects
         dom.create 'g', null,
           dataset: id: id
       wrapper.appendChild g = dom.create 'g'
+      g.appendChild rect = dom.create 'rect',
+        class: 'bbox'
       g.appendChild text = dom.create 'text'
     else
       g = wrapper.firstChild
-      text = g.firstChild
+      [rect, text] = g.childNodes
     dom.attr g,
       transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
@@ -122,7 +153,7 @@ export class RenderObjects
         cursorRE = '<tspan\\s+class="cursor">[^<>]*<\\/tspan>'
         mathRE = /// \$(#{cursorRE})\$ | \$\$? | \\. | [{}] ///g
         math = null
-        while match = mathRE.exec text
+        while (match = mathRE.exec text)?
           if math?
             switch match[0]
               when '{'
@@ -162,7 +193,7 @@ export class RenderObjects
               out.push text[math.end...maths[i+1].start]
             else
               out.push text[math.end..]
-            if job = @tex[[math.formula, math.display]]
+            if (job = @tex[[math.formula, math.display]])?
               unless job.texts[id]?
                 job.texts[id] = true
                 jobs.push job
@@ -189,7 +220,6 @@ export class RenderObjects
           ## Strip one leading and trailling space
           inner = inner[1..] if inner.startsWith '\u00a0'
           inner = inner[...-1] if inner.endsWith '\u00a0'
-          console.log inner
           "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
         text = latex text
         .replace ///
@@ -232,7 +262,7 @@ export class RenderObjects
               unmatched.replace ///<tspan[^<>]*>///g, (match) ->
                 tspans.push match
                 ''
-              line = resume + line + ("</tspan>" for tspan in tspans).join ''
+              line = resume + line + ("</tspan>" for tspan in tspans).join '' # eslint-disable-line coffee/no-unused-vars
               line = """<tspan x="0" dy="1.25em">#{line or '&nbsp;'}</tspan>""" unless i == 0
               line
           ).join '\n'
@@ -273,6 +303,11 @@ export class RenderObjects
       text.innerHTML = content
       for {job, id} in readyJobs
         @texRender job, id
+    ## Update bounding box of text
+    x = y = width = height = 0
+    dom.attr rect, {x, y, width, height}
+    {x, y, width, height} = g.getBBox()
+    dom.attr rect, {x, y, width, height}
     wrapper
   texInit: ->
     return if @tex2svg?
@@ -321,7 +356,7 @@ export class RenderObjects
     return unless object
     fontSize = object.fontSize
     g = @dom[id].firstChild
-    text = g.firstChild
+    [rect, text] = g.childNodes
     dx = job.width * fontSize
     ## Roboto Slab in https://opentype.js.org/font-inspector.html:
     #unitsPerEm = 1000 # Font Header table
@@ -353,6 +388,12 @@ export class RenderObjects
         svgG = job2.texts[id][i]
         svgG.setAttribute 'transform', svgG.getAttribute('transform').replace \
           /translate\([\-\.\d]+/, "translate(#{x}"
+    ## Update bounding box of text
+    x = y = width = height = 0
+    dom.attr rect, {x, y, width, height}
+    {x, y, width, height} = g.getBBox()
+    dom.attr rect, {x, y, width, height}
+    ## Update selected copies
     @board.selection.redraw id, @dom[id] if @board.selection?.has id
     pointers.cursorUpdate?() if id == pointers.text
   texJob: ->
@@ -435,12 +476,14 @@ export class RenderObjects
       console.warn "Duplicate object with ID #{id}?!"
       delete @dom[id]
 
+###
 dot = (obj, p) ->
   dom.create 'circle',
     cx: p.x
     cy: p.y
     r: obj.width * p.w / 2
     fill: obj.color
+###
 edge = (obj, p1, p2) ->
   dom.create 'line',
     x1: p1.x
@@ -448,7 +491,9 @@ edge = (obj, p1, p2) ->
     x2: p2.x
     y2: p2.y
     stroke: obj.color
-    'stroke-width': obj.width * (p1.w + p2.w) / 2
-    #'stroke-linecap': 'round' # alternative to dot
+    #'stroke-width': obj.width * (p1.w + p2.w) / 2
+    'stroke-width': obj.width * p2.w
+    ## Replace `dot` with round linecap, now set in CSS.
+    #'stroke-linecap': 'round'
     ## Dots mode:
     #'stroke-width': 1

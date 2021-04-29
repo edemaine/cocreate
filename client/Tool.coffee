@@ -47,7 +47,11 @@ export Tool = React.memo ({tool, placement}) ->
   return div unless toolSpec.help?
   <SoloTooltip id="tool:#{tool}" placement={placement} overlay={(props) ->
     <Tooltip {...props}>
-      {toolSpec.help}
+      {if toolSpec.help instanceof Function
+        toolSpec.help()
+      else
+        toolSpec.help
+      }
       {if toolSpec.hotkey.length
         <>
           <span className="hotkeys">

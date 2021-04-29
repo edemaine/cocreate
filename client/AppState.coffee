@@ -3,13 +3,21 @@
 
 import {ReactiveVar} from 'meteor/reactive-var'
 
+routerHistory = null
+export setRouterHistory = (history) -> routerHistory = history
+
 export currentRoom = new ReactiveVar  # Room object for current room
 export currentPage = new ReactiveVar  # Page object for current page
-## `currentPageId` is the "master" that causes currentPage to update.
+## `currentPageId` is the primary source that causes currentPage to update.
 ## Set it to change pages.
 export currentPageId = new ReactiveVar
 
+export setPageId = (id) ->
+  return if id == currentPageId.get()
+  routerHistory.push "#{routerHistory.location.pathname}##{id}"
+
 export currentTool = new ReactiveVar 'pan'
+export historyMode = new ReactiveVar false
 
 ## These colors are initialized in ./tools/color.coffee:
 export currentColor = new ReactiveVar
@@ -26,7 +34,7 @@ export setMainBoard = (board) -> mainBoard = board
 export setHistoryBoard = (board) -> historyBoard = board
 
 export currentBoard = ->
-  if currentTool.get() == 'history'
+  if historyMode.get()
     historyBoard
   else
     mainBoard
