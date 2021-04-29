@@ -20,6 +20,7 @@ export class Page
       defaultTransform(), false
     @board.setTransform @transform.get()
     @grid = new Grid @
+    @_objMap = {}
     @observeObjects()
     @observeRemotes()
     @board.onRetransform = =>
@@ -42,23 +43,29 @@ export class Page
     @remotesObserver.stop()
   data: ->
     Pages.findOne @id
+  objMap: ->
+    @_objMap
   eltMap: ->
     @render.dom
   observeObjects: ->
     @render = render = new RenderObjects @board
     dbvt = @dbvt
     board = @board
+    objMap = @_objMap
     dbvt_svg = dom.create 'g'
     @objectsObserver = Objects.find
       room: @room.id
       page: @id
     .observe
       added: (obj) ->
+        objMap[obj._id] = obj
         render.shouldNotExist obj
         render.render obj
-        dbvt.insert obj._id, Aabb.from_obj obj, board.svg, board.root, render.dom
+        obj.aabb = Aabb.from_obj obj, board.svg, board.root, render.dom
+        dbvt.insert obj._id, obj.aabb
         board.root.appendChild dbvt.export_debug_svg dbvt_svg
       changed: (obj, old) ->
+        objMap[obj._id] = obj
         options = {}
         if old.pts?
           ## Assuming that pen's `pts` field changes only by appending
@@ -66,9 +73,11 @@ export class Page
         for own key of obj when key != 'pts'
           options[key] = obj[key] != old[key]
         render.render obj, options
-        dbvt.move obj._id, Aabb.from_obj obj, board.svg, board.root, render.dom
+        obj.aabb = Aabb.from_obj obj, board.svg, board.root, render.dom
+        dbvt.move obj._id, obj.aabb
         board.root.appendChild dbvt.export_debug_svg dbvt_svg
       removed: (obj) ->
+        delete objMap[obj._id]
         render.delete obj
         dbvt.remove obj._id
         board.root.appendChild dbvt.export_debug_svg dbvt_svg

@@ -9,19 +9,28 @@ export class Aabb
   @from_rect: (rect) ->
     new Aabb rect.x, rect.y, rect.x + rect.width, rect.y + rect.height
 
-  @from_obj: (obj, svg, svg_root, dom_map) ->
-    ## Unfortunately, getBBox doesn't take the transform of the current node into account.
-    ## So wrap it in a group and hope it doesn't break anything.
-    elt = dom_map[obj._id]
+  @from_obj: (obj, svg, svg_root, obj_map) ->
+    elt = obj_map[obj._id]
     ext = dom.svgExtremes svg, elt, svg_root
     new Aabb ext.min.x, ext.min.y, ext.max.x, ext.max.y
+
+  center: ->
+    x: (@max_x + @min_x) / 2
+    y: (@max_y + @min_y) / 2
+
+  width: -> @max_x - @min_x
+
+  height: -> @max_y - @min_y
 
   ## Adds fat to the AABB to allow for constant-time small changes to the object's position
   fattened: (fat) -> new Aabb (@min_x - fat), (@min_y - fat), (@max_x + fat), (@max_y + fat)
 
-  area: -> (@max_x - @min_x) * (@max_y - @min_y)
+  ## Adds fat unevenly to the AABB to allow for constant-time small changes to the object's position
+  fattened_xy: (fat_x, fat_y) -> new Aabb (@min_x - fat_x), (@min_y - fat_y), (@max_x + fat_x), (@max_y + fat_y)
 
-  perimeter: -> 2 * ((@max_x - @min_x) + (@max_y - @min_y))
+  area: -> @width() * @height()
+
+  perimeter: -> 2 * (@width() + @height())
 
   cost: -> @perimeter()
 
@@ -30,6 +39,10 @@ export class Aabb
 
   contains: (other) ->
     @min_x <= other.min_x && @max_x >= other.max_x && @min_y <= other.min_y && @max_y >= other.max_y
+
+  # Point must have an x field and a y field
+  contains_point: (pt) ->
+    @min_x <= pt.x && @max_x >= pt.x && @min_y <= pt.y && @max_y >= pt.y
 
   union: (other) ->
     new Aabb \

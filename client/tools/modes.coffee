@@ -13,6 +13,7 @@ import {Ctrl, Alt, firefox} from '../lib/platform'
 import dom from '../lib/dom'
 import throttle from '../lib/throttle'
 import {Aabb} from '../Dbvt'
+import {intersects} from '../Collision'
 
 export pointers = {}   # maps pointerId to tool-specific data
 
@@ -111,13 +112,14 @@ defineTool
 
       ## Now that we've traversed the DOM, modify the selection
       selection = mainBoard.selection
-      console.log h.start, board.eventToPoint e
-      for id from currentPage.get().dbvt.query Aabb.from_rect rect
-        if selection.has id  # Toggle selection
-          selection.remove id
-        else
-          h.highlight currentPage.get().eltMap()[id]
-          selection.add h
+      query_aabb = Aabb.from_rect rect
+      for id from currentPage.get().dbvt.query query_aabb
+        if intersects query_aabb, currentPage.get().objMap()[id]
+          if selection.has id  # Toggle selection
+            selection.remove id
+          else
+            h.highlight currentPage.get().eltMap()[id]
+            selection.add h
       selection.setAttributes()
       h.selector.remove()
       h.selector = null
