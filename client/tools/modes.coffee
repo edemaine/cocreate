@@ -122,9 +122,9 @@ defineTool
 
       ## Now that we've traversed the DOM, modify the selection
       selection = currentBoard().selection
-      query_aabb = Aabb.from_rect rect
-      for id from currentPage.get().dbvt.query query_aabb
-        if intersects query_aabb, currentPage.get().objMap()[id]
+      queryAabb = Aabb.fromRect rect
+      for id from currentPage.get().dbvt.query queryAabb
+        if intersects queryAabb, currentPage.get().objMap()[id]
           if selection.has id  # Toggle selection
             selection.remove id
           else
