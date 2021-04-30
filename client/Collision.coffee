@@ -118,4 +118,4 @@ intersectsSpecific =
         aabb.intersects obj.aabb
 
 export intersects = (aabb, obj) ->
-    intersectsSpecific[obj.type] aabb, obj
+    intersectsSpecific[obj.type]? aabb, obj
