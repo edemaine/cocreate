@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-04-30
+
+* Fix SVG export with mixture of text and math
+
 ## 2021-04-28
 
 * You can now link to a specific page of a Cocreate board.  You can copy the

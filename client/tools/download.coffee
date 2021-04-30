@@ -36,7 +36,7 @@ defineTool
       .replace />/g, '&gt;'
       }\""
     ## Compress using SVG's self-closing tags
-    .replace ///(<(\w+)\b[^<>]*)> \s* </\2>///g, '$1/>'
+    .replace ///(<(\w+)\b[^<>]*)> </\2>///g, '$1/>'
     ## Remove selection-helping rect.bbox elements from text objects
     .replace ///<rect [^<>]* class="bbox" [^<>]*/>///g, ''
     ## Reset transform and grid
