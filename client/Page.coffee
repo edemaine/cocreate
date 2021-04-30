@@ -1,7 +1,8 @@
 ## Page class maintains the link between a room's page and the renderers,
 ## as well as maintaining the page's grid.
 
-import dom from './lib/dom'
+# Used for DBVT debugging
+#import dom from './lib/dom'
 
 import {Tracker} from 'meteor/tracker'
 

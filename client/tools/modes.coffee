@@ -117,7 +117,6 @@ defineTool
     h = pointers[e.pointerId]
     if h?.selector?
       board = currentBoard()
-      here = board.eventToPoint e
       rect = dom.pointsToRect h.start, board.eventToPoint e
 
       ## Now that we've traversed the DOM, modify the selection
