@@ -57,7 +57,8 @@ class DbvtNode
 
   @leaf: (id, aabb) ->
     node = new DbvtNode()
-    node.children = [null, null]
+    node.left = null
+    node.right = null
     node.parent = null
     node.id = id
     node.aabb = aabb
@@ -65,7 +66,8 @@ class DbvtNode
 
   @internal: (left, right, parent) ->
     node = new DbvtNode()
-    node.children = [left, right]
+    node.left = left
+    node.right = right
     node.parent = parent
     left.parent = node
     right.parent = node
@@ -77,15 +79,23 @@ class DbvtNode
     !@parent?
 
   isLeaf: ->
-    !@children[0]?
+    !@left?
 
   # 0 if left child, 1 if right child. Assumes this node has a parent
   childIndex: ->
-    if @ == @parent.children[0] then 0 else 1
+    if @ == @parent.left then 0 else 1
+
+  # Gets the child at a specific index.
+  child: (index) ->
+    if index == 0 then @left else @right
+
+  # Sets the child at a specific index.
+  setChild: (index, node) ->
+    if index == 0 then @left = node else @right = node
 
   # Assumes this node has a parent
   sibling: ->
-    if @ == @parent.children[0] then @parent.children[1] else @parent.children[0]
+    if @ == @parent.left then @parent.right else @parent.left
 
   # Returns the new root if the root changed.
   insert: (node) ->
@@ -95,7 +105,7 @@ class DbvtNode
         side = @childIndex()
       newNode = DbvtNode.internal @, node, @parent
       if newNode.parent?
-        newNode.parent.children[side] = newNode
+        newNode.parent.setChild(side, newNode)
 
       if newNode.isRoot() 
         newNode
@@ -104,16 +114,16 @@ class DbvtNode
         null
     else
       # l = left child, r = right child, n = new node
-      ln = @children[0].aabb.union node.aabb
-      rn = @children[1].aabb.union node.aabb
+      ln = @left.aabb.union node.aabb
+      rn = @right.aabb.union node.aabb
       lnCost = ln.cost() ? Infinity
       rnCost = rn.cost() ? Infinity
 
       @aabb = @aabb.union node.aabb
       if lnCost <= rnCost
-        @children[0].insert node
+        @left.insert node
       else
-        @children[1].insert node
+        @right.insert node
 
   # Requires parent to exist.
   # Returns new root if the root changed.
@@ -121,7 +131,7 @@ class DbvtNode
     sibling = @sibling()
     sibling.parent = @parent.parent
     if sibling.parent?
-      sibling.parent.children[@parent.childIndex()] = sibling
+      sibling.parent.setChild(@parent.childIndex(), sibling)
 
       # Update AABBs and balance
       sibling.parent.balance()
@@ -136,31 +146,31 @@ class DbvtNode
       sibling = @sibling()
       # l = left child, r = right child, s = sibling.
       # Possibilities: switch child and sibling, or do nothing
-      lr = @children[0].aabb.union @children[1].aabb
-      ls = @children[0].aabb.union sibling.aabb
-      rs = @children[1].aabb.union sibling.aabb
+      lr = @left.aabb.union @right.aabb
+      ls = @left.aabb.union sibling.aabb
+      rs = @right.aabb.union sibling.aabb
 
       lrCost = Math.max lr.cost(), sibling.aabb.cost()
-      lsCost = Math.max ls.cost(), @children[1].aabb.cost()
-      rsCost = Math.max rs.cost(), @children[0].aabb.cost()
+      lsCost = Math.max ls.cost(), @right.aabb.cost()
+      rsCost = Math.max rs.cost(), @left.aabb.cost()
 
       if lrCost <= lsCost and lrCost <= rsCost
         @aabb = lr
       else if lsCost <= rsCost
         @aabb = ls
-        @parent.children[sibling.childIndex()] = @children[1]
-        @children[1].parent = @parent
-        @children[1] = sibling
+        @parent.setChild(sibling.childIndex(), @right)
+        @right.parent = @parent
+        @right = sibling
         sibling.parent = @
       else
         @aabb = rs
-        @parent.children[sibling.childIndex()] = @children[0]
-        @children[0].parent = @parent
-        @children[0] = sibling
+        @parent.setChild(sibling.childIndex(), @left)
+        @left.parent = @parent
+        @left = sibling
         sibling.parent = @
       @parent.balance()
     else
-      @aabb = @children[0].aabb.union @children[1].aabb
+      @aabb = @left.aabb.union @right.aabb
 
   # Returns ids of leaf nodes that the aabb intersects
   query: (aabb) ->
@@ -168,19 +178,19 @@ class DbvtNode
       if @id?
         yield @id
       else
-        yield from @children[0].query aabb
-        yield from @children[1].query aabb
+        yield from @left.query aabb
+        yield from @right.query aabb
 
   # Checks the integrity of the structure and logs integrity errors
   checkIntegrity: ->
-    if @children[0]? or @children[1]?
-      Dbvt.assert @children[0]? and @children[1]?, "Node has exactly 1 child", @
-      Dbvt.assert @children[0].parent == @, "Node's left child doesn't point back to it", @
-      Dbvt.assert @children[1].parent == @, "Node's right child doesn't point back to it", @
+    if @left? or @right?
+      Dbvt.assert @left? and @right?, "Node has exactly 1 child", @
+      Dbvt.assert @left.parent == @, "Node's left child doesn't point back to it", @
+      Dbvt.assert @right.parent == @, "Node's right child doesn't point back to it", @
       Dbvt.assert !@id?, "Non-leaf node has id", @
-      Dbvt.assert ((@children[0].aabb.union @children[1].aabb).eq @aabb), "Node's AABB is not the union of child AABBs", @
-      @children[0].checkIntegrity()
-      @children[1].checkIntegrity()
+      Dbvt.assert ((@left.aabb.union @right.aabb).eq @aabb), "Node's AABB is not the union of child AABBs", @
+      @left.checkIntegrity()
+      @right.checkIntegrity()
     else
       Dbvt.assert @id?, "Leaf node has no id", @
   
@@ -188,8 +198,8 @@ class DbvtNode
     if @isLeaf()
       yield @
     else
-      yield from @children[0].leaves()
-      yield from @children[1].leaves()
+      yield from @left.leaves()
+      yield from @right.leaves()
 
   exportDebugSVG: (svgParent) ->
     rect = dom.create 'rect',
@@ -204,8 +214,8 @@ class DbvtNode
     svgParent.appendChild rect
     svgParent.appendChild group
 
-    @children[0]?.exportDebugSVG group
-    @children[1]?.exportDebugSVG group
+    @left?.exportDebugSVG group
+    @right?.exportDebugSVG group
 
 export class Dbvt
   constructor: ->
