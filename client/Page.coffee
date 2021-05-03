@@ -21,7 +21,7 @@ export class Page
       defaultTransform(), false
     @board.setTransform @transform.get()
     @grid = new Grid @
-    @_objMap = {}
+    @objMap = {}
     @observeObjects()
     @observeRemotes()
     @board.onRetransform = =>
@@ -44,15 +44,13 @@ export class Page
     @remotesObserver.stop()
   data: ->
     Pages.findOne @id
-  objMap: ->
-    @_objMap
   eltMap: ->
     @render.dom
   observeObjects: ->
     @render = render = new RenderObjects @board
     dbvt = @dbvt
     board = @board
-    objMap = @_objMap
+    objMap = @objMap
     #dbvt_svg = dom.create 'g'
     @objectsObserver = Objects.find
       room: @room.id

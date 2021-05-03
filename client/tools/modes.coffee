@@ -123,7 +123,7 @@ defineTool
       selection = currentBoard().selection
       queryAabb = Aabb.fromRect rect
       for id from currentPage.get().dbvt.query queryAabb
-        if intersects queryAabb, currentPage.get().objMap()[id]
+        if intersects queryAabb, currentPage.get().objMap[id]
           if selection.has id  # Toggle selection
             selection.remove id
           else

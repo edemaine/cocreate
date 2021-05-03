@@ -35,14 +35,14 @@ export class Aabb
   cost: -> @perimeter()
 
   intersects: (other) ->
-    @minX <= other.maxX && @maxX >= other.minX && @minY <= other.maxY && @maxY >= other.minY
+    @minX <= other.maxX and @maxX >= other.minX and @minY <= other.maxY and @maxY >= other.minY
 
   contains: (other) ->
-    @minX <= other.minX && @maxX >= other.maxX && @minY <= other.minY && @maxY >= other.maxY
+    @minX <= other.minX and @maxX >= other.maxX and @minY <= other.minY and @maxY >= other.maxY
 
   # Point must have an x field and a y field
   containsPoint: (pt) ->
-    @minX <= pt.x && @maxX >= pt.x && @minY <= pt.y && @maxY >= pt.y
+    @minX <= pt.x and @maxX >= pt.x and @minY <= pt.y and @maxY >= pt.y
 
   union: (other) ->
     new Aabb \
@@ -50,7 +50,7 @@ export class Aabb
       (Math.max @maxX, other.maxX), (Math.max @maxY, other.maxY),
 
   eq: (other) ->
-    @minX == other.minX && @maxX == other.maxX && @minY == other.minY && @maxY == other.maxY
+    @minX == other.minX and @maxX == other.maxX and @minY == other.minY and @maxY == other.maxY
 
 class DbvtNode
   constructor: ->
@@ -63,7 +63,7 @@ class DbvtNode
     node.aabb = aabb
     node
 
-  @parent: (left, right, parent) ->
+  @internal: (left, right, parent) ->
     node = new DbvtNode()
     node.children = [left, right]
     node.parent = parent
@@ -89,11 +89,11 @@ class DbvtNode
 
   # Returns the new root if the root changed.
   insert: (node) ->
-    #if lrCost <= lnCost && lrCost <= rnCost
+    #if lrCost <= lnCost and lrCost <= rnCost
     if @isLeaf()
       if @parent?
         side = @childIndex()
-      newNode = DbvtNode.parent @, node, @parent
+      newNode = DbvtNode.internal @, node, @parent
       if newNode.parent?
         newNode.parent.children[side] = newNode
 
@@ -144,7 +144,7 @@ class DbvtNode
       lsCost = Math.max ls.cost(), @children[1].aabb.cost()
       rsCost = Math.max rs.cost(), @children[0].aabb.cost()
 
-      if lrCost <= lsCost && lrCost <= rsCost
+      if lrCost <= lsCost and lrCost <= rsCost
         @aabb = lr
       else if lsCost <= rsCost
         @aabb = ls
@@ -173,8 +173,8 @@ class DbvtNode
 
   # Checks the integrity of the structure and logs integrity errors
   checkIntegrity: ->
-    if @children[0]? || @children[1]?
-      Dbvt.assert @children[0]? && @children[1]?, "Node has exactly 1 child", @
+    if @children[0]? or @children[1]?
+      Dbvt.assert @children[0]? and @children[1]?, "Node has exactly 1 child", @
       Dbvt.assert @children[0].parent == @, "Node's left child doesn't point back to it", @
       Dbvt.assert @children[1].parent == @, "Node's right child doesn't point back to it", @
       Dbvt.assert !@id?, "Non-leaf node has id", @
