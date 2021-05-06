@@ -231,59 +231,11 @@ defineTool
         for e2 in e.getCoalescedEvents?() ? [e]
           currentBoard().eventToPointW e2
 
-defineTool
-  name: 'segment'
-  category: 'mode'
-  icon: 'segment'
-  hotspot: [0.0625, 0.9375]
-  help: <>Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>{Alt}</kbd> to center at first point.</>
-  hotkey: ['l', '\\']
-  down: (e) ->
-    return if pointers[e.pointerId]
-    origin = snapPoint currentBoard().eventToPoint e
-    pointers[e.pointerId] =
-      origin: origin
-      id: Meteor.apply 'objectNew', [
-        room: currentRoom.get().id
-        page: currentPage.get().id
-        type: 'poly'
-        pts: [origin, origin]
-        color: currentColor.get()
-        width: currentWidth.get()
-      ], returnStubValue: true
-      edit: throttle.method 'objectEdit', ([edit1], [edit2]) ->
-        ## Add older pts[0] updates to newer updates
-        edit2.pts = Object.assign {}, edit1.pts, edit2.pts
-        [edit2]
-  up: (e) ->
-    return unless pointers[e.pointerId]
-    pointers[e.pointerId].edit.flush()
-    undoStack.push
-      type: 'new'
-      obj: Objects.findOne pointers[e.pointerId].id
-    delete pointers[e.pointerId]
-  move: (e) ->
-    return unless pointers[e.pointerId]
-    {origin, id, alt, last, edit} = pointers[e.pointerId]
-    pts =
-      1: snapPoint currentBoard().eventToOrthogonalPoint e, origin
-    ## When holding Alt/Option, make origin be the center.
-    if e.altKey
-      pts[0] = symmetricPoint pts[1], origin
-    else if alt  # was holding down Alt, go back to original first point
-      pts[0] = origin
-    pointers[e.pointerId].alt = e.altKey
-    return if JSON.stringify(last) == JSON.stringify(pts)
-    pointers[e.pointerId].last = pts
-    edit
-      id: id
-      pts: pts
-
 symmetricPoint = (pt, origin) ->
   x: 2*origin.x - pt.x
   y: 2*origin.y - pt.y
 
-rectLikeTool = (type) ->
+rectLikeTool = (type, fillable) ->
   down: (e) ->
     return if pointers[e.pointerId]
     origin = snapPoint currentBoard().eventToPoint e
@@ -294,7 +246,7 @@ rectLikeTool = (type) ->
       pts: [origin, origin]
       color: currentColor.get()
       width: currentWidth.get()
-    object.fill = currentFill.get() if currentFillOn.get()
+    object.fill = currentFill.get() if fillable and currentFillOn.get()
     pointers[e.pointerId] =
       origin: origin
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
@@ -326,7 +278,15 @@ rectLikeTool = (type) ->
       id: id
       pts: pts
 
-defineTool Object.assign rectLikeTool('rect'),
+defineTool Object.assign rectLikeTool('poly', false),
+  name: 'segment'
+  category: 'mode'
+  icon: 'segment'
+  hotspot: [0.0625, 0.9375]
+  help: <>Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>{Alt}</kbd> to center at first point.</>
+  hotkey: ['l', '\\']
+
+defineTool Object.assign rectLikeTool('rect', true),
   name: 'rect'
   category: 'mode'
   icon: 'rect'
@@ -335,7 +295,7 @@ defineTool Object.assign rectLikeTool('rect'),
   help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point.</>
   hotkey: 'r'
 
-defineTool Object.assign rectLikeTool('ellipse'),
+defineTool Object.assign rectLikeTool('ellipse', true),
   name: 'ellipse'
   category: 'mode'
   icon: 'ellipse'
