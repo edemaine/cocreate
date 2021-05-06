@@ -12,6 +12,8 @@ instead of version numbers.
 * Fix <kbd>Alt</kbd> key behavior when drawing rectangles, ellipses,
   and segments
   [[#182](https://github.com/edemaine/cocreate/issues/182)]
+* Fix pan tool when clicking on grid lines
+  [[#180](https://github.com/edemaine/cocreate/issues/180)]
 
 ## 2021-04-30
 
