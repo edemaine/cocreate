@@ -6,6 +6,9 @@ import dom from './lib/dom'
 export class Aabb
   constructor: (@minX, @minY, @maxX, @maxY) ->
 
+  @fromPoint: (pt) ->
+    new Aabb pt.x, pt.y, pt.x, pt.y
+
   @fromRect: (rect) ->
     new Aabb rect.x, rect.y, rect.x + rect.width, rect.y + rect.height
 

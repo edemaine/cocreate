@@ -64,6 +64,7 @@ export class Page
         dbvt.insert obj._id, obj.aabb
         #board.root.appendChild dbvt.exportDebugSVG dbvt_svg
       changed: (obj, old) ->
+        obj.aabb = objMap[obj._id].aabb
         objMap[obj._id] = obj
         options = {}
         if old.pts?
@@ -72,7 +73,12 @@ export class Page
         for own key of obj when key != 'pts'
           options[key] = obj[key] != old[key]
         render.render obj, options
-        obj.aabb = Aabb.fromObj obj, board.svg, board.root, render.dom
+        ## AABB update
+        if obj.type == 'pen' && !options.width # only points are added
+          for i in [options.start...obj.pts.length]
+            obj.aabb = obj.aabb.union (Aabb.fromPoint obj.pts[i]).fattened (obj.width / 2)
+        else
+          obj.aabb = Aabb.fromObj obj, board.svg, board.root, render.dom
         dbvt.move obj._id, obj.aabb
         #board.root.appendChild dbvt.exportDebugSVG dbvt_svg
       removed: (obj) ->
