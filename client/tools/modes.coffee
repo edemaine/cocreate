@@ -67,8 +67,8 @@ defineTool
     h.moved = null
     h.edit = throttle.func (diffs) ->
       Meteor.call 'objectsEdit', (diff for id, diff of diffs)
-    , (older = {}, newer) ->
-      Object.assign older, newer
+    , ([older], [newer]) ->
+      [Object.assign older, newer]
     ## Check for clicking on a selected object, to ensure dragging selection
     ## works even when another object is more topmost.
     ## Also check for clicking within the selection outline.
@@ -251,7 +251,10 @@ defineTool
         color: currentColor.get()
         width: currentWidth.get()
       ], returnStubValue: true
-      edit: throttle.method 'objectEdit'
+      edit: throttle.method 'objectEdit', ([edit1], [edit2]) ->
+        ## Add older pts[0] updates to newer updates
+        edit2.pts = Object.assign {}, edit1.pts, edit2.pts
+        [edit2]
   up: (e) ->
     return unless pointers[e.pointerId]
     pointers[e.pointerId].edit.flush()
@@ -295,7 +298,10 @@ rectLikeTool = (type) ->
     pointers[e.pointerId] =
       origin: origin
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
-      edit: throttle.method 'objectEdit'
+      edit: throttle.method 'objectEdit', ([edit1], [edit2]) ->
+        ## Add older pts[0] updates to newer updates
+        edit2.pts = Object.assign {}, edit1.pts, edit2.pts
+        [edit2]
   up: (e) ->
     return unless pointers[e.pointerId]
     pointers[e.pointerId].edit.flush()

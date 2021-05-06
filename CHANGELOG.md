@@ -7,6 +7,12 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-05-06
+
+* Fix <kbd>Alt</kbd> key behavior when drawing rectangles, ellipses,
+  and segments
+  [[#182](https://github.com/edemaine/cocreate/issues/182)]
+
 ## 2021-04-30
 
 * Fix SVG export with mixture of text and math
