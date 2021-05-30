@@ -7,6 +7,12 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-05-30
+
+* Default line width changed from 5 to 3.
+  This is better for pen drawing, and gives more room to grow.
+  [[#172](https://github.com/edemaine/cocreate/issues/172)]
+
 ## 2021-05-06
 
 * Fix <kbd>Alt</kbd> key behavior when drawing rectangles, ellipses,
