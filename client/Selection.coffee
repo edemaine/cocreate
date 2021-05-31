@@ -189,6 +189,7 @@ export class Selection
           after: "#{attrib}": value
   duplicate: ->
     return if @board.readonly
+    return unless @nonempty()
     oldIds = @ids()
     newObjs =
       for id in oldIds

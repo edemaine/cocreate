@@ -14,6 +14,9 @@ instead of version numbers.
   [[#172](https://github.com/edemaine/cocreate/issues/172)]
 * Fix drawing horizontal and vertical lines by holding <kbd>Shift</kbd>.
   [[#187](https://github.com/edemaine/cocreate/issues/187)]
+* Prevent <kbd>Ctrl-D</kbd> from bookmarking page when using Select tool, even
+  if duplicating an empty selection.  (Other tools can still trigger bookmark.)
+  [[#186](https://github.com/edemaine/cocreate/issues/186)]
 
 ## 2021-05-06
 

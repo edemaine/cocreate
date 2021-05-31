@@ -237,8 +237,7 @@ export DrawApp = React.memo ->
             if currentTool.get() != 'pan' and not middleDown and not spaceDown 
               spaceDown = pushTool 'pan'
           when 'd', 'D'  ## duplicate
-            if (e.ctrlKey or e.metaKey) and
-               currentBoard()?.selection?.nonempty()
+            if (e.ctrlKey or e.metaKey) and currentTool.get() == 'select'
               e.preventDefault()  # ctrl-D bookmarks on Chrome
               currentBoard().selection.duplicate()
           when 'Escape'
