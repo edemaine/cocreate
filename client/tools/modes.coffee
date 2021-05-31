@@ -235,7 +235,7 @@ symmetricPoint = (pt, origin) ->
   x: 2*origin.x - pt.x
   y: 2*origin.y - pt.y
 
-rectLikeTool = (type, fillable) ->
+rectLikeTool = (type, fillable, constrain) ->
   down: (e) ->
     return if pointers[e.pointerId]
     origin = snapPoint currentBoard().eventToPoint e
@@ -265,7 +265,7 @@ rectLikeTool = (type, fillable) ->
     return unless pointers[e.pointerId]
     {id, origin, alt, last, edit} = pointers[e.pointerId]
     pts =
-      1: snapPoint currentBoard().eventToConstrainedPoint e, origin
+      1: snapPoint currentBoard()[constrain] e, origin
     ## When holding Alt/Option, make origin be the center.
     if e.altKey
       pts[0] = symmetricPoint pts[1], origin
@@ -278,7 +278,7 @@ rectLikeTool = (type, fillable) ->
       id: id
       pts: pts
 
-defineTool Object.assign rectLikeTool('poly', false),
+defineTool Object.assign rectLikeTool('poly', false, 'eventToOrthogonalPoint'),
   name: 'segment'
   category: 'mode'
   icon: 'segment'
@@ -286,7 +286,7 @@ defineTool Object.assign rectLikeTool('poly', false),
   help: <>Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>{Alt}</kbd> to center at first point.</>
   hotkey: ['l', '\\']
 
-defineTool Object.assign rectLikeTool('rect', true),
+defineTool Object.assign rectLikeTool('rect', true, 'eventToConstrainedPoint'),
   name: 'rect'
   category: 'mode'
   icon: 'rect'
@@ -295,7 +295,7 @@ defineTool Object.assign rectLikeTool('rect', true),
   help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point.</>
   hotkey: 'r'
 
-defineTool Object.assign rectLikeTool('ellipse', true),
+defineTool Object.assign rectLikeTool('ellipse', true, 'eventToConstrainedPoint'),
   name: 'ellipse'
   category: 'mode'
   icon: 'ellipse'

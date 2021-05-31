@@ -12,6 +12,8 @@ instead of version numbers.
 * Default line width changed from 5 to 3.
   This is better for pen drawing, and gives more room to grow.
   [[#172](https://github.com/edemaine/cocreate/issues/172)]
+* Fix drawing horizontal and vertical lines by holding <kbd>Shift</kbd>.
+  [[#187](https://github.com/edemaine/cocreate/issues/187)]
 
 ## 2021-05-06
 
