@@ -18,6 +18,7 @@ import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
+import storage from './lib/storage'
 
 onResize = ->
   mainBoard.resize()
@@ -73,18 +74,18 @@ export DrawApp = React.memo ->
     id = currentPageId.get()
     hashId = location.hash?[1..]
     pages = room?.data()?.pages
+    pageStorage = new storage.StringVariable "#{roomId}.page", undefined, false
     ## Check for initial or changed hash indicating page ID
     if hashId
       if id != hashId and pages?
         if hashId in pages
           currentPageId.set hashId
-          window?.localStorage?.setItem? "#{roomId}.page", hashId
+          pageStorage.set hashId
         else if not loading ## Invalid page hash: redirect to remove from URL
           Meteor.defer -> locationHistory.replace location.path
     else if not id and pages?.length
       ## Use last page recorded in localStorage if there is one.
-      if (storageId = window?.localStorage?.getItem? "#{roomId}.page") and
-         storageId in pages
+      if (storageId = pageStorage.get()) and storageId in pages
         currentPageId.set storageId
       else
         ## Auto load first page by default

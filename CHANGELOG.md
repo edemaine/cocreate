@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-06-01
+
+* Support incognito mode by handling lack of localStorage
+
 ## 2021-05-30
 
 * Default line width changed from 5 to 3.
