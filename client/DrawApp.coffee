@@ -4,6 +4,7 @@ import {useTracker} from 'meteor/react-meteor-data'
 
 import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
 import {Board} from './Board'
+import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
 import {Page} from './Page'
 import {PageList} from './PageList'
@@ -13,7 +14,6 @@ import {undoStack} from './UndoStack'
 import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
 import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
-import {snapPoint} from './tools/settings'
 import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
@@ -299,7 +299,7 @@ export DrawApp = React.memo ->
           ## through all items during `tryAddImage` seems to clear text content.
           text = e.clipboardData.getData 'text/plain'
           obj =
-            pts: [snapPoint currentBoard().relativePoint 0.25, 0.25]
+            pts: [maybeSnapPointToGrid currentBoard().relativePoint 0.25, 0.25]
           ## First check for image paste
           if (image = await tryAddImage e.clipboardData.items, obj)?
             setSelection [image._id]
@@ -344,7 +344,7 @@ export DrawApp = React.memo ->
         dragDepth = 0
         document.getElementById('dragzone').classList.remove 'drag'
         tryAddImage e.dataTransfer.items,
-          pts: [snapPoint currentBoard().eventToPoint e]
+          pts: [maybeSnapPointToGrid currentBoard().eventToPoint e]
   , []
 
   ## Initialize tools (after boards are created)

@@ -1,14 +1,15 @@
 import React, {useLayoutEffect, useState} from 'react'
 import {useHistory} from 'react-router-dom'
 
-import {gridDefault} from './Grid'
+import {defaultGrid, defaultGridType} from './Grid'
 
 export FrontPage = React.memo ->
   [error, setError] = useState()
   history = useHistory()
   useLayoutEffect ->
     Meteor.call 'roomNew',
-      grid: gridDefault
+      grid: defaultGrid
+      gridType: defaultGridType
     , (err, data) ->
       if err?
         setError err

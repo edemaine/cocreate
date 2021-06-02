@@ -4,7 +4,7 @@
 import {Tracker} from 'meteor/tracker'
 
 import {defaultTransform} from './Board'
-import {Grid} from './Grid'
+import {Grid, defaultGridType} from './Grid'
 import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
 import storage from './lib/storage'
@@ -26,7 +26,13 @@ export class Page
       @transform.set @board.transform
     ## Automatically update grid
     @auto = Tracker.autorun =>
-      unless @gridMode == (gridMode = @data()?.grid)
+      data = @data()
+      gridMode =
+        if data?.grid
+          data.gridType ? defaultGridType
+        else
+          false
+      unless @gridMode == gridMode
         @gridMode = gridMode
         Tracker.nonreactive => @grid.update()
   stop: ->

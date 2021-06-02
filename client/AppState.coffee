@@ -2,6 +2,7 @@
 ## current state.  This helps avoids import cycles.
 
 import {ReactiveVar} from 'meteor/reactive-var'
+import {defaultGrid, defaultGridType} from '/lib/grid'
 
 routerHistory = null
 export setRouterHistory = (history) -> routerHistory = history
@@ -15,6 +16,11 @@ export currentPageId = new ReactiveVar
 export setPageId = (id) ->
   return if id == currentPageId.get()
   routerHistory.push "#{routerHistory.location.pathname}##{id}"
+
+export currentGrid = ->
+  currentPage.get()?.data()?.grid ? defaultGrid
+export currentGridType = ->
+  currentPage.get()?.data()?.gridType ? defaultGridType
 
 export currentTool = new ReactiveVar 'pan'
 export historyMode = new ReactiveVar false

@@ -3,10 +3,10 @@ import debounce from 'debounce'
 
 import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
-import {snapPoint} from './settings'
 import {tools} from './tools'
 import {currentWidth} from './width'
 import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from '../AppState'
+import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
 import {Ctrl, Alt, firefox} from '../lib/platform'
@@ -92,7 +92,7 @@ defineTool
     ## except that selection outline doesn't count when we
     ## shift/ctrl/meta-click (toggle)
     if h.id? or (outline? and not toggle)
-      h.start = snapPoint h.start  # don't snap selection rectangle
+      h.start = maybeSnapPointToGrid h.start  # don't snap selection rectangle
       if h.id?  # have something highlighted, possibly just now
         unless selection.has h.id
           pointers.objects[h.id] = Objects.findOne h.id
@@ -170,7 +170,8 @@ defineTool
         dom.attr h.selector, dom.pointsToRect h.start, here
       else if distanceThreshold h.down, e, dragDist
         h.down = true
-        here = snapPoint currentBoard().eventToOrthogonalPoint e, h.start
+        here = maybeSnapPointToGrid currentBoard().eventToPoint e
+        here = orthogonalPoint here, e, h.start
         ## Don't set h.moved out here in case no objects selected
         diffs = {}
         for id, obj of pointers.objects when obj?
@@ -235,10 +236,35 @@ symmetricPoint = (pt, origin) ->
   x: 2*origin.x - pt.x
   y: 2*origin.y - pt.y
 
+equalXYPoint = (pt, e, origin) ->
+  ## When holding Shift, constrain 1:1 aspect ratio from origin, following
+  ## the largest delta and maintaining their signs (like Illustrator).
+  if e.shiftKey
+    dx = pt.x - origin.x
+    dy = pt.y - origin.y
+    adx = Math.abs dx
+    ady = Math.abs dy
+    if adx > ady
+      pt.y = origin.y + adx * Math.sign dy
+    else if adx < ady
+      pt.x = origin.x + ady * Math.sign dx
+  pt
+
+orthogonalPoint = (pt, e, origin) ->
+  ## Force horizontal/vertical line from origin when holding shift
+  if e.shiftKey
+    dx = Math.abs pt.x - origin.x
+    dy = Math.abs pt.y - origin.y
+    if dx > dy
+      pt.y = origin.y
+    else
+      pt.x = origin.x
+  pt
+
 rectLikeTool = (type, fillable, constrain) ->
   down: (e) ->
     return if pointers[e.pointerId]
-    origin = snapPoint currentBoard().eventToPoint e
+    origin = maybeSnapPointToGrid currentBoard().eventToPoint e
     object =
       room: currentRoom.get().id
       page: currentPage.get().id
@@ -264,8 +290,10 @@ rectLikeTool = (type, fillable, constrain) ->
   move: (e) ->
     return unless pointers[e.pointerId]
     {id, origin, alt, last, edit} = pointers[e.pointerId]
+    pt = maybeSnapPointToGrid currentBoard().eventToPoint e
+    pt = constrain pt, e, origin
     pts =
-      1: snapPoint currentBoard()[constrain] e, origin
+      1: pt
     ## When holding Alt/Option, make origin be the center.
     if e.altKey
       pts[0] = symmetricPoint pts[1], origin
@@ -278,7 +306,7 @@ rectLikeTool = (type, fillable, constrain) ->
       id: id
       pts: pts
 
-defineTool Object.assign rectLikeTool('poly', false, 'eventToOrthogonalPoint'),
+defineTool Object.assign rectLikeTool('poly', false, orthogonalPoint),
   name: 'segment'
   category: 'mode'
   icon: 'segment'
@@ -286,7 +314,7 @@ defineTool Object.assign rectLikeTool('poly', false, 'eventToOrthogonalPoint'),
   help: <>Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>{Alt}</kbd> to center at first point.</>
   hotkey: ['l', '\\']
 
-defineTool Object.assign rectLikeTool('rect', true, 'eventToConstrainedPoint'),
+defineTool Object.assign rectLikeTool('rect', true, equalXYPoint),
   name: 'rect'
   category: 'mode'
   icon: 'rect'
@@ -295,7 +323,7 @@ defineTool Object.assign rectLikeTool('rect', true, 'eventToConstrainedPoint'),
   help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point.</>
   hotkey: 'r'
 
-defineTool Object.assign rectLikeTool('ellipse', true, 'eventToConstrainedPoint'),
+defineTool Object.assign rectLikeTool('ellipse', true, equalXYPoint),
   name: 'ellipse'
   category: 'mode'
   icon: 'ellipse'
@@ -440,7 +468,7 @@ defineTool
         room: currentRoom.get().id
         page: currentPage.get().id
         type: 'text'
-        pts: [snapPoint currentBoard().eventToPoint e]
+        pts: [maybeSnapPointToGrid currentBoard().eventToPoint e]
         text: text = ''
         color: currentColor.get()
         fontSize: currentFontSize.get()
@@ -506,7 +534,7 @@ defineTool
         return unless obj?
         unless old?
           obj.pts = [pointers.point ?
-                      snapPoint currentBoard().relativePoint 0.25, 0.25]
+                      maybeSnapPointToGrid currentBoard().relativePoint 0.25, 0.25]
           undoStack.pushAndDo pointers.undoable =
             type: 'new'
             obj: obj
@@ -564,7 +592,7 @@ defineTool
       mainBoard.selection.setAttributes()
       url = Objects.findOne(pointers.image)?.url ? ''
     else
-      pointers.point = snapPoint currentBoard().eventToPoint e
+      pointers.point = maybeSnapPointToGrid currentBoard().eventToPoint e
       url = ''
     @resetInput true, url
   move: (e) ->

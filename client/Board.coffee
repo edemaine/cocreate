@@ -47,31 +47,6 @@ export class Board
   eventToPoint: (e) ->
     {x, y} = dom.svgPoint @svg, e.clientX, e.clientY, @root
     {x, y}
-  eventToConstrainedPoint: (e, origin) ->
-    pt = @eventToPoint e
-    ## When holding Shift, constrain 1:1 aspect ratio from origin, following
-    ## the largest delta and maintaining their signs (like Illustrator).
-    if e.shiftKey
-      dx = pt.x - origin.x
-      dy = pt.y - origin.y
-      adx = Math.abs dx
-      ady = Math.abs dy
-      if adx > ady
-        pt.y = origin.y + adx * Math.sign dy
-      else if adx < ady
-        pt.x = origin.x + ady * Math.sign dx
-    pt
-  eventToOrthogonalPoint: (e, origin) ->
-    pt = @eventToPoint e
-    ## Force horizontal/vertical line from origin when holding shift
-    if e.shiftKey
-      dx = Math.abs pt.x - origin.x
-      dy = Math.abs pt.y - origin.y
-      if dx > dy
-        pt.y = origin.y
-      else
-        pt.x = origin.x
-    pt
   eventToPointW: (e) ->
     pt = @eventToPoint e
     pt.w =

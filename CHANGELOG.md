@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-06-02
+
+* Triangular grid feature, including reasonable snapping behavior
+  [[#21](https://github.com/edemaine/cocreate/issues/21)]
+
 ## 2021-06-01
 
 * Support incognito mode by handling lack of localStorage

@@ -3,7 +3,7 @@
 ## (which often come from Highlighter).
 
 import {undoStack} from './UndoStack'
-import {gridSize} from './Grid'
+import {gridUnitOffset} from './Grid'
 import {selectColor, selectFill, selectFillOff} from './tools/color'
 import {selectWidth} from './tools/width'
 import {selectFontSize} from './tools/font'
@@ -191,6 +191,7 @@ export class Selection
     return if @board.readonly
     return unless @nonempty()
     oldIds = @ids()
+    offset = gridUnitOffset()
     newObjs =
       for id in oldIds
         obj = Objects.findOne id
@@ -199,8 +200,8 @@ export class Selection
         delete obj.created
         obj.tx ?= 0
         obj.ty ?= 0
-        obj.tx += gridSize
-        obj.ty += gridSize
+        obj.tx += offset.x
+        obj.ty += offset.y
         obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
         obj
     undoStack.push
