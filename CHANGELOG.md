@@ -11,6 +11,7 @@ instead of version numbers.
 
 * Triangular grid feature, including reasonable snapping behavior
   [[#21](https://github.com/edemaine/cocreate/issues/21)]
+* Avoid one-dimensional ellipses and rectangles when holding <kbd>Shift</kbd>.
 
 ## 2021-06-01
 

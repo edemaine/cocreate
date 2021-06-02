@@ -245,9 +245,9 @@ equalXYPoint = (pt, e, origin) ->
     adx = Math.abs dx
     ady = Math.abs dy
     if adx > ady
-      pt.y = origin.y + adx * Math.sign dy
+      pt.y = origin.y + adx * (Math.sign(dy) or 1)
     else if adx < ady
-      pt.x = origin.x + ady * Math.sign dx
+      pt.x = origin.x + ady * (Math.sign(dx) or 1)
   pt
 
 orthogonalPoint = (pt, e, origin) ->
