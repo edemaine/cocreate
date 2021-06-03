@@ -26,7 +26,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     and basic **Markdown formatting**<sup>★</sup>
   * **Image** (PNG/JPG/GIF/SVG) embedding from other websites
     (e.g., Imgur or Coauthor) for drawing on top of images
-  * Other basic tools: pan, zoom, eraser
+  * Other basic tools: pan, zoom, zoom to fit<sup>★</sup>, eraser
   * Basic settings: line thickness (scaling correctly with zoom),
     color palette, fill, font size
 * **Vector** representation:
@@ -42,6 +42,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     with optional **grid snapping**<sup>★</sup>
 * **Undo/redo** (of your own operations)
 * **Time travel**<sup>★</sup> to see entire past history of the board
+  (and copy/paste to present)
 * **Keyboard shortcuts**<sup>★</sup>
 * **Minimalist** user interface leaves lots of room for drawing,
   without hiding features behind dropdowns,
