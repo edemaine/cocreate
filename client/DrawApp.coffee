@@ -184,6 +184,10 @@ export DrawApp = React.memo ->
         e.preventDefault()
         return if restrictTouch e
         tools[currentTool.get()].move? e
+      touchmove: (e) ->
+        ## This workaround fixes pointer events on iOS with Scribble enabled.
+        ## See https://mikepk.com/2020/10/iOS-safari-scribble-bug/
+        e.preventDefault()
       contextmenu: (e) ->
         ## Prevent right click from bringing up context menu, as it interferes
         ## with e.g. drawing.
