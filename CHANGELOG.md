@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-06-09
+
+* Fix Cocreate on iPads with Pencil's Scribble feature enabled.
+  [[#157](https://github.com/edemaine/coauthor/issues/158)]
+
 ## 2021-06-02
 
 * Triangular grid feature, including reasonable snapping behavior
