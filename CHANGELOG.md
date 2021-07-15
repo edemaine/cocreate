@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-07-14
+
+* Improved LaTeX rendering via MathJax 3.2.0
+
 ## 2021-06-09
 
 * Fix Cocreate on iPads with Pencil's Scribble feature enabled.
