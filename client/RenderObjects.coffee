@@ -104,10 +104,12 @@ export class RenderObjects
     dim.height or= Number.EPSILON
     dom.attr rect, Object.assign dim,
       stroke: obj.color
+
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
       fill: obj.fill or 'none'
+      'fill-opacity': obj.opacity
     rect
   renderEllipse: (obj) ->
     id = @id obj
@@ -126,6 +128,7 @@ export class RenderObjects
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       fill: obj.fill or 'none'
+      'fill-opacity': obj.opacity
     ellipse
   renderText: (obj, options) ->
     id = @id obj
