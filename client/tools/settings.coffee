@@ -1,7 +1,7 @@
 import {Tracker} from 'meteor/tracker'
 
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage, currentGrid, currentGridType, currentOpacity, currentColor} from '../AppState'
+import {currentRoom, currentPage, currentGrid, currentGridType, currentOpacity} from '../AppState'
 import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
