@@ -55,7 +55,7 @@ export class RenderObjects
         class: 'pen'
       ,
         dataset: id: id
-    if simple or allowTransparency.valueCur == true
+    if simple or allowTransparency.valueCur != true
       frag.appendChild dom.create 'polyline',
         points: (
           for i in [start - (start > 0)...obj.pts.length]
