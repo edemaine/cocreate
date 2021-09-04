@@ -2,7 +2,7 @@ import React, {useEffect, useLayoutEffect, useRef} from 'react'
 import {useParams, useHistory, useLocation} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
+import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity} from './AppState'
 import {Board} from './Board'
 import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
@@ -134,6 +134,7 @@ export DrawApp = React.memo ->
       page: currentPage.get().id
       tool: currentTool.get()
       color: currentColor.get()
+      opacity: currentOpacity.get()
     remote.cursor = currentBoard().eventToPointW e if e?
     remote.fill = currentFill.get() if currentFillOn.get()
     remotes.update remote

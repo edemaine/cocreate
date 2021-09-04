@@ -6,6 +6,7 @@ import dom from './lib/dom'
 import icons from './lib/icons'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
+import {allowTransparency} from './tools/settings'
 
 export class RenderObjects
   constructor: (@board) ->
@@ -27,8 +28,9 @@ export class RenderObjects
     ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
     ## Redraw from scratch if no `start` specified, or if color or width changed
     start = 0
-    if options?.start?
-      start = options.start unless options.color or options.width
+    if allowTransparency.valueCur == false
+      if options?.start?
+        start = options.start unless options.color or options.width or options.opacity
     ## Choose between two rendering modes for this batch of points:
     ## * "Simple" mode: when all points have w == 1, use a single <polyline>
     ## * "Complex" mode: otherwise, use many <line>s
@@ -53,7 +55,7 @@ export class RenderObjects
         class: 'pen'
       ,
         dataset: id: id
-    if simple
+    if simple or allowTransparency.valueCur == true
       frag.appendChild dom.create 'polyline',
         points: (
           for i in [start - (start > 0)...obj.pts.length]
@@ -61,6 +63,7 @@ export class RenderObjects
             "#{pt.x},#{pt.y}"
         ).join ' '
         stroke: obj.color
+        'stroke-opacity': obj.opacity
         'stroke-width': obj.width
     else
       ## Draw an `edge` between consecutive dots.
@@ -85,6 +88,7 @@ export class RenderObjects
     dom.attr poly,
       points: ("#{x},#{y}" for {x, y} in obj.pts).join ' '
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
@@ -100,6 +104,7 @@ export class RenderObjects
     dim.height or= Number.EPSILON
     dom.attr rect, Object.assign dim,
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
       fill: obj.fill or 'none'
@@ -118,6 +123,7 @@ export class RenderObjects
       rx: rx
       ry: ry
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       fill: obj.fill or 'none'
     ellipse
@@ -491,6 +497,7 @@ edge = (obj, p1, p2) ->
     x2: p2.x
     y2: p2.y
     stroke: obj.color
+    'stroke-opacity': obj.opacity
     #'stroke-width': obj.width * (p1.w + p2.w) / 2
     'stroke-width': obj.width * p2.w
     ## Replace `dot` with round linecap, now set in CSS.

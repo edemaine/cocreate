@@ -44,11 +44,13 @@ Meteor.methods
           pts: [xywType]
           color: String
           width: Number
+          opacity: Number
       when 'poly'
         Object.assign pattern,
           pts: [xyType]
           color: String
           width: Number
+          opacity: Number
       when 'rect', 'ellipse'
         Object.assign pattern,
           pts: Match.Where (pts) ->
@@ -57,6 +59,7 @@ Meteor.methods
           color: String
           fill: Match.Optional Match.OneOf String, null
           width: Number
+          opacity: Number
       when 'text'
         Object.assign pattern,
           pts: Match.Where (pts) ->

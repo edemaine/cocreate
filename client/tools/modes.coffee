@@ -5,7 +5,7 @@ import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
 import {tools} from './tools'
 import {currentWidth} from './width'
-import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from '../AppState'
+import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity} from '../AppState'
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
@@ -208,6 +208,7 @@ defineTool
         pts: [currentBoard().eventToPointW e]
         color: currentColor.get()
         width: currentWidth.get()
+        opacity: currentOpacity.get()
       ], returnStubValue: true
       push: throttle.method 'objectPush', ([older], [newer]) ->
         console.assert older.id == newer.id
@@ -272,6 +273,7 @@ rectLikeTool = (type, fillable, constrain) ->
       pts: [origin, origin]
       color: currentColor.get()
       width: currentWidth.get()
+      opacity: currentOpacity.get()
     object.fill = currentFill.get() if fillable and currentFillOn.get()
     pointers[e.pointerId] =
       origin: origin
