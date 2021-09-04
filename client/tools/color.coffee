@@ -72,7 +72,9 @@ for color in colors
       active: -> currentColor.get() == color
       icon: -> # eslint-disable-line react/display-name
         <div className="color" style={backgroundColor: color}/>
-      click: (e) -> selectColorOrFill e, color
+      click: (e) ->
+        selectColorOrFill e, color
+        updateColorOpacity()
 
 customColor = new ReactiveVar '#808080'
 customColorRef = React.createRef()
@@ -127,3 +129,7 @@ export selectFillOff = ->
     selection.edit 'fill', null
   else
     selectDrawingTool()
+
+updateColorOpacity = () ->
+  for el in document.querySelectorAll('[data-tool^="Opacity"]')
+    el.style.fill = currentColor.get()
