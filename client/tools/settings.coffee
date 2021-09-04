@@ -122,6 +122,8 @@ updateOpacity = (val) ->
     else
       currentOpacity.set val
 
+# These values are chosen for no particular reason.  I saw that
+# 12.5 was a number you liked for highlighting Perhaps .25 should be 12.5
 for opacity in [.75, .50, .25]
   do (opacity) ->
     defineTool
