@@ -98,29 +98,10 @@ defineTool
     allowTransparency.get()
   click: ->
     allowTransparency.set not allowTransparency.get()
-    if allowTransparency.curValue == true
-      for el in document.querySelectorAll('[data-tool^="Opacity"]')
-        el.style.display = 'block'
-        updateOpacity 1.0
-        allowTransparency.set true
-    else
-      for el in document.querySelectorAll('[data-tool^="Opacity"]')
-        el.style.display = 'none'
-        updateOpacityIcons 1.0
-        allowTransparency.set false
+    updateOpacity 1.0, allowTransparency.curValue
   init: ->
-    for el in document.querySelectorAll('[data-tool^="Opacity"]')
-      el.style.display = 'none'
-      currentOpacity.set 1.0
+    updateOpacity 1.0, false
 
-updateOpacity = (val) ->
-    allow25Percent.set false
-    allow50Percent.set false
-    allow75Percent.set false
-    if currentOpacity.get() == val
-      currentOpacity.set 1.0
-    else
-      currentOpacity.set val
 
 # These values are chosen for no particular reason.  I saw that
 # 12.5 was a number you liked for highlighting Perhaps .25 should be 12.5
@@ -132,7 +113,22 @@ for opacity in [.75, .50, .25]
       icon: "opacity#{opacity*100}"
       help: "Select #{opacity*100}% Transparency"
       click: ->
-        updateOpacity opacity
-        allow50Percent.set not allow50Percent.get()
+        updateOpacity opacity, true
       active: ->
         if currentOpacity.get() == opacity then true else false
+
+
+updateOpacity = (val, display) ->
+  allowTransparency.set display
+  allow25Percent.set false
+  allow50Percent.set false
+  allow75Percent.set false
+
+  if currentOpacity.get() == val
+    currentOpacity.set 1.0
+  else
+    currentOpacity.set val
+
+  buttons = document.querySelectorAll('[data-tool^="Opacity"]')
+  for button in buttons
+    button.style.display = if display then "block" else "none"
