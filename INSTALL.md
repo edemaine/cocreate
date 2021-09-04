@@ -16,7 +16,6 @@ Here is how to get a **local test server** running:
    * `cd cocreate`
    * `meteor npm install`
    * `meteor`
-   
 
 Even a test server will be accessible from the rest of the Internet,
 on port 3000.
