@@ -101,70 +101,36 @@ defineTool
     if allowTransparency.curValue == true
       for el in document.querySelectorAll('[data-tool^="Opacity"]')
         el.style.display = 'block'
-        allow25Percent.set false
-        allow50Percent.set false
-        allow75Percent.set false
+        updateOpacity 1.0
         allowTransparency.set true
     else
       for el in document.querySelectorAll('[data-tool^="Opacity"]')
         el.style.display = 'none'
-        allow25Percent.set false
-        allow50Percent.set false
-        allow75Percent.set false
+        updateOpacityIcons 1.0
         allowTransparency.set false
-        currentOpacity.set 1.0
   init: ->
     for el in document.querySelectorAll('[data-tool^="Opacity"]')
       el.style.display = 'none'
       currentOpacity.set 1.0
 
-defineTool
-  name: 'Opacity75'
-  category: 'color'
-  class: 'transparency'
-  icon: 'opacity75'
-  help: 'Toggle 75% Transparency'
-  click: ->
-    allow75Percent.set not allow75Percent.get()
+updateOpacity = (val) ->
     allow25Percent.set false
     allow50Percent.set false
-    if allow75Percent.curValue == true
-      currentOpacity.set 0.75
-    else
-      currentOpacity.set 1.0
-  active: ->
-    allow75Percent.get()
-
-defineTool
-  name: 'Opacity50'
-  category: 'color'
-  class: 'transparency'
-  icon: 'opacity50'
-  help: 'Toggle 50% Transparency'
-  click: ->
-    allow50Percent.set not allow50Percent.get()
-    allow25Percent.set false
     allow75Percent.set false
-    if allow50Percent.curValue == true
-      currentOpacity.set 0.50
-    else
+    if currentOpacity.get() == val
       currentOpacity.set 1.0
-  active: ->
-    allow50Percent.get()
+    else
+      currentOpacity.set val
 
-defineTool
-  name: 'Opacity25'
-  category: 'color'
-  class: 'transparency'
-  icon: 'opacity25'
-  help: 'Toggle 25% Transparency'
-  click: ->
-    allow25Percent.set not allow25Percent.get()
-    allow50Percent.set false
-    allow75Percent.set false
-    if allow25Percent.curValue == true
-      currentOpacity.set 0.25
-    else
-      currentOpacity.set 1.0
-  active: ->
-    allow25Percent.get()
+for opacity in [.75, .50, .25]
+  do (opacity) ->
+    defineTool
+      name: "Opacity:#{opacity*100}"
+      category: 'color'
+      icon: "opacity#{opacity*100}"
+      help: "Select #{opacity*100}% Transparency"
+      click: ->
+        updateOpacity opacity
+        allow50Percent.set not allow50Percent.get()
+      active: ->
+        if currentOpacity.get() == opacity then true else false
