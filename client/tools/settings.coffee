@@ -8,9 +8,6 @@ import storage from '../lib/storage'
 
 export allowTouch = new storage.Variable 'allowTouch', true
 export allowTransparency = new storage.Variable 'allowTransparency', false
-export allow25Percent = new storage.Variable 'allow25Percent', false
-export allow50Percent = new storage.Variable 'allow50Percent', false
-export allow75Percent = new storage.Variable 'allow75Percent', false
 
 export fancyCursor = new storage.Variable 'fancyCursor', #true
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
@@ -120,9 +117,6 @@ for opacity in [.75, .50, .25]
 
 updateOpacity = (val, display) ->
   allowTransparency.set display
-  allow25Percent.set false
-  allow50Percent.set false
-  allow75Percent.set false
 
   if currentOpacity.get() == val
     currentOpacity.set 1.0
