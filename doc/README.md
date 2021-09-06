@@ -751,8 +751,9 @@ The button's icon will be colored according to the current fill color,
 set by <kbd>Shift</kbd>-clicking on a color in the
 
 ### <img src="icons/highlight.svg" width="18" alt="Transparent Icon"> Transparent Toggle
-This toggle displays three color circle toggles for 75, 50 or 25 perecent 
-transparent. Unselecting the transparent icon returns opacity to 
+
+This toggle displays three color circle toggles for 75, 50 or 25 perecent
+transparent. Unselecting the transparent icon returns opacity to
 100%.
 
 [Color Palette](#color-palette).
