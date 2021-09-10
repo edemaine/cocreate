@@ -87,10 +87,10 @@ defineTool
     room.gridSnap.set not room.gridSnap.get()
 
 defineTool
-  name: 'Transparency'
+  name: 'transparency'
   category: 'color'
   icon: 'highlighter'
-  help: 'Change transparency of pen'
+  help: 'Change transparency of all drawing tools'
   active: ->
     allowTransparency.get()
   click: ->
@@ -108,7 +108,7 @@ for opacity in [.75, .50, .25]
       name: "Opacity:#{opacity*100}"
       category: 'color'
       icon: "opacity#{opacity*100}"
-      help: "Select #{opacity*100}% Transparency"
+      help: "Select #{opacity*100}% transparency"
       click: ->
         updateOpacity opacity, true
       active: ->
