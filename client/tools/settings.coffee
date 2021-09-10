@@ -1,13 +1,14 @@
+import React from 'react'
 import {Tracker} from 'meteor/tracker'
 
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage, currentGrid, currentGridType, currentOpacity} from '../AppState'
+import {currentRoom, currentPage, currentGrid, currentGridType, currentOpacity, currentColor} from '../AppState'
 import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
 
 export allowTouch = new storage.Variable 'allowTouch', true
-export allowTransparency = new storage.Variable 'allowTransparency', false
+export currentOpacityOn = new storage.Variable 'currentOpacityOn', false
 
 export fancyCursor = new storage.Variable 'fancyCursor', #true
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
@@ -17,8 +18,6 @@ export dark = new storage.Variable 'dark', false
 
 Tracker.autorun ->
   dom.classSet document.body, 'dark', dark.get()
-  allowTransparency.set false
-  currentOpacity.set 1.0
 
 defineTool
   name: 'touch'
@@ -88,41 +87,31 @@ defineTool
 
 defineTool
   name: 'transparency'
-  category: 'color'
+  category: 'width'
   icon: 'highlighter'
   help: 'Change transparency of all drawing tools'
   active: ->
-    allowTransparency.get()
+    currentOpacityOn.get()
   click: ->
-    allowTransparency.set not allowTransparency.get()
-    updateOpacity 1.0, allowTransparency.curValue
-  init: ->
-    updateOpacity 1.0, false
-
+    currentOpacityOn.set not currentOpacityOn.get()
+    if currentOpacityOn.get() == false
+      currentOpacity.set 1.0
 
 # These values are chosen for no particular reason.  I saw that
 # 12.5 was a number you liked for highlighting Perhaps .25 should be 12.5
+widthSize = 24
 for opacity in [.75, .50, .25]
   do (opacity) ->
     defineTool
       name: "Opacity:#{opacity*100}"
-      category: 'color'
-      icon: "opacity#{opacity*100}"
+      category: 'opacity'
+      icon: ->
+        <svg viewBox="0 0 #{widthSize} #{widthSize}" fill="#{currentColor.get()}"
+         width={widthSize} height={widthSize}>
+          <circle cx="#{widthSize/2}" cy="#{widthSize/2}" r="10" fill-opacity="#{opacity}"/>
+        </svg>
       help: "Select #{opacity*100}% transparency"
       click: ->
-        updateOpacity opacity, true
+        currentOpacity.set opacity
       active: ->
         if currentOpacity.get() == opacity then true else false
-
-
-updateOpacity = (val, display) ->
-  allowTransparency.set display
-
-  if currentOpacity.get() == val
-    currentOpacity.set 1.0
-  else
-    currentOpacity.set val
-
-  buttons = document.querySelectorAll('[data-tool^="Opacity"]')
-  for button in buttons
-    button.style.display = if display then "block" else "none"

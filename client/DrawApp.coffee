@@ -16,6 +16,7 @@ import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
 import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
+import {currentOpacityOn} from './tools/settings'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
 import storage from './lib/storage'
@@ -366,6 +367,8 @@ export DrawApp = React.memo ->
   , [tool]
   useEffect onResize, [tool]  # text and image tools affect layout
 
+  transparency = useTracker -> currentOpacityOn.get()
+
   history = useTracker ->
     historyMode.get()
   , []
@@ -424,6 +427,11 @@ export DrawApp = React.memo ->
           else
             <div id="widths" className="subpalette">
               <ToolCategory category="width" placement="top"/>
+            </div>
+          }
+          {if transparency
+            <div id="opacities" className="subpalette">
+              <ToolCategory category="opacity" placement="top"/>
             </div>
           }
           <div id="colors" className="subpalette">

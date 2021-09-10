@@ -6,7 +6,7 @@ import dom from './lib/dom'
 import icons from './lib/icons'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
-import {allowTransparency} from './tools/settings'
+import {currentOpacityOn} from './tools/settings'
 
 export class RenderObjects
   constructor: (@board) ->
@@ -28,7 +28,7 @@ export class RenderObjects
     ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
     ## Redraw from scratch if no `start` specified, or if color or width changed
     start = 0
-    if allowTransparency.valueCur == false
+    if currentOpacityOn.valueCur == false
       if options?.start?
         start = options.start unless options.color or options.width or options.opacity
     ## Choose between two rendering modes for this batch of points:
@@ -55,7 +55,7 @@ export class RenderObjects
         class: 'pen'
       ,
         dataset: id: id
-    if simple or allowTransparency.valueCur != true
+    if simple or currentOpacityOn.valueCur != true
       frag.appendChild dom.create 'polyline',
         points: (
           for i in [start - (start > 0)...obj.pts.length]
