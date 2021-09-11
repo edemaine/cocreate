@@ -2,7 +2,7 @@ import React, {useEffect, useLayoutEffect, useRef} from 'react'
 import {useParams, useHistory, useLocation} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity} from './AppState'
+import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from './AppState'
 import {Board} from './Board'
 import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
@@ -16,7 +16,6 @@ import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
 import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
-import {currentOpacityOn} from './tools/settings'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
 import storage from './lib/storage'
@@ -367,7 +366,7 @@ export DrawApp = React.memo ->
   , [tool]
   useEffect onResize, [tool]  # text and image tools affect layout
 
-  transparency = useTracker -> currentOpacityOn.get()
+  opacityOn = useTracker -> currentOpacityOn.get()
 
   history = useTracker ->
     historyMode.get()
@@ -429,7 +428,7 @@ export DrawApp = React.memo ->
               <ToolCategory category="width" placement="top"/>
             </div>
           }
-          {if transparency
+          {if opacityOn
             <div id="opacities" className="subpalette">
               <ToolCategory category="opacity" placement="top"/>
             </div>

@@ -2,13 +2,12 @@ import React from 'react'
 import {Tracker} from 'meteor/tracker'
 
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage, currentGrid, currentGridType, currentOpacity, currentColor} from '../AppState'
+import {currentRoom, currentPage, currentGrid, currentGridType, currentColor, currentOpacity, currentOpacityOn} from '../AppState'
 import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
 
 export allowTouch = new storage.Variable 'allowTouch', true
-export currentOpacityOn = new storage.Variable 'currentOpacityOn', false
 
 export fancyCursor = new storage.Variable 'fancyCursor', #true
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
@@ -94,8 +93,6 @@ defineTool
     currentOpacityOn.get()
   click: ->
     currentOpacityOn.set not currentOpacityOn.get()
-    if currentOpacityOn.get() == false
-      currentOpacity.set 1.0
 
 # These values are chosen for no particular reason.  I saw that
 # 12.5 was a number you liked for highlighting Perhaps .25 should be 12.5
