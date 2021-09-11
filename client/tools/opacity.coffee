@@ -45,19 +45,23 @@ for opacity in opacities
            fill={currentColor.get()} fillOpacity="#{opacity}"/>
         </svg>
       help: "Set opacity to #{opacity*100}% (transparency #{(1-opacity)*100}%)"
-      click: ->
-        currentOpacity.set opacity
-        selection = currentBoard().selection
-        if selection?.nonempty()
-          selection.edit 'opacity', currentOpacity.get()
-        else
-          selectDrawingTool()
-      active: ->
-        currentOpacity.get() == opacity
+      click: -> selectOpacity opacity
+      active: -> currentOpacity.get() == opacity
 
-export selectOpacity = (opacity, keepTool, skipSelection) ->
-  currentOpacity.set parseFloat opacity if opacity?
-  if not skipSelection and (selection = currentBoard().selection)?.nonempty()
-    selection.edit 'width', currentWidth.get()
-    keepTool = true
-  selectDrawingTool() unless keepTool
+export selectOpacity = (opacity, fromSelection) ->
+  currentOpacity.set opacity
+  currentOpacityOn.set true
+  return if fromSelection
+  selection = currentBoard().selection
+  if selection?.nonempty()
+    selection.edit 'opacity', currentOpacity.get()
+  else
+    selectDrawingTool()
+
+export selectOpacityOff = ->
+  currentOpacityOn.set false
+  selection = currentBoard().selection
+  if selection?.nonempty()
+    selection.edit 'opacity', null
+  else
+    selectDrawingTool()
