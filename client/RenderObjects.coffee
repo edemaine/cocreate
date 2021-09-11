@@ -106,7 +106,6 @@ export class RenderObjects
     dim.height or= Number.EPSILON
     dom.attr rect, Object.assign dim,
       stroke: obj.color
-
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linejoin': 'round'

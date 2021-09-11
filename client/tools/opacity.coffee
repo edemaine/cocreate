@@ -2,7 +2,7 @@ import React from 'react'
 
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
-import {currentColor, currentOpacity, currentOpacityOn} from '../AppState'
+import {currentBoard, currentColor, currentOpacity, currentOpacityOn} from '../AppState'
 
 export opacities = [
   0.25
@@ -21,6 +21,15 @@ defineTool
     currentOpacityOn.get()
   click: ->
     currentOpacityOn.set not currentOpacityOn.get()
+    selection = currentBoard()?.selection
+    if selection?.nonempty()
+      selection.edit 'opacity',
+        if currentOpacityOn.get()
+          currentOpacity.get()
+        else
+          null
+    else
+      selectDrawingTool()
 
 # These values are chosen for no particular reason.  I saw that
 # 12.5 was a number you liked for highlighting Perhaps .25 should be 12.5
@@ -38,5 +47,17 @@ for opacity in opacities
       help: "Set opacity to #{opacity*100}% (transparency #{(1-opacity)*100}%)"
       click: ->
         currentOpacity.set opacity
+        selection = currentBoard().selection
+        if selection?.nonempty()
+          selection.edit 'opacity', currentOpacity.get()
+        else
+          selectDrawingTool()
       active: ->
         currentOpacity.get() == opacity
+
+export selectOpacity = (opacity, keepTool, skipSelection) ->
+  currentOpacity.set parseFloat opacity if opacity?
+  if not skipSelection and (selection = currentBoard().selection)?.nonempty()
+    selection.edit 'width', currentWidth.get()
+    keepTool = true
+  selectDrawingTool() unless keepTool
