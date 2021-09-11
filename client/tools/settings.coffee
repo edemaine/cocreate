@@ -1,8 +1,7 @@
-import React from 'react'
 import {Tracker} from 'meteor/tracker'
 
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage, currentGrid, currentGridType, currentColor, currentOpacity, currentOpacityOn} from '../AppState'
+import {currentRoom, currentPage, currentGrid, currentGridType} from '../AppState'
 import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
@@ -83,32 +82,3 @@ defineTool
   click: ->
     return unless (room = currentRoom.get())?
     room.gridSnap.set not room.gridSnap.get()
-
-defineTool
-  name: 'transparency'
-  category: 'width'
-  icon: 'highlighter'
-  help: 'Change transparency of all drawing tools'
-  active: ->
-    currentOpacityOn.get()
-  click: ->
-    currentOpacityOn.set not currentOpacityOn.get()
-
-# These values are chosen for no particular reason.  I saw that
-# 12.5 was a number you liked for highlighting Perhaps .25 should be 12.5
-widthSize = 24
-for opacity in [.75, .50, .25]
-  do (opacity) ->
-    defineTool
-      name: "opacity:#{opacity*100}"
-      category: 'opacity'
-      icon: ->
-        <svg viewBox="0 0 #{widthSize} #{widthSize}" fill="#{currentColor.get()}"
-         width={widthSize} height={widthSize}>
-          <circle cx="#{widthSize/2}" cy="#{widthSize/2}" r="10" fill-opacity="#{opacity}"/>
-        </svg>
-      help: "Select #{opacity*100}% transparency"
-      click: ->
-        currentOpacity.set opacity
-      active: ->
-        currentOpacity.get() == opacity
