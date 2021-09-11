@@ -30,9 +30,10 @@ for opacity in opacities
       name: "opacity:#{opacity*100}"
       category: 'opacity'
       icon: ->
-        <svg viewBox="0 0 #{opacitySize} #{opacitySize}" fill="#{currentColor.get()}"
+        <svg viewBox="0 0 #{opacitySize} #{opacitySize}" className="opacity"
          width={opacitySize} height={opacitySize}>
-          <circle cx="#{opacitySize/2}" cy="#{opacitySize/2}" r="10" fillOpacity="#{opacity}"/>
+          <circle cx="#{opacitySize/2}" cy="#{opacitySize/2}" r="10"
+           fill={currentColor.get()} fillOpacity="#{opacity}"/>
         </svg>
       help: "Set opacity to #{opacity*100}% (transparency #{(1-opacity)*100}%)"
       click: ->
