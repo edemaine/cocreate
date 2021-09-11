@@ -134,9 +134,9 @@ export DrawApp = React.memo ->
       page: currentPage.get().id
       tool: currentTool.get()
       color: currentColor.get()
-      opacity: currentOpacity.get()
     remote.cursor = currentBoard().eventToPointW e if e?
     remote.fill = currentFill.get() if currentFillOn.get()
+    remote.opacity = currentOpacity.get() if currentOpacityOn.get()
     remotes.update remote
   useEffect ->
     dom.listen mainBoardRef.current, pointermove: (e) ->
@@ -366,7 +366,9 @@ export DrawApp = React.memo ->
   , [tool]
   useEffect onResize, [tool]  # text and image tools affect layout
 
-  opacityOn = useTracker -> currentOpacityOn.get()
+  opacityOn = useTracker ->
+    currentOpacityOn.get()
+  , []
 
   history = useTracker ->
     historyMode.get()
