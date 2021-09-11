@@ -100,7 +100,7 @@ widthSize = 24
 for opacity in [.75, .50, .25]
   do (opacity) ->
     defineTool
-      name: "Opacity:#{opacity*100}"
+      name: "opacity:#{opacity*100}"
       category: 'opacity'
       icon: ->
         <svg viewBox="0 0 #{widthSize} #{widthSize}" fill="#{currentColor.get()}"
@@ -111,4 +111,4 @@ for opacity in [.75, .50, .25]
       click: ->
         currentOpacity.set opacity
       active: ->
-        if currentOpacity.get() == opacity then true else false
+        currentOpacity.get() == opacity
