@@ -72,8 +72,7 @@ for color in colors
       active: -> currentColor.get() == color
       icon: -> # eslint-disable-line react/display-name
         <div className="color" style={backgroundColor: color}/>
-      click: (e) ->
-        selectColorOrFill e, color
+      click: (e) -> selectColorOrFill e, color
 
 customColor = new ReactiveVar '#808080'
 customColorRef = React.createRef()
