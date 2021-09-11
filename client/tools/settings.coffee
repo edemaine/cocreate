@@ -108,7 +108,7 @@ for opacity in [.75, .50, .25]
       icon: ->
         <svg viewBox="0 0 #{widthSize} #{widthSize}" fill="#{currentColor.get()}"
          width={widthSize} height={widthSize}>
-          <circle cx="#{widthSize/2}" cy="#{widthSize/2}" r="10" fill-opacity="#{opacity}"/>
+          <circle cx="#{widthSize/2}" cy="#{widthSize/2}" r="10" fillOpacity="#{opacity}"/>
         </svg>
       help: "Select #{opacity*100}% transparency"
       click: ->
