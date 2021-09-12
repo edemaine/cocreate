@@ -753,7 +753,7 @@ This setting will affect both stroke and fill opacity for fillable objects:
 and
 [<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
 
-Currently, 
+Currently,
 [<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool)
 does not support pressure sensitivity together with opacity.
 Make pen objects fully opaque to see their pressure-dependent width.

@@ -14,7 +14,8 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   **No accounts required**<sup>★</sup>.
 * Works on computers, tablets, and phones **without any software installation**
   (use any modern web browser, such as Chrome)
-* **See everyone's cursors**, with their names and what page they're on, updated live
+* **See everyone's cursors**, with their names and what page they're on,
+  updated live
 * See everyone's drawing **while they draw**<sup>★</sup>
   * **Freehand pen** drawing, with **pressure sensitivity**<sup>★</sup>
     for supporting devices (e.g., Wacom, Surface, iPad Pencil)
@@ -36,7 +37,8 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     past and pasting into the present
   * Export as **SVG**<sup>★</sup>
 * **Multiple pages**<sup>★</sup>
-  * **Page duplication**<sup>★</sup> (for separating ideas/alternatives, animation, and efficiency)
+  * **Page duplication**<sup>★</sup> (for separating ideas/alternatives,
+    animation, and efficiency)
   * Can link to specific pages<sup>★</sup>
   * **Grid** backgrounds: **Square** and **triangular**<sup>★</sup>
     with optional **grid snapping**<sup>★</sup>
