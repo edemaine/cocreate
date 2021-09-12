@@ -430,11 +430,12 @@ export DrawApp = React.memo ->
               <ToolCategory category="width" placement="top"/>
             </div>
           }
-          {if opacityOn
-            <div id="opacities" className="subpalette">
-              <ToolCategory category="opacity" placement="top"/>
-            </div>
-          }
+          <div id="opacities" className="subpalette">
+            <ToolCategory category="opacity" placement="top"/>
+            {if opacityOn
+              <ToolCategory category="opacities" placement="top"/>
+            }
+          </div>
           <div id="colors" className="subpalette">
             <ToolCategory category="color" placement="top"/>
           </div>

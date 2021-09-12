@@ -15,7 +15,7 @@ opacityRadius = 9
 
 defineTool
   name: 'opacity'
-  category: 'width'
+  category: 'opacity'
   icon: 'highlighter'
   help: 'Toggle partial opacity / transparency in objects'
   active: ->
@@ -38,7 +38,7 @@ for opacity in opacities
   do (opacity) ->
     defineTool
       name: "opacity:#{opacity*100}"
-      category: 'opacity'
+      category: 'opacities'
       icon: ->
         <svg viewBox="-#{opacitySize/2} -#{opacitySize/2} #{opacitySize} #{opacitySize}"
          className="opacity" width={opacitySize} height={opacitySize}>

@@ -148,8 +148,9 @@ export class RenderObjects
       transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
       fill: obj.color
-      style: "font-size:#{obj.fontSize}px"
-    if not options? or options.text or options.fontSize or options.color
+      style: "font-size:#{obj.fontSize}px" +
+        if obj.opacity? then ";opacity:#{obj.opacity}" else ''
+    if not options? or options.text or options.fontSize or options.color or options.opacity
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
       @texDelete id if @texById[id]?
@@ -386,6 +387,7 @@ export class RenderObjects
           # not sure where the /2 comes from... exFactor?
         dom.attr svgG,
           transform: "translate(#{x} #{y}) scale(#{fontSize})"
+          style: "opacity:#{object.opacity}" if object.opacity?
         svgG
     ## The `dx` attributes set above may mean that previously rendered LaTeX
     ## <g>s need to shift horizontally.  Update their x translation.
@@ -425,6 +427,7 @@ export class RenderObjects
     dom.attr image,
       x: obj.pts[0].x
       y: obj.pts[0].y
+      style: "opacity:#{obj.opacity}" if obj.opacity
     if not options? or options.url or options.proxy or options.credentials
       dom.attr image,
         href: if obj.proxy then proxyUrl obj.url else obj.url

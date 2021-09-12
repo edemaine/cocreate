@@ -466,7 +466,7 @@ defineTool
       mainBoard.selection.setAttributes()
       text = Objects.findOne(pointers.text)?.text ? ''
     else
-      pointers.text = Meteor.apply 'objectNew', [
+      object =
         room: currentRoom.get().id
         page: currentPage.get().id
         type: 'text'
@@ -474,7 +474,8 @@ defineTool
         text: text = ''
         color: currentColor.get()
         fontSize: currentFontSize.get()
-      ], returnStubValue: true
+      object.opacity = currentOpacity.get() if currentOpacityOn.get()
+      pointers.text = Meteor.apply 'objectNew', [object], returnStubValue: true
       mainBoard.selection.addId pointers.text
       undoStack.push pointers.undoable =
         type: 'new'
@@ -537,6 +538,7 @@ defineTool
         unless old?
           obj.pts = [pointers.point ?
                       maybeSnapPointToGrid currentBoard().relativePoint 0.25, 0.25]
+          obj.opacity = currentOpacity.get() if currentOpacityOn.get()
           undoStack.pushAndDo pointers.undoable =
             type: 'new'
             obj: obj
