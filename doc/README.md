@@ -740,28 +740,39 @@ the line-width choices are replaced by font-size choices.
 These control the size of the entire text object.
 Currently, you have seven integral choices.
 
-### <img src="icons/highlight.svg" width="18" alt="Transparent Icon"> Transparent Toggle
+### <img src="icons/highlighter.svg" width="18" alt="Transparent Icon"> Transparent Toggle
 
-This toggle displays three color circle toggles for 75, 50 or 25 perecent
-transparent. Unselecting the transparent icon returns opacity to
-100%.
+This button toggles whether objects are partially transparent/opaque.
+Click/tap the button to switch between the normal fully opaque mode
+(when the button is "out") and partially transparent/opaque mode
+(when the button is "in").
+In partially transparent/opaque mode, three additional buttons will display
+for selecting among 25%, 50%, or 75% opacity.
+This setting will affect both stroke and fill opacity for fillable objects:
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool)
+and
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
 
+Currently, 
+[<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool)
+does not support pressure sensitivity together with opacity.
+Make pen objects fully opaque to see their pressure-dependent width.
+
+### <img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill / <img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill Toggle
+
+This button controls whether objects have a fill color or are hollow
+(transparent inside).
+Click/tap the button to switch between
+<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill and
+<img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill.
+The button's icon will be colored according to the current fill color,
+set by <kbd>Shift</kbd>-clicking on a color in the
 [Color Palette](#color-palette).
 
 This toggle only affects objects that support fill:
 [<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool)
 and
 [<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
-
-### <img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill / <img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill Toggle
-
-This button controls whether objects have a fill color or are hollow
-(transparent inside).
-Click/tab the button to switch between
-<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill and
-<img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill.
-The button's icon will be colored according to the current fill color,
-set by <kbd>Shift</kbd>-clicking on a color in the
 
 ### Color Palette
 
