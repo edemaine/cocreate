@@ -740,16 +740,6 @@ the line-width choices are replaced by font-size choices.
 These control the size of the entire text object.
 Currently, you have seven integral choices.
 
-### <img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill / <img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill Toggle
-
-This button controls whether objects have a fill color or are hollow
-(transparent inside).
-Click/tab the button to switch between
-<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill and
-<img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill.
-The button's icon will be colored according to the current fill color,
-set by <kbd>Shift</kbd>-clicking on a color in the
-
 ### <img src="icons/highlight.svg" width="18" alt="Transparent Icon"> Transparent Toggle
 
 This toggle displays three color circle toggles for 75, 50 or 25 perecent
@@ -762,6 +752,16 @@ This toggle only affects objects that support fill:
 [<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool)
 and
 [<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+
+### <img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill / <img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill Toggle
+
+This button controls whether objects have a fill color or are hollow
+(transparent inside).
+Click/tab the button to switch between
+<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill and
+<img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill.
+The button's icon will be colored according to the current fill color,
+set by <kbd>Shift</kbd>-clicking on a color in the
 
 ### Color Palette
 
