@@ -7,7 +7,6 @@ import dom from '../lib/dom'
 import storage from '../lib/storage'
 
 export allowTouch = new storage.Variable 'allowTouch', true
-
 export fancyCursor = new storage.Variable 'fancyCursor', #true
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
   ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488

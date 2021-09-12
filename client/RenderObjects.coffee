@@ -427,7 +427,7 @@ export class RenderObjects
     dom.attr image,
       x: obj.pts[0].x
       y: obj.pts[0].y
-      style: "opacity:#{obj.opacity}" if obj.opacity
+      style: "opacity:#{obj.opacity}" if obj.opacity?
     if not options? or options.url or options.proxy or options.credentials
       dom.attr image,
         href: if obj.proxy then proxyUrl obj.url else obj.url
