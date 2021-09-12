@@ -5,7 +5,7 @@ import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
 import {tools} from './tools'
 import {currentWidth} from './width'
-import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from '../AppState'
+import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from '../AppState'
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
@@ -200,15 +200,16 @@ defineTool
   hotkey: 'p'
   down: (e) ->
     return if pointers[e.pointerId]
+    object =
+      room: currentRoom.get().id
+      page: currentPage.get().id
+      type: 'pen'
+      pts: [currentBoard().eventToPointW e]
+      color: currentColor.get()
+      width: currentWidth.get()
+    object.opacity = currentOpacity.get() if currentOpacityOn.get()
     pointers[e.pointerId] =
-      id: Meteor.apply 'objectNew', [
-        room: currentRoom.get().id
-        page: currentPage.get().id
-        type: 'pen'
-        pts: [currentBoard().eventToPointW e]
-        color: currentColor.get()
-        width: currentWidth.get()
-      ], returnStubValue: true
+      id: Meteor.apply 'objectNew', [object], returnStubValue: true
       push: throttle.method 'objectPush', ([older], [newer]) ->
         console.assert older.id == newer.id
         older.pts.push ...newer.pts
@@ -273,6 +274,7 @@ rectLikeTool = (type, fillable, constrain) ->
       color: currentColor.get()
       width: currentWidth.get()
     object.fill = currentFill.get() if fillable and currentFillOn.get()
+    object.opacity = currentOpacity.get() if currentOpacityOn.get()
     pointers[e.pointerId] =
       origin: origin
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
@@ -464,7 +466,7 @@ defineTool
       mainBoard.selection.setAttributes()
       text = Objects.findOne(pointers.text)?.text ? ''
     else
-      pointers.text = Meteor.apply 'objectNew', [
+      object =
         room: currentRoom.get().id
         page: currentPage.get().id
         type: 'text'
@@ -472,7 +474,8 @@ defineTool
         text: text = ''
         color: currentColor.get()
         fontSize: currentFontSize.get()
-      ], returnStubValue: true
+      object.opacity = currentOpacity.get() if currentOpacityOn.get()
+      pointers.text = Meteor.apply 'objectNew', [object], returnStubValue: true
       mainBoard.selection.addId pointers.text
       undoStack.push pointers.undoable =
         type: 'new'
@@ -535,6 +538,7 @@ defineTool
         unless old?
           obj.pts = [pointers.point ?
                       maybeSnapPointToGrid currentBoard().relativePoint 0.25, 0.25]
+          obj.opacity = currentOpacity.get() if currentOpacityOn.get()
           undoStack.pushAndDo pointers.undoable =
             type: 'new'
             obj: obj

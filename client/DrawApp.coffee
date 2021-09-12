@@ -2,7 +2,7 @@ import React, {useEffect, useLayoutEffect, useRef} from 'react'
 import {useParams, useHistory, useLocation} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
+import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from './AppState'
 import {Board} from './Board'
 import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
@@ -136,6 +136,7 @@ export DrawApp = React.memo ->
       color: currentColor.get()
     remote.cursor = currentBoard().eventToPointW e if e?
     remote.fill = currentFill.get() if currentFillOn.get()
+    remote.opacity = currentOpacity.get() if currentOpacityOn.get()
     remotes.update remote
   useEffect ->
     dom.listen mainBoardRef.current, pointermove: (e) ->
@@ -365,6 +366,10 @@ export DrawApp = React.memo ->
   , [tool]
   useEffect onResize, [tool]  # text and image tools affect layout
 
+  opacityOn = useTracker ->
+    currentOpacityOn.get()
+  , []
+
   history = useTracker ->
     historyMode.get()
   , []
@@ -425,6 +430,12 @@ export DrawApp = React.memo ->
               <ToolCategory category="width" placement="top"/>
             </div>
           }
+          <div id="opacities" className="subpalette">
+            <ToolCategory category="opacity" placement="top"/>
+            {if opacityOn
+              <ToolCategory category="opacities" placement="top"/>
+            }
+          </div>
           <div id="colors" className="subpalette">
             <ToolCategory category="color" placement="top"/>
           </div>

@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-09-12
+
+* Partial transparency/opacity attribute for all objects / drawing modes.
+  [[#193](https://github.com/edemaine/coauthor/pull/193)]
+
 ## 2021-07-14
 
 * Improved LaTeX rendering via MathJax 3.2.0

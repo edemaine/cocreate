@@ -5,6 +5,7 @@
 import {undoStack} from './UndoStack'
 import {gridUnitOffset} from './Grid'
 import {selectColor, selectFill, selectFillOff} from './tools/color'
+import {selectOpacity, selectOpacityOff} from './tools/opacity'
 import {selectWidth} from './tools/width'
 import {selectFontSize} from './tools/font'
 import {pointers} from './tools/modes'
@@ -237,7 +238,9 @@ export class Selection
       for value in values
         ## Special null value represents "not uniform" (or "all null"),
         ## whereas if all values are undefined, we return undefined.
-        return null unless value == example or (nullWild and not value?)
+        ## Here we treat null and undefined/absent values as the same.
+        return null unless value == example or (not value? and not example?) or\
+                           (nullWild and not value?)
       example
     if (color = uniformAttribute 'color')?  # uniform draw color
       selectColor color, true, true
@@ -245,6 +248,10 @@ export class Selection
       selectFill fill, true
     if fill == undefined  # uniform no fill
       selectFillOff()
+    if (opacity = uniformAttribute 'opacity', false)?  # uniform actual opacity
+      selectOpacity opacity, true
+    if opacity == undefined  # uniform no opacity
+      selectOpacityOff()
     if (width = uniformAttribute 'width')?  # uniform line width
       selectWidth width, true, true
     if (fontSize = uniformAttribute 'fontSize')?  # uniform font size

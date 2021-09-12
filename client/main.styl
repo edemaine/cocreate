@@ -224,11 +224,16 @@ button(activeBorder)
   /.dark & svg
     filter: invert(1) hue-rotate(180deg)
 
-.color, [data-tool="fill"] svg
+.color, .opacity, [data-tool="fill"] svg
   width: 100%
   height: 100%
   /.dark &
     filter: invert(1) hue-rotate(180deg)
+
+#opacities > .tool:not(:first-child)
+  padding: 0
+.opacity
+  background: linear-gradient(to bottom right, #999, #fff);
 
 .custom.color
   input[type="color"], .set

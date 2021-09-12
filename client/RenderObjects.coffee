@@ -24,16 +24,20 @@ export class RenderObjects
     ###
     obj.id ? obj._id ? obj
   renderPen: (obj, options) ->
+    transparent = obj.opacity? and obj.opacity != 1
     ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
-    ## Redraw from scratch if no `start` specified, or if color or width changed
+    ## Redraw from scratch if no `start` specified, or if color/width/opacity
+    ## changed, or object has any transparency.
     start = 0
-    if options?.start?
-      start = options.start unless options.color or options.width
+    if options?.start? and not (options.color or options.width or options.opacity or transparent)
+      start = options.start
     ## Choose between two rendering modes for this batch of points:
     ## * "Simple" mode: when all points have w == 1, use a single <polyline>
     ## * "Complex" mode: otherwise, use many <line>s
+    ## We currently also use simple mode when the pen has transparency,
+    ## to avoid overlap patterns between consecutive lines.
     simple = true
-    if simple
+    unless transparent
       for i in [start...obj.pts.length]
         unless obj.pts[i].w == 1
           simple = false
@@ -61,6 +65,7 @@ export class RenderObjects
             "#{pt.x},#{pt.y}"
         ).join ' '
         stroke: obj.color
+        'stroke-opacity': obj.opacity
         'stroke-width': obj.width
     else
       ## Draw an `edge` between consecutive dots.
@@ -85,6 +90,7 @@ export class RenderObjects
     dom.attr poly,
       points: ("#{x},#{y}" for {x, y} in obj.pts).join ' '
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
@@ -100,9 +106,11 @@ export class RenderObjects
     dim.height or= Number.EPSILON
     dom.attr rect, Object.assign dim,
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
       fill: obj.fill or 'none'
+      'fill-opacity': obj.opacity
     rect
   renderEllipse: (obj) ->
     id = @id obj
@@ -118,8 +126,10 @@ export class RenderObjects
       rx: rx
       ry: ry
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       fill: obj.fill or 'none'
+      'fill-opacity': obj.opacity
     ellipse
   renderText: (obj, options) ->
     id = @id obj
@@ -138,8 +148,9 @@ export class RenderObjects
       transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
       fill: obj.color
-      style: "font-size:#{obj.fontSize}px"
-    if not options? or options.text or options.fontSize or options.color
+      style: "font-size:#{obj.fontSize}px" +
+        if obj.opacity? then ";opacity:#{obj.opacity}" else ''
+    if not options? or options.text or options.fontSize or options.color or options.opacity
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
       @texDelete id if @texById[id]?
@@ -376,6 +387,7 @@ export class RenderObjects
           # not sure where the /2 comes from... exFactor?
         dom.attr svgG,
           transform: "translate(#{x} #{y}) scale(#{fontSize})"
+          style: "opacity:#{object.opacity}" if object.opacity?
         svgG
     ## The `dx` attributes set above may mean that previously rendered LaTeX
     ## <g>s need to shift horizontally.  Update their x translation.
@@ -415,6 +427,7 @@ export class RenderObjects
     dom.attr image,
       x: obj.pts[0].x
       y: obj.pts[0].y
+      style: "opacity:#{obj.opacity}" if obj.opacity?
     if not options? or options.url or options.proxy or options.credentials
       dom.attr image,
         href: if obj.proxy then proxyUrl obj.url else obj.url
@@ -491,6 +504,7 @@ edge = (obj, p1, p2) ->
     x2: p2.x
     y2: p2.y
     stroke: obj.color
+    'stroke-opacity': obj.opacity
     #'stroke-width': obj.width * (p1.w + p2.w) / 2
     'stroke-width': obj.width * p2.w
     ## Replace `dot` with round linecap, now set in CSS.

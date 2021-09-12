@@ -30,6 +30,9 @@ export currentColor = new ReactiveVar
 export currentFill = new ReactiveVar
 export currentFillOn = new ReactiveVar
 
+export currentOpacity = new ReactiveVar 0.5
+export currentOpacityOn = new ReactiveVar
+
 ## Initialized in ./tools/font.coffee:
 export currentFontSize = new ReactiveVar
 
