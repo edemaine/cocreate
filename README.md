@@ -29,7 +29,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     (e.g., Imgur or Coauthor) for drawing on top of images
   * Other basic tools: pan, zoom, zoom to fit<sup>★</sup>, eraser
   * Basic settings: line thickness (scaling correctly with zoom),
-    color palette, fill, font size
+    opacity<sup>★</sup>, color palette, fill, font size
 * **Vector** representation:
   * **Select, edit, move, duplicate<sup>★</sup>, delete** existing objects,
     including **rectangular select**<sup>★</sup>
