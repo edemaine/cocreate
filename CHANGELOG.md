@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2021-09-14
+
+* Fix paste and duplicate not working.
+
 ## 2021-09-12
 
 * Partial transparency/opacity attribute for all objects / drawing modes.

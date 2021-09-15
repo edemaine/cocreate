@@ -38,7 +38,7 @@ Meteor.methods
       updated: Match.Optional Date
       tx: Match.Optional Number
       ty: Match.Optional Number
-      opacity: Match.Optional Number
+      opacity: Match.Optional Match.OneOf Number, null
     switch obj?.type
       when 'pen'
         Object.assign pattern,
@@ -56,7 +56,7 @@ Meteor.methods
             check pts, [xyType]
             pts.length == 2
           color: String
-          fill: Match.Optional String
+          fill: Match.Optional Match.OneOf String, null
           width: Number
       when 'text'
         Object.assign pattern,
