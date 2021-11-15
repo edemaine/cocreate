@@ -43,15 +43,14 @@
   "devDependencies": {
     "@babel/core": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
-    "@fellow/eslint-plugin-coffee": "^0.4.13",
     "coffeescript": "^2.5.1",
     "eslint": "^7.25.0",
     "eslint-import-resolver-meteor": "^0.4.0",
-    "eslint-plugin-coffee": "0.1.15",
-    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-coffee": "github:helixbass/eslint-plugin-coffee#eslint-plugin-coffee-v0.1.16-dev.4-gitpkg",
+    "eslint-plugin-import": "2.22.1",
     "eslint-plugin-meteor": "^7.3.0",
     "eslint-plugin-react": "^7.23.2",
-    "markdownlint-cli": "^0.28.1",
+    "markdownlint-cli": "^0.29.0",
     "markdownlint-rule-github-internal-links": "^0.0.2"
   },
   "meteor": {
