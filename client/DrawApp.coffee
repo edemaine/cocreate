@@ -6,6 +6,7 @@ import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, se
 import {Board} from './Board'
 import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
+import {RoomName} from './RoomName'
 import {Page} from './Page'
 import {PageList} from './PageList'
 import {Room} from './Room'
@@ -400,6 +401,7 @@ export DrawApp = React.memo ->
     <div id="pages" className="top horizontal palette" ref={topRef}>
       <ToolCategory category="zoom" placement="bottom"/>
       <div className="spacer"/>
+      <RoomName/>
       <PageList/>
       <ToolCategory category="page" placement="bottom"/>
       <div className="spacer"/>
