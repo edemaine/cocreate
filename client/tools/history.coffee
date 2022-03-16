@@ -70,6 +70,7 @@ defineTool
         apply = diffs[...target]
       return if apply.length == 0
       lastTarget.current = target
+      toRender = new Set
       for diff in apply
         switch diff.type
           when 'pen', 'poly', 'rect', 'ellipse', 'text', 'image'
@@ -77,13 +78,15 @@ defineTool
             obj = Object.assign {}, diff
             obj.pts = obj.pts[..] if obj.pts?
             historyBoard.objects[obj.id] = obj
-            historyRender.current.render obj
+            toRender.add obj.id
           when 'push'
             obj = historyBoard.objects[diff.id]
             obj.pts.push ...diff.pts
-            historyRender.current.render obj,
-              start: obj.pts.length - diff.pts.length
-              translate: false
+            toRender.add obj.id
+            #unless toRender.has obj
+            #  historyRender.current.render obj,
+            #    start: obj.pts.length - diff.pts.length
+            #    translate: false
           when 'edit'
             obj = historyBoard.objects[diff.id]
             for key, value of diff when key not in ['id', 'type']
@@ -93,10 +96,13 @@ defineTool
                     obj[key][subkey] = subvalue
                 else
                   obj[key] = value
-            historyRender.current.render obj
+            toRender.add obj.id
           when 'del'
-            historyRender.current.delete diff
+            historyRender.current.delete diff, true
             delete historyBoard.objects[diff.id]
+            toRender.delete diff.id
+      for id from toRender
+        historyRender.current.render historyBoard.objects[id]
 
     <input id="historyRange" className="history" type="range"
       min="0" max={diffs.length} title="Drag to time travel through history"

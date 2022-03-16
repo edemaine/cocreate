@@ -232,7 +232,7 @@ export class RenderObjects
         ## See https://spec.commonmark.org/0.29/#code-spans
         text = text
         .replace /(^|[^\\`])(`+)((?!`)[^]*?[^`])\2(?!`)/g, (m, pre, left, inner) ->
-          ## Strip one leading and trailling space
+          ## Strip one leading and trailing space
           inner = inner[1..] if inner.startsWith '\u00a0'
           inner = inner[...-1] if inner.endsWith '\u00a0'
           "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
@@ -461,10 +461,11 @@ export class RenderObjects
       else
         elt.removeAttribute 'transform'
     @board.selection.redraw obj._id, elt if @board.selection?.has obj._id
-  delete: (obj) ->
+  delete: (obj, noWarn) ->
     id = @id obj
     unless @dom[id]?
-      return console.warn "Attempt to delete unknown object ID #{id}?!"
+      console.warn "Attempt to delete unknown object ID #{id}?!" unless noWarn
+      return
     @dom[id].remove()
     delete @dom[id]
     tools.text.stop() if id == pointers.text

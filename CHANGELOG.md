@@ -9,7 +9,8 @@ instead of version numbers.
 
 ## 2022-03-16
 
-* Fix LaTeX rendering in History view.
+* Fix LaTeX rendering in Time Travel view.
+* Speed up time travel by large temporal distances.
 
 ## 2021-09-14
 
