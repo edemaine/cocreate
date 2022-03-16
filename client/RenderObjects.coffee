@@ -204,16 +204,20 @@ export class RenderObjects
               out.push text[math.end...maths[i+1].start]
             else
               out.push text[math.end..]
+            attrs =
+              color: obj.color
+              fontSize: obj.fontSize
+              opacity: obj.opacity
             if (job = @tex[[math.formula, math.display]])?
               unless job.texts[id]?
-                job.texts[id] = true
+                job.texts[id] = attrs
                 jobs.push job
                 readyJobs.push {job, id} if job.svg? # already rendered
             else
               job = @tex[[math.formula, math.display]] =
                 formula: math.formula
                 display: math.display
-                texts: "#{id}": true
+                texts: "#{id}": attrs
               @texQueue.push job
               jobs.push job
               if @texQueue.length == 1  # added job while idle
@@ -357,15 +361,14 @@ export class RenderObjects
     Precondition: `job.texts[id]` should exist.
 
     `job.texts[id]` can be one of two values:
-      * `true` means "needs to be rendered"
+      * object containing `color`, `fontSize`, and `opacity` attributes,
+        meaning "needs to be rendered with these attributes"
       * array of rendered <g> elements, one for each instance of `job`
         (in the order they appear in the text)
     This method only does work in the first case.
     ###
-    return unless job.texts[id] == true
-    object = Objects.findOne id
-    return unless object
-    fontSize = object.fontSize
+    {color, fontSize, opacity} = job.texts[id]
+    return unless fontSize?
     g = @dom[id].firstChild
     [rect, text] = g.childNodes
     dx = job.width * fontSize
@@ -379,7 +382,7 @@ export class RenderObjects
         tspanBBox = tspan.getBBox()
         g.appendChild svgG = dom.create 'g'
         svgG.innerHTML = job.svg
-        .replace /currentColor/g, object.color
+        .replace /currentColor/g, color
         x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
         y = tspanBBox.y \
           + tspanBBox.height * (1 - descender/(descender+ascender)) \
@@ -387,13 +390,13 @@ export class RenderObjects
           # not sure where the /2 comes from... exFactor?
         dom.attr svgG,
           transform: "translate(#{x} #{y}) scale(#{fontSize})"
-          style: "opacity:#{object.opacity}" if object.opacity?
+          style: "opacity:#{opacity}" if opacity?
         svgG
     ## The `dx` attributes set above may mean that previously rendered LaTeX
     ## <g>s need to shift horizontally.  Update their x translation.
     for job2 in @texById[id]
       continue if job == job2  # don't need to update job we just rendered
-      continue if job2.texts[id] == true  # only update already rendered jobs
+      continue if job2.texts[id].fontSize?  # only update already rendered jobs
       for tspan, i in text.querySelectorAll """tspan[data-tex="#{CSS.escape job2.formula}"][data-display="#{job2.display}"]"""
         tspanBBox = tspan.getBBox()
         x = tspanBBox.x - tspan.getAttribute('dx') + tspanBBox.width/2  # divvy up &VeryThinSpace;
@@ -470,12 +473,14 @@ export class RenderObjects
     for job in check = @texById[id]
       delete job.texts[id]
     delete @texById[id]
-    ## After we potentially rerender text, check for expired cache jobs
+    ## After we potentially rerender text, check for expired cache jobs.
+    ## Wait 5 seconds in case we're going to use the text again soon
+    ## (e.g. when switching views in history).
     setTimeout =>
       for job in check
         unless (t for t of job.texts).length
           delete @tex[[job.formula, job.display]]
-    , 0
+    , 5000
   #has: (obj) ->
   #  (id obj) of @dom
   shouldNotExist: (obj) ->

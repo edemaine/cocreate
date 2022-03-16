@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-03-16
+
+* Fix LaTeX rendering in History view.
+
 ## 2021-09-14
 
 * Fix paste and duplicate not working.
