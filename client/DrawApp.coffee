@@ -329,7 +329,7 @@ export DrawApp = React.memo ->
     dragDepth = 0
     all = (e) ->
       e.preventDefault()
-      e.dataTransfer.dropEffect = 'copy'
+      e.dataTransfer.dropEffect = 'link'
     dom.listen mainBoardRef.current,
       dragenter: (e) ->
         all e
@@ -346,6 +346,7 @@ export DrawApp = React.memo ->
         document.getElementById('dragzone').classList.remove 'drag'
       drop: (e) ->
         all e
+        e.stopPropagation()
         dragDepth = 0
         document.getElementById('dragzone').classList.remove 'drag'
         tryAddImage e.dataTransfer.items,
