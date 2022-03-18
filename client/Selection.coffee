@@ -116,11 +116,15 @@ export class Selection
       ## Add an object to the selection before it's been rendered
       ## (triggering redraw when it gets rendered).
       @selected[id] = true
-  redraw: (id, target) ->
-    unless @selected[id] == true  # added via `addId`
-      @selected[id].remove()
-    @rehighlighter.highlight target
-    @selected[id] = @rehighlighter.select()
+  redraw: (id, target, transformOnly) ->
+    exists = @selected[id] != true  # not added via `addId`
+    if transformOnly and exists
+      @selected[id].firstChild.setAttribute 'transform',
+        target.getAttribute 'transform'
+    else
+      @selected[id].remove() if exists
+      @rehighlighter.highlight target
+      @selected[id] = @rehighlighter.select()
     @outline()
   remove: (id) ->
     unless @selected[id] == true  # added via `addId`

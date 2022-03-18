@@ -439,28 +439,37 @@ export class RenderObjects
   render: (obj, options) ->
     ## `options` should be an object mapping changed keys of `obj` to `true`,
     ## or absent (`undefined`, not `{}`), meaning `obj` is brand new.
+    transformOnly = options? and options.start == obj.pts.length
+    for key, changed of options
+      if changed and key not in ['tx', 'ty', 'start']
+        transformOnly = false
+        break
     elt =
-      switch obj.type
-        when 'pen'
-          @renderPen obj, options
-        when 'poly'
-          @renderPoly obj, options
-        when 'rect'
-          @renderRect obj, options
-        when 'ellipse'
-          @renderEllipse obj, options
-        when 'text'
-          @renderText obj, options
-        when 'image'
-          @renderImage obj, options
-        else
-          console.warn "No renderer for object of type #{obj.type}"
+      if transformOnly
+        @dom[@id obj]
+      else
+        switch obj.type
+          when 'pen'
+            @renderPen obj, options
+          when 'poly'
+            @renderPoly obj, options
+          when 'rect'
+            @renderRect obj, options
+          when 'ellipse'
+            @renderEllipse obj, options
+          when 'text'
+            @renderText obj, options
+          when 'image'
+            @renderImage obj, options
+          else
+            console.warn "No renderer for object of type #{obj.type}"
     if (not options? or options.tx or options.ty) and elt?
       if obj.tx? or obj.ty?
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
         elt.removeAttribute 'transform'
-    @board.selection.redraw obj._id, elt if @board.selection?.has obj._id
+    if @board.selection?.has obj._id
+      @board.selection.redraw obj._id, elt, transformOnly
   delete: (obj, noWarn) ->
     id = @id obj
     unless @dom[id]?

@@ -9,6 +9,13 @@ import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
 import storage from './lib/storage'
 
+noDiff =
+  _id: true       # should never change
+  type: true      # should never change
+  pts: true       # use `start` instead
+  created: true   # irrelevant to rendering, not properly compared
+  updated: true   # irrelevant to rendering
+
 export class Page
   constructor: (@id, @room, @board, @remoteSVG) ->
     @board.clear()
@@ -58,7 +65,7 @@ export class Page
         if old.pts?
           ## Assuming that pen's `pts` field changes only by appending
           options.start = old.pts.length
-        for own key of obj when key != 'pts'
+        for own key of obj when key not of noDiff
           options[key] = obj[key] != old[key]
         render.render obj, options
       removed: (obj) ->
