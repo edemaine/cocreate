@@ -9,6 +9,8 @@ instead of version numbers.
 
 ## 2022-03-18
 
+* Selecting, dragging, and deleting many objects at once is much faster now.
+  [[#196](https://github.com/edemaine/coauthor/pull/196)]
 * Support dragging images from other pages into Cocreate, creating image link
   (previously, only dragging links to image URLs worked).
 

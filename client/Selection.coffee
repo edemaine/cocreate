@@ -215,6 +215,14 @@ export class Selection
     @clear()
     @addId obj._id for obj in newObjs
   outline: ->
+    ## Combine multiple `outline` operations into one update,
+    ## e.g. when adding a lot of objects to the selection.
+    return if @outlineQueued
+    @outlineQueued = true
+    @outlineTask ?= queueMicrotask =>
+      @outlineQueued = false
+      @outlineNow()
+  outlineNow: ->
     if @nonempty()
       @board.root.appendChild @rect ?= dom.create 'rect',
         class: 'outline'
