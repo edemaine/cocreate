@@ -13,6 +13,8 @@ instead of version numbers.
   [[#196](https://github.com/edemaine/coauthor/pull/196)]
 * Support dragging images from other pages into Cocreate, creating image link
   (previously, only dragging links to image URLs worked).
+* Fix rendering of zero-width/height rectangles and ellipses in Chrome.
+  [[#198](https://github.com/edemaine/coauthor/pull/198)]
 
 ## 2022-03-16
 

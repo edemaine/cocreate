@@ -7,6 +7,12 @@ import icons from './lib/icons'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
 
+## Chrome seems to truncate SVG rects and ellipses to zero and not render
+## (or incorrectly render) when their width/height/radii is less than this
+## threshold, so we round up to this minimum.
+## (Actually, radii can go down to half this, but this is good enough.)
+minSvgSize = 0.000001
+
 export class RenderObjects
   constructor: (@board) ->
     @root = @board.root
@@ -102,8 +108,8 @@ export class RenderObjects
       @root.appendChild @dom[id] = rect =
         dom.create 'rect', null, dataset: id: id
     dim = dom.pointsToRect obj.pts[0], obj.pts[1]
-    dim.width or= Number.EPSILON
-    dim.height or= Number.EPSILON
+    dim.width = minSvgSize if dim.width < minSvgSize
+    dim.height = minSvgSize if dim.height < minSvgSize
     dom.attr rect, Object.assign dim,
       stroke: obj.color
       'stroke-opacity': obj.opacity
@@ -118,8 +124,10 @@ export class RenderObjects
       @root.appendChild @dom[id] = ellipse =
         dom.create 'ellipse', null, dataset: id: id
     {x, y, width, height} = dom.pointsToRect obj.pts[0], obj.pts[1]
-    rx = (width / 2) or Number.EPSILON
-    ry = (height / 2) or Number.EPSILON
+    rx = width / 2
+    rx = minSvgSize if rx < minSvgSize
+    ry = height / 2
+    ry = minSvgSize if ry < minSvgSize
     dom.attr ellipse,
       cx: x + rx
       cy: y + ry
