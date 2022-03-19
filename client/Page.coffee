@@ -63,8 +63,17 @@ export class Page
       changed: (obj, old) ->
         options = {}
         if old.pts?
-          ## Assuming that pen's `pts` field changes only by appending
-          options.start = old.pts.length
+          if old.type == 'pen'
+            ## Assuming that pen's `pts` field changes only by appending
+            options.start = old.pts.length
+          else
+            ## For other types such as `poly`, `rect`, `ellipse`, do a diff
+            for start in [0...old.pts.length]
+              oldPt = old.pts[start]
+              newPt = obj.pts[start]
+              if oldPt.x != newPt.x or oldPt.y != newPt.y or oldPt.w != newPt.w
+                break
+            options.start = start
         for own key of obj when key not of noDiff
           options[key] = obj[key] != old[key]
         render.render obj, options
