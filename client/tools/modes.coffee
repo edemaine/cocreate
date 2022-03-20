@@ -12,7 +12,7 @@ import {undoStack} from '../UndoStack'
 import {Ctrl, Alt, firefox} from '../lib/platform'
 import dom from '../lib/dom'
 import throttle from '../lib/throttle'
-import {Aabb} from '../Dbvt'
+import {AABB} from '../DBVT'
 import {intersects} from '../Collision'
 
 export pointers = {}   # maps pointerId to tool-specific data
@@ -121,13 +121,13 @@ defineTool
 
       ## Now that we've traversed the DOM, modify the selection
       selection = currentBoard().selection
-      queryAabb = Aabb.fromRect rect
-      for id from currentPage.get().dbvt.query queryAabb
-        if intersects queryAabb, currentPage.get().objMap[id]
+      queryAABB = AABB.fromRect rect
+      for id from currentPage.get().dbvt.query queryAABB
+        if intersects queryAABB, currentPage.get().objMap[id]
           if selection.has id  # Toggle selection
             selection.remove id
           else
-            h.highlight currentPage.get().eltMap()[id]
+            h.highlight currentPage.get().id2dom id
             selection.add h
       selection.setAttributes()
       h.selector.remove()

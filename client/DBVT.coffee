@@ -1,21 +1,20 @@
-## Dynamic bounding volume tree, used to accelerate box queries
+## Dynamic Bounding Volume Tree, used to accelerate box queries
 ## when selecting objects that intersect a box.
 
 import dom from './lib/dom'
 
-export class Aabb
+export class AABB  # Axis-Aligned Bounding Box
   constructor: (@minX, @minY, @maxX, @maxY) ->
 
   @fromPoint: (pt) ->
-    new Aabb pt.x, pt.y, pt.x, pt.y
+    new AABB pt.x, pt.y, pt.x, pt.y
 
   @fromRect: (rect) ->
-    new Aabb rect.x, rect.y, rect.x + rect.width, rect.y + rect.height
+    new AABB rect.x, rect.y, rect.x + rect.width, rect.y + rect.height
 
-  @fromObj: (obj, svg, svgRoot, objMap) ->
-    elt = objMap[obj._id]
+  @fromDom: (elt, svg, svgRoot) ->
     ext = dom.svgExtremes svg, elt, svgRoot
-    new Aabb ext.min.x, ext.min.y, ext.max.x, ext.max.y
+    new AABB ext.min.x, ext.min.y, ext.max.x, ext.max.y
 
   center: ->
     x: (@maxX + @minX) / 2
@@ -26,10 +25,10 @@ export class Aabb
   height: -> @maxY - @minY
 
   ## Adds fat to the AABB to allow for constant-time small changes to the object's position
-  fattened: (fat) -> new Aabb (@minX - fat), (@minY - fat), (@maxX + fat), (@maxY + fat)
+  fattened: (fat) -> new AABB (@minX - fat), (@minY - fat), (@maxX + fat), (@maxY + fat)
 
   ## Adds fat unevenly to the AABB to allow for constant-time small changes to the object's position
-  fattenedXY: (fatX, fatY) -> new Aabb (@minX - fatX), (@minY - fatY), (@maxX + fatX), (@maxY + fatY)
+  fattenedXY: (fatX, fatY) -> new AABB (@minX - fatX), (@minY - fatY), (@maxX + fatX), (@maxY + fatY)
 
   area: -> @width() * @height()
 
@@ -48,18 +47,18 @@ export class Aabb
     @minX <= pt.x and @maxX >= pt.x and @minY <= pt.y and @maxY >= pt.y
 
   union: (other) ->
-    new Aabb \
+    new AABB \
       (Math.min @minX, other.minX), (Math.min @minY, other.minY), \
       (Math.max @maxX, other.maxX), (Math.max @maxY, other.maxY),
 
   eq: (other) ->
     @minX == other.minX and @maxX == other.maxX and @minY == other.minY and @maxY == other.maxY
 
-class DbvtNode
+class DBVTNode
   constructor: ->
 
   @leaf: (id, aabb) ->
-    node = new DbvtNode()
+    node = new DBVTNode()
     node.left = null
     node.right = null
     node.parent = null
@@ -68,7 +67,7 @@ class DbvtNode
     node
 
   @internal: (left, right, parent) ->
-    node = new DbvtNode()
+    node = new DBVTNode()
     node.left = left
     node.right = right
     node.parent = parent
@@ -79,10 +78,10 @@ class DbvtNode
     node
 
   isRoot: ->
-    !@parent?
+    not @parent?
 
   isLeaf: ->
-    !@left?
+    not @left?
 
   # 0 if left child, 1 if right child. Assumes this node has a parent
   childIndex: ->
@@ -106,7 +105,7 @@ class DbvtNode
     if @isLeaf()
       if @parent?
         side = @childIndex()
-      newNode = DbvtNode.internal @, node, @parent
+      newNode = DBVTNode.internal @, node, @parent
       if newNode.parent?
         newNode.parent.setChild(side, newNode)
 
@@ -187,15 +186,15 @@ class DbvtNode
   # Checks the integrity of the structure and logs integrity errors
   checkIntegrity: ->
     if @left? or @right?
-      Dbvt.assert @left? and @right?, "Node has exactly 1 child", @
-      Dbvt.assert @left.parent == @, "Node's left child doesn't point back to it", @
-      Dbvt.assert @right.parent == @, "Node's right child doesn't point back to it", @
-      Dbvt.assert !@id?, "Non-leaf node has id", @
-      Dbvt.assert ((@left.aabb.union @right.aabb).eq @aabb), "Node's AABB is not the union of child AABBs", @
+      DBVT.assert @left? and @right?, "Node has exactly 1 child", @
+      DBVT.assert @left.parent == @, "Node's left child doesn't point back to it", @
+      DBVT.assert @right.parent == @, "Node's right child doesn't point back to it", @
+      DBVT.assert not @id?, "Non-leaf node has id", @
+      DBVT.assert ((@left.aabb.union @right.aabb).eq @aabb), "Node's AABB is not the union of child AABBs", @
       @left.checkIntegrity()
       @right.checkIntegrity()
     else
-      Dbvt.assert @id?, "Leaf node has no id", @
+      DBVT.assert @id?, "Leaf node has no id", @
   
   leaves: ->
     if @isLeaf()
@@ -220,21 +219,21 @@ class DbvtNode
     @left?.exportDebugSVG group
     @right?.exportDebugSVG group
 
-export class Dbvt
+export class DBVT
   constructor: ->
     @root = null
     @nodesById = {}
     # TODO: Remove
 
   insert: (id, aabb) ->
-    node = DbvtNode.leaf id, aabb.fattened(38)
+    node = DBVTNode.leaf id, aabb.fattened(38)
     @nodesById[id] = node
     @root = (@root?.insert node) ? @root ? node
     # TODO: Remove
 
   move: (id, aabb) ->
     node = @nodesById[id]
-    if !node.aabb.contains aabb
+    unless node.aabb.contains aabb
       @remove id
       @insert id, aabb
 
@@ -246,33 +245,33 @@ export class Dbvt
       @root = node.remove() ? @root
     delete @nodesById[id]
     # TODO: Remove
-    
+
   query: (aabb) ->
     if @root?
       yield from @root.query aabb
 
   @assert: (condition, print...) ->
-    if !condition
+    unless condition
       console.log "DBVT integrity fail", print...
 
   # Checks the integrity of the structure and logs integrity errors
   checkIntegrity: ->
-    Dbvt.assert !@root?.parent?, "Root has a parent", @root
+    DBVT.assert not @root?.parent?, "Root has a parent", @root
     @root?.checkIntegrity()
 
     if @root?
       leavesArr = Array.from @root.leaves()
       leaves = Object.fromEntries ([leaf.id, leaf] for leaf in leavesArr)
-      Dbvt.assert leavesArr.length == (Object.keys leaves).length, "Duplicate leaf", leavesArr
+      DBVT.assert leavesArr.length == (Object.keys leaves).length, "Duplicate leaf", leavesArr
 
       for _, leaf of leaves
-        Dbvt.assert @nodesById[leaf.id] == leaf, "Leaf id is recorded incorrectly", leaf, @nodesById
+        DBVT.assert @nodesById[leaf.id] == leaf, "Leaf id is recorded incorrectly", leaf, @nodesById
 
       for id, node of @nodesById
-        Dbvt.assert node.id == id, "Leaf node is recorded incorrectly", id, node
-        Dbvt.assert leaves[id]?, "Leaf node is not reachable from root", id, node, @
+        DBVT.assert node.id == id, "Leaf node is recorded incorrectly", id, node
+        DBVT.assert leaves[id]?, "Leaf node is not reachable from root", id, node, @
     else
-      Dbvt.assert (Object.keys @nodesById).length == 0, "Leaf cache should be empty", @
+      DBVT.assert (Object.keys @nodesById).length == 0, "Leaf cache should be empty", @
 
   exportDebugSVG: (svgParent) ->
     while svgParent.firstChild?
