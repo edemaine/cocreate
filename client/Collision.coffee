@@ -121,4 +121,6 @@ intersectsSpecific =
     query.intersects obj.bbox
 
 export intersects = (query, obj, bbox) ->
+  ## Untranslate query box if object is translated.
+  query = query.translate -(obj.tx ? 0), -(obj.ty ? 0) if obj.tx or obj.ty
   intersectsSpecific[obj.type] query, obj, bbox

@@ -31,13 +31,12 @@ export class BBox
       (if @width() < epsilon then @maxX + epsilon else @maxX),
       (if @height() < epsilon then @maxY + epsilon else @maxY)
 
-  ## Adds fat to the BBox to allow for constant-time small changes to the object's position
+  translate: (dx, dy) ->
+    new BBox @minX + dx, @minY + dy, @maxX + dx, @maxY + dy
   fattened: (fat) ->
-    new BBox (@minX - fat), (@minY - fat), (@maxX + fat), (@maxY + fat)
-
-  ## Adds fat unevenly to the BBox to allow for constant-time small changes to the object's position
+    new BBox @minX - fat, @minY - fat, @maxX + fat, @maxY + fat
   fattenedXY: (fatX, fatY) ->
-    new BBox (@minX - fatX), (@minY - fatY), (@maxX + fatX), (@maxY + fatY)
+    new BBox @minX - fatX, @minY - fatY, @maxX + fatX, @maxY + fatY
 
   area: -> @width() * @height()
 

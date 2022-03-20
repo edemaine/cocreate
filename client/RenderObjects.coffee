@@ -483,7 +483,10 @@ export class RenderObjects
         # only points are added
         bbox = @bbox[id]
         for i in [options.start...obj.pts.length]
-          bbox = bbox.union (BBox.fromPoint obj.pts[i]).fattened (obj.width / 2)
+          {x, y} = obj.pts[i]
+          x += obj.tx if obj.tx?
+          y += obj.ty if obj.tx?
+          bbox = bbox.union (BBox.fromPoint {x, y}).fattened (obj.width / 2)
       else
         bbox = dom.svgBBox @board.svg, elt, @board.root
       @bbox[id] = bbox
