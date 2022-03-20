@@ -9,19 +9,24 @@ instead of version numbers.
 
 ## 2022-03-20
 
+* Multitouch pan/zoom in pan mode, and in drawing modes when
+  "drawing with touch" is disabled.
+  [[#13](https://github.com/edemaine/cocreate/issues/13)]
+  [[#111](https://github.com/edemaine/cocreate/pull/111)]
 * New rectangular selection algorithm works on Firefox and avoids false
   matches: selection rectangle checks overlap with shape itself,
   not (just) its bounding box.
-  [[#87](https://github.com/edemaine/coauthor/pull/87)]
+  [[#87](https://github.com/edemaine/cocreate/pull/87)]
+  [[#183](https://github.com/edemaine/cocreate/pull/183)]
 
 ## 2022-03-18
 
 * Selecting, dragging, and deleting many objects at once is much faster now.
-  [[#196](https://github.com/edemaine/coauthor/pull/196)]
+  [[#196](https://github.com/edemaine/cocreate/pull/196)]
 * Support dragging images from other pages into Cocreate, creating image link
   (previously, only dragging links to image URLs worked).
 * Fix rendering of zero-width/height rectangles and ellipses in Chrome.
-  [[#198](https://github.com/edemaine/coauthor/pull/198)]
+  [[#198](https://github.com/edemaine/cocreate/pull/198)]
 
 ## 2022-03-16
 
@@ -35,7 +40,7 @@ instead of version numbers.
 ## 2021-09-12
 
 * Partial transparency/opacity attribute for all objects / drawing modes.
-  [[#193](https://github.com/edemaine/coauthor/pull/193)]
+  [[#193](https://github.com/edemaine/cocreate/pull/193)]
 
 ## 2021-07-14
 
@@ -44,7 +49,7 @@ instead of version numbers.
 ## 2021-06-09
 
 * Fix Cocreate on iPads with Pencil's Scribble feature enabled.
-  [[#157](https://github.com/edemaine/coauthor/issues/158)]
+  [[#157](https://github.com/edemaine/cocreate/issues/158)]
 
 ## 2021-06-02
 

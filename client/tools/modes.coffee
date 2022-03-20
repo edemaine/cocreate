@@ -33,7 +33,7 @@ defineTool
   category: 'mode'
   icon: 'arrows-alt'
   hotspot: [0.5, 0.5]
-  help: 'Pan around the page by dragging'
+  help: 'Pan around the page by dragging. Two-finger pinch to zoom.'
   hotkey: 'hold SPACE or middle mouse button'
   start: ->
     pointers.transform = null  # triggers refresh
@@ -77,6 +77,42 @@ defineTool
            midNow.x / newScale - midStart.x / pointers.transform.scale
         y: pointers.transform.y +
            midNow.y / newScale - midStart.y / pointers.transform.scale
+
+## Virtual tool sent touch events (only) directly by DrawApp
+## when the event wouldn't be sent to the actual tool.
+defineTool
+  name: 'multitouch'
+  pointers: {}
+  down: (e) ->
+    point = currentBoard().eventToRawPoint e
+    @pointers[e.pointerId] =
+      start: point
+      now: point
+    @refresh()
+  up: (e) ->
+    delete @pointers[e.pointerId]
+    @refresh()
+  refresh: ->
+    ## Start new pan/zoom operation whenever number of pointers changes.
+    for key, value of @pointers
+      @pointers[key].start = value.now
+    @transform = {...currentBoard().transform}
+  move: (e) ->
+    return unless (pointer = @pointers[e.pointerId])?
+    board = currentBoard()
+    pointer.now = board.eventToRawPoint e
+    pointerList = (p for key, p of @pointers)
+    return if pointerList.length == 1
+    midStart = centroid (p.start for p in pointerList)
+    distStart = average (distance p.start, midStart for p in pointerList)
+    midNow = centroid (p.now for p in pointerList)
+    distNow = average (distance p.now, midNow for p in pointerList)
+    newScale = @transform.scale * distNow / distStart
+    # Code below is similar in spirit to Board::setScaleFixingPoint
+    board.setTransform
+      scale: newScale
+      x: @transform.x + midNow.x / newScale - midStart.x / @transform.scale
+      y: @transform.y + midNow.y / newScale - midStart.y / @transform.scale
 
 defineTool
   name: 'select'

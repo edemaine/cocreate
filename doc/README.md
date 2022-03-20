@@ -153,7 +153,7 @@ buttons.
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
 On a multitouch device (most tablets and laptops with touchscreens),
-two-finger dragging also activates pan and zoom.
+two-finger dragging also activates pan and zoom in this mode.
 
 Cocreate remembers your last view (pan and zoom) of each page that you visit (via the
 browser's local storage), so that you can easily pick up where you left off.
@@ -466,6 +466,11 @@ touch will work only for clicking buttons and in nondrawing modes:
 [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan](#-pan-tool)
 and
 [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select](#-select-tool).
+In addition, turning this option off on a multitouch device
+(most tablets and laptops with touchscreens) enables two-finger pan and zoom
+in drawing modes (as if you were in
+[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan](#-pan-tool)
+mode).
 
 ### <img src="icons/plus.svg" width="18" alt="Crosshair Icon"> Crosshair Toggle
 

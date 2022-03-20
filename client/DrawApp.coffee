@@ -159,7 +159,7 @@ export DrawApp = React.memo ->
     dom.listen [mainBoardRef.current, historyBoardRef.current],
       pointerdown: (e) ->
         e.preventDefault()
-        return if restrictTouchDraw e
+        return tools.multitouch.down? e if restrictTouchDraw e
         text.blur() for text in document.querySelectorAll 'input'
         window.focus()  # for getting keyboard focus when <iframe>d
         ## Pan via middle-button drag
@@ -169,21 +169,21 @@ export DrawApp = React.memo ->
         tools[currentTool.get()].down? e
       pointerenter: (e) ->
         e.preventDefault()
-        return if restrictTouchDraw e
+        return tools.multitouch.enter? e if restrictTouchDraw e
         ## Stop middle-button pan if we re-enter board with button released
         if middleDown and (e.buttons & 4) == 0
           middleDown = popTool middleDown
         tools[currentTool.get()].down? e if e.buttons
       pointerup: stop = (e) ->
         e.preventDefault()
-        return if restrictTouchDraw e
+        return tools.multitouch.up? e if restrictTouchDraw e
         tools[currentTool.get()].up? e
         if e.button == 1 and middleDown  ## end middle-button pan
           middleDown = popTool middleDown
       pointerleave: stop
       pointermove: (e) ->
         e.preventDefault()
-        return if restrictTouchDraw e
+        return tools.multitouch.move? e if restrictTouchDraw e
         tools[currentTool.get()].move? e
       touchmove: (e) ->
         ## This workaround fixes pointer events on iOS with Scribble enabled.
