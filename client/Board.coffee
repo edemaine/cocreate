@@ -124,7 +124,7 @@ export class Board
     for own key, value of newTransform
       unless value? and typeof value == 'number' and isFinite(value) and
              not value.toString().includes 'e'
-        return console.warn "Attempt to set transform to #{JSON.stringify newTransform} with invalid #{key}"
+        return console.warn "Attempt to set transform to #{JSON.stringify newTransform} with invalid #{key}: #{value}"
     if newTransform.scale? and newTransform.scale <= 0
       return console.warn "Attempt to set transform to #{newTransform} with negative scale"
     ## Copy all key/values over (but allow specifying only some keys).

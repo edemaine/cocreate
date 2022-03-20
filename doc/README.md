@@ -152,6 +152,8 @@ or
 buttons.
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging also activates pan and zoom.
 
 Cocreate remembers your last view (pan and zoom) of each page that you visit (via the
 browser's local storage), so that you can easily pick up where you left off.
@@ -425,6 +427,8 @@ While in Time Travel mode, you can do the following:
 * Using the
   [<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool),
   drag on the page to pan around.
+  On a multitouch device (most tablets and laptops with touchscreens),
+  two-finger dragging will also activate pan and zoom during Time Travel.
 * Using the
   [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool),
   select objects and copy them to the clipboard via
@@ -452,7 +456,7 @@ or
 [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool)
 from the left palette.
 
-### <img src="icons/hand-pointer.svg" width="18" alt="Touch Icon"> Touch Toggle
+### <img src="icons/touch-draw.svg" width="18" alt="Touch Draw Icon"> Touch Draw Toggle
 
 This button toggles whether Cocreate will allow drawing via touchscreen.
 By default, this toggle is on (the button is down) and it will.
@@ -639,6 +643,14 @@ to put it in the center of your view, and then
 
 You can also zoom using a scroll wheel while holding <kbd>Ctrl</kbd>,
 or using a touchpad's zoom gesture (typically two-finger pinching).
+On a multitouch device (most tablets and laptops with touchscreens),
+two-finger dragging also activates pan and zoom when using the
+[<img src="icons/arrows-alt.svg" width="18" alt="Pan Icon"> Pan Tool](#-pan-tool).
+<!--
+or when the
+[<img src="icons/touch-draw.svg" width="18" alt="Touch Draw Icon"> Touch Draw Toggle](#-touch-draw-toggle)
+is off.
+-->
 
 ### <img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset
 

@@ -11,7 +11,7 @@ import {PageList} from './PageList'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
-import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
+import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouchDraw} from './tools/tools'
 import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
 import {useHorizontalScroll} from './lib/hscroll'
@@ -142,7 +142,7 @@ export DrawApp = React.memo ->
     dom.listen mainBoardRef.current, pointermove: (e) ->
       return unless currentRoom.get()? and currentPage.get()?
       return unless currentBoard() == mainBoard
-      return if restrictTouch e
+      return if restrictTouchDraw e
       updateRemote e
   , []
   ## Cursorless update when page changes
@@ -159,7 +159,7 @@ export DrawApp = React.memo ->
     dom.listen [mainBoardRef.current, historyBoardRef.current],
       pointerdown: (e) ->
         e.preventDefault()
-        return if restrictTouch e
+        return if restrictTouchDraw e
         text.blur() for text in document.querySelectorAll 'input'
         window.focus()  # for getting keyboard focus when <iframe>d
         ## Pan via middle-button drag
@@ -169,21 +169,21 @@ export DrawApp = React.memo ->
         tools[currentTool.get()].down? e
       pointerenter: (e) ->
         e.preventDefault()
-        return if restrictTouch e
+        return if restrictTouchDraw e
         ## Stop middle-button pan if we re-enter board with button released
         if middleDown and (e.buttons & 4) == 0
           middleDown = popTool middleDown
         tools[currentTool.get()].down? e if e.buttons
       pointerup: stop = (e) ->
         e.preventDefault()
-        return if restrictTouch e
+        return if restrictTouchDraw e
         tools[currentTool.get()].up? e
         if e.button == 1 and middleDown  ## end middle-button pan
           middleDown = popTool middleDown
       pointerleave: stop
       pointermove: (e) ->
         e.preventDefault()
-        return if restrictTouch e
+        return if restrictTouchDraw e
         tools[currentTool.get()].move? e
       touchmove: (e) ->
         ## This workaround fixes pointer events on iOS with Scribble enabled.

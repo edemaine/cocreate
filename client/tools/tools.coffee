@@ -20,7 +20,7 @@ export {tools}
 export {toolsByCategory, toolsByHotkey} from './defineTool'
 
 import {pointers} from './modes'
-import {allowTouch} from './settings'
+import {touchDraw} from './settings'
 import {mainBoard, historyMode, currentTool} from '../AppState'
 import {highlighterClear} from '../Selection'
 import {updateCursor} from '../cursor'
@@ -84,9 +84,9 @@ export stopTool = (options) ->
 export resumeTool = (options) ->
   tools[currentTool.get()]?.start?() unless options?.noStart
 
-export restrictTouch = (e) ->
-  not allowTouch.get() and \
-  e.pointerType == 'touch' and \
+export restrictTouchDraw = (e) ->
+  not touchDraw.get() and
+  e.pointerType == 'touch' and
   currentTool.get() of drawingTools
 
 ## Temporary tool activation, intended for excursions into 'pan' tool

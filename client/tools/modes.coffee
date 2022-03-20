@@ -9,8 +9,9 @@ import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentC
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
-import {Ctrl, Alt} from '../lib/platform'
 import dom from '../lib/dom'
+import {average, centroid, distance} from '../lib/geom'
+import {Ctrl, Alt} from '../lib/platform'
 import throttle from '../lib/throttle'
 import {BBox, minSvgSize} from '../BBox'
 import {intersects} from '../Collision'
@@ -34,19 +35,48 @@ defineTool
   hotspot: [0.5, 0.5]
   help: 'Pan around the page by dragging'
   hotkey: 'hold SPACE or middle mouse button'
+  start: ->
+    pointers.transform = null  # triggers refresh
   down: (e) ->
-    board = currentBoard()
-    pointers[e.pointerId] = board.eventToRawPoint e
-    pointers[e.pointerId].transform = Object.assign {}, board.transform
+    point = currentBoard().eventToRawPoint e
+    pointers[e.pointerId] =
+      start: point
+      now: point
+    @refresh()
   up: (e) ->
     delete pointers[e.pointerId]
+    @refresh()
+  refresh: ->
+    ## Start new pan/zoom operation whenever number of pointers changes.
+    for key, value of pointers
+      if key == 'transform'
+        pointers.transform = {...currentBoard().transform}
+      else
+        pointers[key].start = value.now
   move: (e) ->
-    return unless (start = pointers[e.pointerId])?
+    return unless (pointer = pointers[e.pointerId])?
     board = currentBoard()
-    current = board.eventToRawPoint e
-    board.setTransform
-      x: start.transform.x + (current.x - start.x) / board.transform.scale
-      y: start.transform.y + (current.y - start.y) / board.transform.scale
+    pointer.now = board.eventToRawPoint e
+    pointerList = (p for key, p of pointers when key != 'transform')
+    if pointerList.length == 1
+      board.setTransform
+        x: pointers.transform.x +
+           (pointer.now.x - pointer.start.x) / pointers.transform.scale
+        y: pointers.transform.y +
+           (pointer.now.y - pointer.start.y) / pointers.transform.scale
+    else
+      midStart = centroid (p.start for p in pointerList)
+      distStart = average (distance p.start, midStart for p in pointerList)
+      midNow = centroid (p.now for p in pointerList)
+      distNow = average (distance p.now, midNow for p in pointerList)
+      newScale = pointers.transform.scale * distNow / distStart
+      # Code below is similar in spirit to Board::setScaleFixingPoint
+      board.setTransform
+        scale: newScale
+        x: pointers.transform.x +
+           midNow.x / newScale - midStart.x / pointers.transform.scale
+        y: pointers.transform.y +
+           midNow.y / newScale - midStart.y / pointers.transform.scale
 
 defineTool
   name: 'select'
@@ -125,7 +155,6 @@ defineTool
         bbox = render.bbox[id]
         continue unless query.intersects bbox  # quick filter without DBVT
         obj = board.findObject id
-        console.log 'select', id, obj unless obj?
         continue unless obj?
         if intersects query, obj, bbox
           if selection.has id  # Toggle selection

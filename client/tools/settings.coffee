@@ -6,7 +6,7 @@ import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
 
-export allowTouch = new storage.Variable 'allowTouch', true
+export touchDraw = new storage.Variable 'touchDraw', true
 export fancyCursor = new storage.Variable 'fancyCursor', #true
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
   ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488
@@ -21,9 +21,9 @@ defineTool
   category: 'setting'
   icon: 'hand-pointer'
   help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools.'
-  active: -> allowTouch.get()
+  active: -> touchDraw.get()
   click: ->
-    allowTouch.set not allowTouch.get()
+    touchDraw.set not touchDraw.get()
 
 defineTool
   name: 'crosshair'
