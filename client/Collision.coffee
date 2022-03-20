@@ -6,8 +6,7 @@ intersectsSpecific =
     for i in [0...obj.pts.length - 1]
       pt0 = obj.pts[i]
       pt1 = obj.pts[i + 1]
-      if pt0.x == pt1.x and pt0.y == pt1.y
-        continue
+      continue if pt0.x == pt1.x and pt0.y == pt1.y
 
       # Transform everything so the line is centered at the origin.
       center = {x: (pt1.x + pt0.x) / 2, y: (pt1.y + pt0.y) / 2}
@@ -65,6 +64,7 @@ intersectsSpecific =
     false
 
   poly: (query, obj, bbox) ->
+    # Currently no fill support
     intersectsSpecific.pen query, obj
 
   rect: (query, obj, bbox) ->
@@ -115,10 +115,10 @@ intersectsSpecific =
     true
 
   text: (query, obj, bbox) ->
-    query.intersects obj.bbox
+    query.intersects bbox
 
   image: (query, obj, bbox) ->
-    query.intersects obj.bbox
+    query.intersects bbox
 
 export intersects = (query, obj, bbox) ->
   ## Untranslate query box if object is translated.
