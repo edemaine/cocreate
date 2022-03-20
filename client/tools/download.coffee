@@ -57,11 +57,9 @@ defineTool
         tspan.strike { text-decoration: line-through }
 
       '''
-    width = bbox.max.x - bbox.min.x
-    height = bbox.max.y - bbox.min.y
     svg = """
       <?xml version="1.0" encoding="utf-8"?>
-      <svg xmlns="#{dom.SVGNS}" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="#{bbox.min.x} #{bbox.min.y} #{width} #{height}" width="#{width}px" height="#{height}px">
+      <svg xmlns="#{dom.SVGNS}" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="#{bbox.minX} #{bbox.minY} #{bbox.width()} #{bbox.height()}" width="#{bbox.width()}px" height="#{bbox.height()}px">
       <style>
       .pen line { stroke-linecap: round }
       .pen polyline { stroke-linecap: round; stroke-linejoin: round; fill: none }

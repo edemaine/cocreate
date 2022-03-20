@@ -7,6 +7,13 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-03-20
+
+* New rectangular selection algorithm works on Firefox and avoids false
+  matches: selection rectangle checks overlap with shape itself,
+  not (just) its bounding box.
+  [[#87](https://github.com/edemaine/coauthor/pull/87)]
+
 ## 2022-03-18
 
 * Selecting, dragging, and deleting many objects at once is much faster now.

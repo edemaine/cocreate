@@ -233,11 +233,12 @@ export class Selection
     if @nonempty()
       @board.root.appendChild @rect ?= dom.create 'rect',
         class: 'outline'
-      dom.attr @rect, dom.pointsToRect dom.unionSvgExtremes @board.svg,
+      dom.attr @rect, (dom.unionSvgBBox @board.svg,
         for id, elt of @selected
           continue if elt == true  # added via `addId`
           elt
       , @board.root
+      ).minSize().toRect()
     else
       @rect?.remove()
       @rect = null

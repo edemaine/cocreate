@@ -9,9 +9,11 @@ import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentC
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
-import {Ctrl, Alt, firefox} from '../lib/platform'
+import {Ctrl, Alt} from '../lib/platform'
 import dom from '../lib/dom'
 import throttle from '../lib/throttle'
+import {BBox, minSvgSize} from '../BBox'
+import {intersects} from '../Collision'
 
 export pointers = {}   # maps pointerId to tool-specific data
 
@@ -51,7 +53,7 @@ defineTool
   category: 'mode'
   icon: 'mouse-pointer'
   hotspot: [0.21875, 0.03515625]
-  help: <>Select objects by dragging rectangle {if firefox then <i>(not currently supported on Firefox)</i>} or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), copy via <kbd>{Ctrl}-C</kbd>, cut via <kbd>{Ctrl}-X</kbd>, paste via <kbd>{Ctrl}-V</kbd>, duplicate via <kbd>{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them.</>
+  help: <>Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), copy via <kbd>{Ctrl}-C</kbd>, cut via <kbd>{Ctrl}-X</kbd>, paste via <kbd>{Ctrl}-V</kbd>, duplicate via <kbd>{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them.</>
   hotkey: 's'
   start: ->
     pointers.objects = {}
@@ -115,35 +117,22 @@ defineTool
     h = pointers[e.pointerId]
     if h?.selector?
       board = currentBoard()
-      start = dom.svgTransformPoint board.svg, h.start, board.root
-      here = board.eventToPoint e
-      here = dom.svgTransformPoint board.svg, here, board.root
-      rect = dom.pointsToSVGRect start, here, board.svg, board.root
-      matched = []
-      for elt in board.root.childNodes
-        continue if elt.classList.contains 'grid'
-        continue if elt.classList.contains 'selected'
-        continue if elt.classList.contains 'highlight'
-        continue unless elt.dataset.id
-        ## Check whether any descendant non-<g> element intersects.
-        ## (SVG.checkIntersection doesn't work for <g> elements.)
-        recurse = (part) ->
-          if part.tagName == 'g'
-            for subpart in part.childNodes
-              return true if recurse subpart
-          else if board.svg.checkIntersection? part, rect
-            return true
-          false
-        if recurse elt  # hit
-          matched.push elt
-      ## Now that we've traversed the DOM, modify the selection
-      selection = currentBoard().selection
-      for elt in matched
-        if selection.has elt.dataset.id  # Toggle selection
-          selection.remove elt.dataset.id
-        else
-          h.highlight elt
-          selection.add h
+      query = BBox.fromPoints h.start, board.eventToPoint(e)
+      selection = board.selection
+      render = board.render
+      for id of render.dom
+      #for id from render.dbvt.query query
+        bbox = render.bbox[id]
+        continue unless query.intersects bbox  # quick filter without DBVT
+        obj = board.findObject id
+        console.log 'select', id, obj unless obj?
+        continue unless obj?
+        if intersects query, obj, bbox
+          if selection.has id  # Toggle selection
+            selection.remove id
+          else
+            h.highlight render.dom[id]
+            selection.add h
       selection.setAttributes()
       h.selector.remove()
       h.selector = null
@@ -167,7 +156,7 @@ defineTool
     if h.down
       if h.selector?
         here = currentBoard().eventToPoint e
-        dom.attr h.selector, dom.pointsToRect h.start, here
+        dom.attr h.selector, dom.pointsToRect h.start, here, minSvgSize
       else if distanceThreshold h.down, e, dragDist
         h.down = true
         here = maybeSnapPointToGrid currentBoard().eventToPoint e

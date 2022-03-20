@@ -6,4 +6,4 @@ else
   Alt = 'Alt'
 export {Ctrl, Alt}
 
-export firefox = /Firefox\//.test navigator.userAgent
+#export firefox = /Firefox\//.test navigator.userAgent

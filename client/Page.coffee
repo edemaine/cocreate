@@ -52,15 +52,16 @@ export class Page
   data: ->
     Pages.findOne @id
   observeObjects: ->
-    @render = render = new RenderObjects @board
+    @board.render = @render = new RenderObjects @board
+    #dbvt_svg = dom.create 'g'
     @objectsObserver = Objects.find
       room: @room.id
       page: @id
     .observe
-      added: (obj) ->
-        render.shouldNotExist obj
-        render.render obj
-      changed: (obj, old) ->
+      added: (obj) =>
+        @render.shouldNotExist obj
+        @render.render obj
+      changed: (obj, old) =>
         options = {}
         if old.pts?
           if old.type == 'pen'
@@ -76,9 +77,9 @@ export class Page
             options.start = start
         for own key of obj when key not of noDiff
           options[key] = obj[key] != old[key]
-        render.render obj, options
-      removed: (obj) ->
-        render.delete obj
+        @render.render obj, options
+      removed: (obj) =>
+        @render.delete obj
   observeRemotes: ->
     @remotesRender = remotesRender = new RenderRemotes @board, @remoteSVG
     @remotesObserver = Remotes.find
