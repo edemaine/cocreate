@@ -1,7 +1,7 @@
 import {AABB} from './DBVT'
 
 intersectsSpecific = 
-  pen: (aabb, obj) ->
+  pen: (query, obj, aabb) ->
     # Lines first.
     for i in [0...obj.pts.length - 1]
       pt0 = obj.pts[i]
@@ -12,7 +12,7 @@ intersectsSpecific =
       # Transform everything so the line is centered at the origin.
       center = {x: (pt1.x + pt0.x) / 2, y: (pt1.y + pt0.y) / 2}
       pt = {x: pt0.x - center.x, y: pt0.y - center.y}
-      testPt = aabb.center()
+      testPt = query.center()
       testPt = {x: testPt.x - center.x, y: testPt.y - center.y}
 
       # Fatten line into rectangle consisting of points
@@ -30,7 +30,7 @@ intersectsSpecific =
       pt2 = {x: -pt0.x, y: -pt0.y}
       pt3 = {x: -pt1.x, y: -pt1.y}
 
-      # Test point against Minkowski sum of the rectangle and the aabb.
+      # Test point against Minkowski sum of the rectangle and the query.
       # It's convex, so do intersection of half-planes.
       inHalfPlanes = true
       for [p0, p1, fx, fy] in [
@@ -41,86 +41,84 @@ intersectsSpecific =
       ]
         # Test diagonal half-plane extended from rectangle edge.
         p2 =
-          x: testPt.x + fx * aabb.width() / 2
-          y: testPt.y + fy * aabb.height() / 2
+          x: testPt.x + fx * query.width() / 2
+          y: testPt.y + fy * query.height() / 2
         # Counterclockwise check
         if (p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x) > 0
           inHalfPlanes = false
           break
 
-      # Test horizontal and vertical half-planes that come from the aabb
+      # Test horizontal and vertical half-planes that come from the query
       # when factored into the Minkowski sum.
       if inHalfPlanes and
-         testPt.x + aabb.width() / 2 >= pt0.x and
-         testPt.y - aabb.height() / 2 <= pt1.y and
-         testPt.x - aabb.width() / 2 <= -pt0.x and
-         testPt.y + aabb.height() / 2 >= -pt1.y
+         testPt.x + query.width() / 2 >= pt0.x and
+         testPt.y - query.height() / 2 <= pt1.y and
+         testPt.x - query.width() / 2 <= -pt0.x and
+         testPt.y + query.height() / 2 >= -pt1.y
         return true
 
     # Circles next.
     for pt in obj.pts
-      if intersectsSpecific.rect aabb,
-           width: obj.width
-           aabb: (new AABB pt.x, pt.y, pt.x, pt.y).fattened (obj.width / 2)
-        return true
+      return true if intersectsSpecific.rect query, {width: obj.width}, \
+        (new AABB pt.x, pt.y, pt.x, pt.y).fattened (obj.width / 2)
 
     false
 
-  poly: (aabb, obj) ->
-    intersectsSpecific.pen aabb, obj
+  poly: (query, obj, aabb) ->
+    intersectsSpecific.pen query, obj
 
-  rect: (aabb, obj) ->
+  rect: (query, obj, aabb) ->
     # Minkowski sum to make outer test simpler
-    fattened = obj.aabb.fattenedXY (aabb.width() - obj.width) / 2,
-                                   (aabb.height() - obj.width) / 2
-    testPt = aabb.center()
+    fattened = aabb.fattenedXY (query.width() - obj.width) / 2,
+                               (query.height() - obj.width) / 2
+    testPt = query.center()
 
     if fattened.containsPoint testPt
       # Inside. Take fill or lack of fill into account.
-      obj.fill? or not (obj.aabb.fattened -obj.width).contains aabb
+      obj.fill? or not (aabb.fattened -obj.width).contains query
     else
       # Outside. Take roundedness into account.
-      testPt.x -= obj.aabb.center().x
-      testPt.y -= obj.aabb.center().y
+      testPt.x -= aabb.center().x
+      testPt.y -= aabb.center().y
       testPt.x = Math.max 0, (Math.abs testPt.x) - fattened.width() / 2
       testPt.y = Math.max 0, (Math.abs testPt.y) - fattened.height() / 2
       testPt.x * testPt.x + testPt.y * testPt.y <= (obj.width / 2) * (obj.width / 2)
 
-  ellipse: (aabb, obj) ->
-    testPt = aabb.center()
+  ellipse: (query, obj, aabb) ->
+    testPt = query.center()
 
     # Transform everything so the ellipse is centered at the origin.
-    testPt.x -= obj.aabb.center().x
-    testPt.y -= obj.aabb.center().y
+    testPt.x -= aabb.center().x
+    testPt.y -= aabb.center().y
 
     # Test outer ellipse.
     collapsed =
-      x: Math.max 0, (Math.abs testPt.x) - aabb.width() / 2
-      y: Math.max 0, (Math.abs testPt.y) - aabb.height() / 2
+      x: Math.max 0, (Math.abs testPt.x) - query.width() / 2
+      y: Math.max 0, (Math.abs testPt.y) - query.height() / 2
     if collapsed.x * collapsed.x /
-         ((obj.aabb.width() / 2) * (obj.aabb.width() / 2)) +
+         ((aabb.width() / 2) * (aabb.width() / 2)) +
        collapsed.y * collapsed.y /
-         ((obj.aabb.height() / 2) * (obj.aabb.height() / 2)) > 1
+         ((aabb.height() / 2) * (aabb.height() / 2)) > 1
       return false
 
     unless obj.fill?
       # Test inner ellipse using Minkowski difference,
       # which in this case is the intersection of four ellipses.
       for [fx, fy] in [[1, -1], [-1, -1], [-1, 1], [1, 1]]
-        pt = {x: testPt.x + fx * aabb.width() / 2, y: testPt.y + fy * aabb.height() / 2}
-        width = obj.aabb.width() / 2 - obj.width
-        height = obj.aabb.height() / 2 - obj.width
+        pt = {x: testPt.x + fx * query.width() / 2, y: testPt.y + fy * query.height() / 2}
+        width = aabb.width() / 2 - obj.width
+        height = aabb.height() / 2 - obj.width
         if pt.x * pt.x / (width * width) + pt.y * pt.y / (height * height) >= 1
           return true
       return false
 
     true
 
-  text: (aabb, obj) ->
-    aabb.intersects obj.aabb
+  text: (query, obj, aabb) ->
+    query.intersects obj.aabb
 
-  image: (aabb, obj) ->
-    aabb.intersects obj.aabb
+  image: (query, obj, aabb) ->
+    query.intersects obj.aabb
 
-export intersects = (aabb, obj) ->
-  intersectsSpecific[obj.type] aabb, obj
+export intersects = (query, obj, aabb) ->
+  intersectsSpecific[obj.type] query, obj, aabb

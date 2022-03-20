@@ -20,12 +20,12 @@ noDiff =
 export class Page
   constructor: (@id, @room, @board, @remoteSVG) ->
     @board.clear()
+    @aabb = {}
     @dbvt = new DBVT()
     @transform = new storage.Variable "#{@room.id}.#{@id}.transform",
       defaultTransform(), false
     @board.setTransform @transform.get()
     @grid = new Grid @
-    @objMap = {}
     @observeObjects()
     @observeRemotes()
     @board.onRetransform = =>
@@ -64,15 +64,13 @@ export class Page
       page: @id
     .observe
       added: (obj) =>
-        @objMap[obj._id] = obj
         @render.shouldNotExist obj
         @render.render obj
-        obj.aabb = AABB.fromDom @render.dom[obj._id], @board.svg, @board.root
-        @dbvt.insert obj._id, obj.aabb
+        @aabb[obj._id] = aabb = AABB.fromDom @render.dom[obj._id], @board.svg, @board.root
+        @dbvt.insert obj._id, aabb
         #@board.root.appendChild @dbvt.exportDebugSVG dbvt_svg
       changed: (obj, old) =>
-        obj.aabb = @objMap[obj._id].aabb
-        @objMap[obj._id] = obj
+        aabb = @aabb[obj._id]
         options = {}
         if old.pts?
           if old.type == 'pen'
@@ -92,15 +90,16 @@ export class Page
         ## AABB update
         if obj.type == 'pen' and not options.width # only points are added
           for i in [options.start...obj.pts.length]
-            obj.aabb = obj.aabb.union (AABB.fromPoint obj.pts[i]).fattened (obj.width / 2)
+            aabb = aabb.union (AABB.fromPoint obj.pts[i]).fattened (obj.width / 2)
         else
-          obj.aabb = AABB.fromDom @render.dom[obj._id], @board.svg, @board.root
-        @dbvt.move obj._id, obj.aabb
+          aabb = AABB.fromDom @render.dom[obj._id], @board.svg, @board.root
+        @aabb[obj._id] = aabb
+        @dbvt.move obj._id, aabb
         #@board.root.appendChild @dbvt.exportDebugSVG dbvt_svg
       removed: (obj) =>
-        delete @objMap[obj._id]
         @render.delete obj
         @dbvt.remove obj._id
+        delete @aabb[obj._id]
         #@board.root.appendChild @dbvt.exportDebugSVG dbvt_svg
   observeRemotes: ->
     @remotesRender = remotesRender = new RenderRemotes @board, @remoteSVG
