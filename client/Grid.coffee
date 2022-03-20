@@ -59,8 +59,8 @@ export class Grid
     @grid.innerHTML = ''
     board = @page.board
     bounds ?= BBox.fromExtremePoints(
-      dom.svgPoint board.svg, board.bounding.left, board.bounding.top, @grid
-      dom.svgPoint board.svg, board.bounding.right, board.bounding.bottom, @grid
+      dom.svgPoint board.svg, board.clientBBox.left, board.clientBBox.top, @grid
+      dom.svgPoint board.svg, board.clientBBox.right, board.clientBBox.bottom, @grid
     )
     visibleGridSize = gridSize
     if @page.board.transform.scale < 1/gridScaleDown

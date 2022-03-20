@@ -210,8 +210,8 @@ export DrawApp = React.memo ->
             deltaX *= 50
             deltaY *= 50
           when WheelEvent.DOM_DELTA_PAGE
-            deltaX *= currentBoard().bounding.width
-            deltaY *= currentBoard().bounding.height
+            deltaX *= currentBoard().clientBBox.width
+            deltaY *= currentBoard().clientBBox.height
         if e.ctrlKey
           ## Ensure zoom-out motion is inverse of equivalent zoom-in
           factor = 1 + 0.01 * Math.abs deltaY

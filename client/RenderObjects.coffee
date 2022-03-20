@@ -10,7 +10,7 @@ import {BBox, minSvgSize} from './BBox'
 #import {DBVT} from './DBVT'
 
 export class RenderObjects
-  constructor: (@board, @objects) ->
+  constructor: (@board) ->
     @root = @board.root
     @dom = {}
     @tex = {}

@@ -40,9 +40,9 @@ export class Board
   destroy: ->
     @root.remove()
   resize: ->
-    ## @bounding maintains client bounding box (top/left/bottom/right) of board,
+    ## @clientBBox maintains client clientBBox box (top/left/bottom/right) of board,
     ## computed from the currently visible board (maybe not this one).
-    @bounding = currentBoard().svg.getBoundingClientRect()
+    @clientBBox = currentBoard().svg.getBoundingClientRect()
 
   findObject: (id) ->
     if @objects?  # history board
@@ -70,8 +70,8 @@ export class Board
     y: e.clientY
   relativePoint: (xRatio, yRatio) ->
     {x, y} = dom.svgPoint @svg,
-      @bounding.left + xRatio * @bounding.width,
-      @bounding.top + yRatio * @bounding.height,
+      @clientBBox.left + xRatio * @clientBBox.width,
+      @clientBBox.top + yRatio * @clientBBox.height,
       @root
     {x, y}
 
@@ -98,24 +98,24 @@ export class Board
     return unless width and height
     midX = 0.5 * (minX + maxX)
     midY = 0.5 * (minY + maxY)
-    hScale = @bounding.width / width
-    vScale = @bounding.height / height
+    hScale = @clientBBox.width / width
+    vScale = @clientBBox.height / height
     newScale = Math.min hScale, vScale
     newScale /= 1 + extra
     # Center the content
-    targetX = midX - 0.5*@bounding.width/newScale
-    targetY = midY - 0.5*@bounding.height/newScale
+    targetX = midX - 0.5*@clientBBox.width/newScale
+    targetY = midY - 0.5*@clientBBox.height/newScale
     @setTransform
       x: -targetX
       y: -targetY
       scale: newScale
   setScaleFixingCenter: (newScale) ->
     ###
-    Maintain center point (bounding.width/2, bounding.height/2)
+    Maintain center point (clientBBox.width/2, clientBBox.height/2)
     ###
     @setScaleFixingPoint newScale,
-      x: @bounding.width/2
-      y: @bounding.height/2
+      x: @clientBBox.width/2
+      y: @clientBBox.height/2
   ## @transform should not be changed directly; instead, call @setTransform
   ## with any key/value pairs you want to change.  Checks for errors and
   ## triggers an update to the SVG transform attribute.
