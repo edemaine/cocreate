@@ -6,6 +6,7 @@ import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
 
+storage.upgradeKey 'allowTouch', 'touchDraw'  # backward compatibility
 export touchDraw = new storage.Variable 'touchDraw', true
 export fancyCursor = new storage.Variable 'fancyCursor', #true
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
