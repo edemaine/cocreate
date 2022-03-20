@@ -3,67 +3,16 @@
 
 import dom from './lib/dom'
 
-export class AABB  # Axis-Aligned Bounding Box
-  constructor: (@minX, @minY, @maxX, @maxY) ->
-
-  @fromPoint: (pt) ->
-    new AABB pt.x, pt.y, pt.x, pt.y
-
-  @fromRect: (rect) ->
-    new AABB rect.x, rect.y, rect.x + rect.width, rect.y + rect.height
-
-  @fromDom: (elt, svg, svgRoot) ->
-    ext = dom.svgExtremes svg, elt, svgRoot
-    new AABB ext.min.x, ext.min.y, ext.max.x, ext.max.y
-
-  center: ->
-    x: (@maxX + @minX) / 2
-    y: (@maxY + @minY) / 2
-
-  width: -> @maxX - @minX
-
-  height: -> @maxY - @minY
-
-  ## Adds fat to the AABB to allow for constant-time small changes to the object's position
-  fattened: (fat) -> new AABB (@minX - fat), (@minY - fat), (@maxX + fat), (@maxY + fat)
-
-  ## Adds fat unevenly to the AABB to allow for constant-time small changes to the object's position
-  fattenedXY: (fatX, fatY) -> new AABB (@minX - fatX), (@minY - fatY), (@maxX + fatX), (@maxY + fatY)
-
-  area: -> @width() * @height()
-
-  perimeter: -> 2 * (@width() + @height())
-
-  cost: -> @perimeter()
-
-  intersects: (other) ->
-    @minX <= other.maxX and @maxX >= other.minX and @minY <= other.maxY and @maxY >= other.minY
-
-  contains: (other) ->
-    @minX <= other.minX and @maxX >= other.maxX and @minY <= other.minY and @maxY >= other.maxY
-
-  # Point must have an x field and a y field
-  containsPoint: (pt) ->
-    @minX <= pt.x and @maxX >= pt.x and @minY <= pt.y and @maxY >= pt.y
-
-  union: (other) ->
-    new AABB \
-      (Math.min @minX, other.minX), (Math.min @minY, other.minY), \
-      (Math.max @maxX, other.maxX), (Math.max @maxY, other.maxY),
-
-  eq: (other) ->
-    @minX == other.minX and @maxX == other.maxX and @minY == other.minY and @maxY == other.maxY
-
 class DBVTNode
   constructor: ->
 
-  @leaf: (id, aabb) ->
+  @leaf: (id, bbox) ->
     node = new DBVTNode()
     node.left = null
     node.right = null
     node.parent = null
     node.id = id
-    node.aabb = aabb
+    node.bbox = bbox
     node
 
   @internal: (left, right, parent) ->
@@ -74,7 +23,7 @@ class DBVTNode
     left.parent = node
     right.parent = node
     node.id = null
-    node.aabb = left.aabb.union right.aabb
+    node.bbox = left.bbox.union right.bbox
     node
 
   isRoot: ->
@@ -116,12 +65,12 @@ class DBVTNode
         null
     else
       # l = left child, r = right child, n = new node
-      ln = @left.aabb.union node.aabb
-      rn = @right.aabb.union node.aabb
+      ln = @left.bbox.union node.bbox
+      rn = @right.bbox.union node.bbox
       lnCost = ln.cost() ? Infinity
       rnCost = rn.cost() ? Infinity
 
-      @aabb = @aabb.union node.aabb
+      @bbox = @bbox.union node.bbox
       if lnCost <= rnCost
         @left.insert node
       else
@@ -135,53 +84,53 @@ class DBVTNode
     if sibling.parent?
       sibling.parent.setChild(@parent.childIndex(), sibling)
 
-      # Update AABBs and balance
+      # Update BBoxs and balance
       sibling.parent.balance()
       null
     else
       sibling
 
-  # Balance this node's parent so that the maximum AABB areas of its children is minimized.
+  # Balance this node's parent so that the maximum BBox areas of its children is minimized.
   # Assumes the node has children.
   balance: ->
     if @parent?
       sibling = @sibling()
       # l = left child, r = right child, s = sibling.
       # Possibilities: switch child and sibling, or do nothing
-      lr = @left.aabb.union @right.aabb
-      ls = @left.aabb.union sibling.aabb
-      rs = @right.aabb.union sibling.aabb
+      lr = @left.bbox.union @right.bbox
+      ls = @left.bbox.union sibling.bbox
+      rs = @right.bbox.union sibling.bbox
 
-      lrCost = Math.max lr.cost(), sibling.aabb.cost()
-      lsCost = Math.max ls.cost(), @right.aabb.cost()
-      rsCost = Math.max rs.cost(), @left.aabb.cost()
+      lrCost = Math.max lr.cost(), sibling.bbox.cost()
+      lsCost = Math.max ls.cost(), @right.bbox.cost()
+      rsCost = Math.max rs.cost(), @left.bbox.cost()
 
       if lrCost <= lsCost and lrCost <= rsCost
-        @aabb = lr
+        @bbox = lr
       else if lsCost <= rsCost
-        @aabb = ls
+        @bbox = ls
         @parent.setChild(sibling.childIndex(), @right)
         @right.parent = @parent
         @right = sibling
         sibling.parent = @
       else
-        @aabb = rs
+        @bbox = rs
         @parent.setChild(sibling.childIndex(), @left)
         @left.parent = @parent
         @left = sibling
         sibling.parent = @
       @parent.balance()
     else
-      @aabb = @left.aabb.union @right.aabb
+      @bbox = @left.bbox.union @right.bbox
 
-  # Returns ids of leaf nodes that the aabb intersects
-  query: (aabb) ->
-    if @aabb.intersects aabb
+  # Returns ids of leaf nodes that the bbox intersects
+  query: (bbox) ->
+    if @bbox.intersects bbox
       if @id?
         yield @id
       else
-        yield from @left.query aabb
-        yield from @right.query aabb
+        yield from @left.query bbox
+        yield from @right.query bbox
 
   # Checks the integrity of the structure and logs integrity errors
   checkIntegrity: ->
@@ -190,7 +139,7 @@ class DBVTNode
       DBVT.assert @left.parent == @, "Node's left child doesn't point back to it", @
       DBVT.assert @right.parent == @, "Node's right child doesn't point back to it", @
       DBVT.assert not @id?, "Non-leaf node has id", @
-      DBVT.assert ((@left.aabb.union @right.aabb).eq @aabb), "Node's AABB is not the union of child AABBs", @
+      DBVT.assert ((@left.bbox.union @right.bbox).eq @bbox), "Node's BBox is not the union of child BBoxs", @
       @left.checkIntegrity()
       @right.checkIntegrity()
     else
@@ -205,10 +154,10 @@ class DBVTNode
 
   exportDebugSVG: (svgParent) ->
     rect = dom.create 'rect',
-      'x': @aabb.minX
-      'y': @aabb.minY
-      'width': @aabb.maxX - @aabb.minX
-      'height': @aabb.maxY - @aabb.minY
+      'x': @bbox.minX
+      'y': @bbox.minY
+      'width': @bbox.maxX - @bbox.minX
+      'height': @bbox.maxY - @bbox.minY
       'stroke': '#ff0000'
       'stroke-width': 1
       'fill': 'none', null, null, svgParent
@@ -225,17 +174,17 @@ export class DBVT
     @nodesById = {}
     # TODO: Remove
 
-  insert: (id, aabb) ->
-    node = DBVTNode.leaf id, aabb.fattened(38)
+  insert: (id, bbox) ->
+    node = DBVTNode.leaf id, bbox.fattened(38)
     @nodesById[id] = node
     @root = (@root?.insert node) ? @root ? node
     # TODO: Remove
 
-  move: (id, aabb) ->
+  move: (id, bbox) ->
     node = @nodesById[id]
-    unless node.aabb.contains aabb
+    unless node.bbox.contains bbox
       @remove id
-      @insert id, aabb
+      @insert id, bbox
 
   remove: (id) ->
     node = @nodesById[id]
@@ -246,9 +195,9 @@ export class DBVT
     delete @nodesById[id]
     # TODO: Remove
 
-  query: (aabb) ->
+  query: (bbox) ->
     if @root?
-      yield from @root.query aabb
+      yield from @root.query bbox
 
   @assert: (condition, print...) ->
     unless condition

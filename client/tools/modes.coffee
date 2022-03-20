@@ -12,7 +12,7 @@ import {undoStack} from '../UndoStack'
 import {Ctrl, Alt, firefox} from '../lib/platform'
 import dom from '../lib/dom'
 import throttle from '../lib/throttle'
-import {AABB} from '../DBVT'
+import {BBox, minSvgSize} from '../BBox'
 import {intersects} from '../Collision'
 
 export pointers = {}   # maps pointerId to tool-specific data
@@ -117,13 +117,13 @@ defineTool
     h = pointers[e.pointerId]
     if h?.selector?
       board = currentBoard()
-      rect = dom.pointsToRect h.start, board.eventToPoint e
+      rect = dom.pointsToRect h.start, board.eventToPoint(e), minSvgSize
 
       ## Now that we've traversed the DOM, modify the selection
       selection = currentBoard().selection
-      queryAABB = AABB.fromRect rect
-      for id from currentPage.get().dbvt.query queryAABB
-        if intersects queryAABB, Objects.findOne(id), currentPage.get().aabb[id]
+      query = BBox.fromRect rect
+      for id from currentPage.get().dbvt.query query
+        if intersects query, Objects.findOne(id), currentPage.get().bbox[id]
           if selection.has id  # Toggle selection
             selection.remove id
           else
@@ -152,7 +152,7 @@ defineTool
     if h.down
       if h.selector?
         here = currentBoard().eventToPoint e
-        dom.attr h.selector, dom.pointsToRect h.start, here
+        dom.attr h.selector, dom.pointsToRect h.start, here, minSvgSize
       else if distanceThreshold h.down, e, dragDist
         h.down = true
         here = maybeSnapPointToGrid currentBoard().eventToPoint e

@@ -64,14 +64,14 @@ export class RenderRemotes
     minX = (hotspot[0] - remoteIconOutside) * remoteIconSize
     minY = (hotspot[1] - remoteIconOutside) * remoteIconSize
     do @transforms[id] = =>
-      maxX = @board.bbox.width - (1 - hotspot[0] - remoteIconOutside) * remoteIconSize
-      maxY = @board.bbox.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
+      maxX = @board.bounds.width - (1 - hotspot[0] - remoteIconOutside) * remoteIconSize
+      maxY = @board.bounds.height - (1 - hotspot[1] - remoteIconOutside) * remoteIconSize
       x = (remote.cursor.x + @board.transform.x) * @board.transform.scale
       y = (remote.cursor.y + @board.transform.y) * @board.transform.scale
       unless (goodX = (minX <= x <= maxX)) and
              (goodY = (minY <= y <= maxY))
-        x1 = @board.bbox.width / 2
-        y1 = @board.bbox.height / 2
+        x1 = @board.bounds.width / 2
+        y1 = @board.bounds.height / 2
         x2 = x
         y2 = y
         unless goodX
@@ -125,7 +125,7 @@ export class RenderRemotes
       delete @elts[id]
       delete @transforms[id]
   resize: ->
-    #@svg.setAttribute 'viewBox', "0 0 #{@board.bbox.width} #{@board.bbox.height}"
+    #@svg.setAttribute 'viewBox', "0 0 #{@board.bounds.width} #{@board.bounds.height}"
     @retransform()
   retransform: ->
     for id, transform of @transforms

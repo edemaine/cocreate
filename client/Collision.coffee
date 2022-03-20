@@ -1,7 +1,7 @@
-import {AABB} from './DBVT'
+import {BBox} from './BBox'
 
 intersectsSpecific = 
-  pen: (query, obj, aabb) ->
+  pen: (query, obj, bbox) ->
     # Lines first.
     for i in [0...obj.pts.length - 1]
       pt0 = obj.pts[i]
@@ -60,45 +60,45 @@ intersectsSpecific =
     # Circles next.
     for pt in obj.pts
       return true if intersectsSpecific.rect query, {width: obj.width}, \
-        (new AABB pt.x, pt.y, pt.x, pt.y).fattened (obj.width / 2)
+        (new BBox pt.x, pt.y, pt.x, pt.y).fattened (obj.width / 2)
 
     false
 
-  poly: (query, obj, aabb) ->
+  poly: (query, obj, bbox) ->
     intersectsSpecific.pen query, obj
 
-  rect: (query, obj, aabb) ->
+  rect: (query, obj, bbox) ->
     # Minkowski sum to make outer test simpler
-    fattened = aabb.fattenedXY (query.width() - obj.width) / 2,
+    fattened = bbox.fattenedXY (query.width() - obj.width) / 2,
                                (query.height() - obj.width) / 2
     testPt = query.center()
 
     if fattened.containsPoint testPt
       # Inside. Take fill or lack of fill into account.
-      obj.fill? or not (aabb.fattened -obj.width).contains query
+      obj.fill? or not (bbox.fattened -obj.width).contains query
     else
       # Outside. Take roundedness into account.
-      testPt.x -= aabb.center().x
-      testPt.y -= aabb.center().y
+      testPt.x -= bbox.center().x
+      testPt.y -= bbox.center().y
       testPt.x = Math.max 0, (Math.abs testPt.x) - fattened.width() / 2
       testPt.y = Math.max 0, (Math.abs testPt.y) - fattened.height() / 2
       testPt.x * testPt.x + testPt.y * testPt.y <= (obj.width / 2) * (obj.width / 2)
 
-  ellipse: (query, obj, aabb) ->
+  ellipse: (query, obj, bbox) ->
     testPt = query.center()
 
     # Transform everything so the ellipse is centered at the origin.
-    testPt.x -= aabb.center().x
-    testPt.y -= aabb.center().y
+    testPt.x -= bbox.center().x
+    testPt.y -= bbox.center().y
 
     # Test outer ellipse.
     collapsed =
       x: Math.max 0, (Math.abs testPt.x) - query.width() / 2
       y: Math.max 0, (Math.abs testPt.y) - query.height() / 2
     if collapsed.x * collapsed.x /
-         ((aabb.width() / 2) * (aabb.width() / 2)) +
+         ((bbox.width() / 2) * (bbox.width() / 2)) +
        collapsed.y * collapsed.y /
-         ((aabb.height() / 2) * (aabb.height() / 2)) > 1
+         ((bbox.height() / 2) * (bbox.height() / 2)) > 1
       return false
 
     unless obj.fill?
@@ -106,19 +106,19 @@ intersectsSpecific =
       # which in this case is the intersection of four ellipses.
       for [fx, fy] in [[1, -1], [-1, -1], [-1, 1], [1, 1]]
         pt = {x: testPt.x + fx * query.width() / 2, y: testPt.y + fy * query.height() / 2}
-        width = aabb.width() / 2 - obj.width
-        height = aabb.height() / 2 - obj.width
+        width = bbox.width() / 2 - obj.width
+        height = bbox.height() / 2 - obj.width
         if pt.x * pt.x / (width * width) + pt.y * pt.y / (height * height) >= 1
           return true
       return false
 
     true
 
-  text: (query, obj, aabb) ->
-    query.intersects obj.aabb
+  text: (query, obj, bbox) ->
+    query.intersects obj.bbox
 
-  image: (query, obj, aabb) ->
-    query.intersects obj.aabb
+  image: (query, obj, bbox) ->
+    query.intersects obj.bbox
 
-export intersects = (query, obj, aabb) ->
-  intersectsSpecific[obj.type] query, obj, aabb
+export intersects = (query, obj, bbox) ->
+  intersectsSpecific[obj.type] query, obj, bbox

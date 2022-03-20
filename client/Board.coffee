@@ -39,9 +39,9 @@ export class Board
   destroy: ->
     @root.remove()
   resize: ->
-    ## @bbox maintains client bounding box (top/left/bottom/right) of board,
+    ## @bounding maintains client bounding box (top/left/bottom/right) of board,
     ## computed from the currently visible board (maybe not this one).
-    @bbox = currentBoard().svg.getBoundingClientRect()
+    @bounding = currentBoard().svg.getBoundingClientRect()
 
   ## Helpers to turn events into points
   eventToPoint: (e) ->
@@ -63,8 +63,8 @@ export class Board
     y: e.clientY
   relativePoint: (xRatio, yRatio) ->
     {x, y} = dom.svgPoint @svg,
-      @bbox.left + xRatio * @bbox.width,
-      @bbox.top + yRatio * @bbox.height,
+      @bounding.left + xRatio * @bounding.width,
+      @bounding.top + yRatio * @bounding.height,
       @root
     {x, y}
 
@@ -83,32 +83,32 @@ export class Board
       x: @transform.x + fixed.x * (1/newScale - 1/@transform.scale)
       y: @transform.y + fixed.y * (1/newScale - 1/@transform.scale)
       scale: newScale
-  zoomToFit: ({min, max}, extra = 0.05) ->
+  zoomToFit: ({minX, minY, maxX, maxY}, extra = 0.05) ->
     ## Change transform to fit on screen the rectangle bounded by (min, max),
-    ## as output by renderedBBox() or dom.unionSvgExtremes(), plus 5%.
-    width = max.x - min.x
-    height = max.y - min.y
+    ## as output by renderedBBox() or dom.unionSvgBBox(), plus 5%.
+    width = maxX - minX
+    height = maxY - minY
     return unless width and height
-    midx = 0.5 * (min.x + max.x)
-    midy = 0.5 * (min.y + max.y)
-    hScale = @bbox.width / width
-    vScale = @bbox.height / height
+    midX = 0.5 * (minX + maxX)
+    midY = 0.5 * (minY + maxY)
+    hScale = @bounding.width / width
+    vScale = @bounding.height / height
     newScale = Math.min hScale, vScale
     newScale /= 1 + extra
     # Center the content
-    targetx = midx - 0.5*@bbox.width/newScale
-    targety = midy - 0.5*@bbox.height/newScale
+    targetX = midX - 0.5*@bounding.width/newScale
+    targetY = midY - 0.5*@bounding.height/newScale
     @setTransform
-      x: -targetx
-      y: -targety
+      x: -targetX
+      y: -targetY
       scale: newScale
   setScaleFixingCenter: (newScale) ->
     ###
-    Maintain center point (bbox.width/2, bbox.height/2)
+    Maintain center point (bounding.width/2, bounding.height/2)
     ###
     @setScaleFixingPoint newScale,
-      x: @bbox.width/2
-      y: @bbox.height/2
+      x: @bounding.width/2
+      y: @bounding.height/2
   ## @transform should not be changed directly; instead, call @setTransform
   ## with any key/value pairs you want to change.  Checks for errors and
   ## triggers an update to the SVG transform attribute.
@@ -140,4 +140,4 @@ export class Board
   selectedRenderedChildren: ->
     child for child in @renderedChildren() when @selection.has child.dataset.id
   renderedBBox: (children) ->
-    dom.unionSvgExtremes @svg, children, @root
+    dom.unionSvgBBox @svg, children, @root

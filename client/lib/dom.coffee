@@ -1,3 +1,5 @@
+import {BBox} from '../BBox'
+
 export SVGNS = 'http://www.w3.org/2000/svg'
 
 export svgTags =
@@ -93,7 +95,7 @@ export svgTransformPoint = (svg, {x, y}, matrix) ->
   pt.y = y
   pt.matrixTransform matrix
 
-export svgExtremes = (svg, elt, relative) ->
+export svgBBox = (svg, elt, relative) ->
   ###
   Compute bounding box of element in global SVG coordinates, or coordinates of
   containing element `relative` if specified, incorporating transformations
@@ -111,41 +113,25 @@ export svgExtremes = (svg, elt, relative) ->
   if elt.tagName == 'g'
     elt = elt.firstChild
   stroke = (parseFloat elt?.getAttribute('stroke-width') ? 0) / 2
-  min: svgPoint svg, bbox.x - stroke, bbox.y - stroke, transform
-  max: svgPoint svg, bbox.x + stroke + bbox.width,
-                     bbox.y + stroke + bbox.height, transform
+  BBox.fromExtremePoints(
+    svgPoint svg, bbox.x - stroke, bbox.y - stroke, transform
+    svgPoint svg, bbox.x + stroke + bbox.width,
+             bbox.y + stroke + bbox.height, transform
+  )
 
-export unionExtremes = (extremes) ->
-  min =
-    x: Infinity
-    y: Infinity
-  max =
-    x: -Infinity
-    y: -Infinity
-  for extreme in extremes
-    min.x = Math.min min.x, extreme.min.x
-    max.x = Math.max max.x, extreme.max.x
-    min.y = Math.min min.y, extreme.min.y
-    max.y = Math.max max.y, extreme.max.y
-  if min.x == Infinity
-    min.x = min.y = max.x = max.y = 0
-  {min, max}
-
-export unionSvgExtremes = (svg, elts, relative) ->
-  unionExtremes(
+export unionSvgBBox = (svg, elts, relative) ->
+  BBox.union(
     for elt in elts
-      svgExtremes svg, elt, relative
+      svgBBox svg, elt, relative
   )
 
 export pointsToRect = (p, q, epsilon = 0) ->
-  if p.min? and p.max?
-    q = p.max
-    p = p.min
   x: x = Math.min p.x, q.x
   y: y = Math.min p.y, q.y
   width: (Math.max(p.x, q.x) - x) or epsilon
   height: (Math.max(p.y, q.y) - y) or epsilon
 
+###
 export pointsToSVGRect = (p, q, svg) ->
   {x, y, width, height} = pointsToRect p, q
   rect = svg.createSVGRect()
@@ -154,6 +140,7 @@ export pointsToSVGRect = (p, q, svg) ->
   rect.width = width
   rect.height = height
   rect
+###
 
 export escape = (text) ->
   text

@@ -7,7 +7,9 @@ import {defaultTransform} from './Board'
 import {Grid, defaultGridType} from './Grid'
 import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
-import {AABB, DBVT} from './DBVT'
+import {BBox} from './BBox'
+import {DBVT} from './DBVT'
+import dom from './lib/dom'
 import storage from './lib/storage'
 
 noDiff =
@@ -20,7 +22,7 @@ noDiff =
 export class Page
   constructor: (@id, @room, @board, @remoteSVG) ->
     @board.clear()
-    @aabb = {}
+    @bbox = {}
     @dbvt = new DBVT()
     @transform = new storage.Variable "#{@room.id}.#{@id}.transform",
       defaultTransform(), false
@@ -66,11 +68,11 @@ export class Page
       added: (obj) =>
         @render.shouldNotExist obj
         @render.render obj
-        @aabb[obj._id] = aabb = AABB.fromDom @render.dom[obj._id], @board.svg, @board.root
-        @dbvt.insert obj._id, aabb
+        @bbox[obj._id] = bbox = dom.svgBBox @board.svg, @render.dom[obj._id], @board.root
+        @dbvt.insert obj._id, bbox
         #@board.root.appendChild @dbvt.exportDebugSVG dbvt_svg
       changed: (obj, old) =>
-        aabb = @aabb[obj._id]
+        bbox = @bbox[obj._id]
         options = {}
         if old.pts?
           if old.type == 'pen'
@@ -87,19 +89,19 @@ export class Page
         for own key of obj when key not of noDiff
           options[key] = obj[key] != old[key]
         @render.render obj, options
-        ## AABB update
+        ## BBox update
         if obj.type == 'pen' and not options.width # only points are added
           for i in [options.start...obj.pts.length]
-            aabb = aabb.union (AABB.fromPoint obj.pts[i]).fattened (obj.width / 2)
+            bbox = bbox.union (BBox.fromPoint obj.pts[i]).fattened (obj.width / 2)
         else
-          aabb = AABB.fromDom @render.dom[obj._id], @board.svg, @board.root
-        @aabb[obj._id] = aabb
-        @dbvt.move obj._id, aabb
+          bbox = dom.svgBBox @board.svg, @render.dom[obj._id], @board.root
+        @bbox[obj._id] = bbox
+        @dbvt.move obj._id, bbox
         #@board.root.appendChild @dbvt.exportDebugSVG dbvt_svg
       removed: (obj) =>
         @render.delete obj
         @dbvt.remove obj._id
-        delete @aabb[obj._id]
+        delete @bbox[obj._id]
         #@board.root.appendChild @dbvt.exportDebugSVG dbvt_svg
   observeRemotes: ->
     @remotesRender = remotesRender = new RenderRemotes @board, @remoteSVG
