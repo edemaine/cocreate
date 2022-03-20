@@ -10,8 +10,17 @@ export class BBox
 
   @fromPoint: (pt) ->
     new BBox pt.x, pt.y, pt.x, pt.y
-  @fromExtremePoints: (min, max) ->
+  @fromExtremePoints: (min, max) ->  # assumes min and max are in order
     new BBox min.x, min.y, max.x, max.y
+  @fromPoints: (...pts) ->
+    minX = minY = Infinity
+    maxX = maxY = -Infinity
+    for {x, y} in pts
+      minX = x if x < minX
+      maxX = x if x > maxX
+      minY = y if y < minY
+      maxY = y if y > maxY
+    new BBox minX, minY, maxX, maxY
   @fromRect: (rect) ->
     new BBox rect.x, rect.y, rect.x + rect.width, rect.y + rect.height
 

@@ -1,5 +1,5 @@
-## Dynamic Bounding Volume Tree, used to accelerate box queries
-## when selecting objects that intersect a box.
+## Dynamic Bounding Volume Tree, *not currently used* to accelerate
+## selecting objects that intersect a query rectangle.
 
 import dom from './lib/dom'
 

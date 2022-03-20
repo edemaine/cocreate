@@ -1,7 +1,11 @@
 import {BBox} from './BBox'
 
 intersectsSpecific = 
-  pen: (query, obj, bbox) ->
+  pen: (query, obj) ->
+    ## Untranslate query box if object is translated.
+    if obj.tx or obj.ty
+      query = query.translate -(obj.tx ? 0), -(obj.ty ? 0)
+
     # Lines first.
     for i in [0...obj.pts.length - 1]
       pt0 = obj.pts[i]
@@ -63,7 +67,7 @@ intersectsSpecific =
 
     false
 
-  poly: (query, obj, bbox) ->
+  poly: (query, obj) ->
     # Currently no fill support
     intersectsSpecific.pen query, obj
 
@@ -121,6 +125,4 @@ intersectsSpecific =
     query.intersects bbox
 
 export intersects = (query, obj, bbox) ->
-  ## Untranslate query box if object is translated.
-  query = query.translate -(obj.tx ? 0), -(obj.ty ? 0) if obj.tx or obj.ty
   intersectsSpecific[obj.type] query, obj, bbox

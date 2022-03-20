@@ -6,19 +6,18 @@ import dom from './lib/dom'
 import icons from './lib/icons'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
-import {minSvgSize} from './BBox'
-import {BBox} from './BBox'
-import {DBVT} from './DBVT'
+import {BBox, minSvgSize} from './BBox'
+#import {DBVT} from './DBVT'
 
 export class RenderObjects
-  constructor: (@board) ->
+  constructor: (@board, @objects) ->
     @root = @board.root
     @dom = {}
     @tex = {}
     @texQueue = []
     @texById = {}
     @bbox = {}
-    @dbvt = new DBVT()
+    #@dbvt = new DBVT()
   stop: ->
     @stopped = true
   id: (obj) ->
@@ -475,22 +474,34 @@ export class RenderObjects
     if @board.selection?.has id
       @board.selection.redraw id, elt, transformOnly
     ## DBVT update
-    unless @bbox[id]?  # new object
-      @dbvt.insert id, @bbox[id] =
-        dom.svgBBox @board.svg, elt, @board.root
-    else  # update object
-      if obj.type == 'pen' and not (options.width or options.tx or options.ty)
-        # only points are added
-        bbox = @bbox[id]
-        for i in [options.start...obj.pts.length]
-          {x, y} = obj.pts[i]
-          x += obj.tx if obj.tx?
-          y += obj.ty if obj.tx?
-          bbox = bbox.union (BBox.fromPoint {x, y}).fattened (obj.width / 2)
-      else
-        bbox = dom.svgBBox @board.svg, elt, @board.root
+    #unless @bbox[id]?  # new object
+    #  @dbvt.insert id, @bbox[id] =
+    #    dom.svgBBox @board.svg, elt, @board.root
+    #else  # update object
+    #  if obj.type == 'pen' and not (options.width or options.tx or options.ty)
+    #    # only points are added
+    #    bbox = @bbox[id]
+    #    for i in [options.start...obj.pts.length]
+    #      {x, y} = obj.pts[i]
+    #      x += obj.tx if obj.tx?
+    #      y += obj.ty if obj.tx?
+    #      bbox = bbox.union (BBox.fromPoint {x, y}).fattened (obj.width / 2)
+    #  else
+    #    bbox = dom.svgBBox @board.svg, elt, @board.root
+    #  @bbox[id] = bbox
+    #  @dbvt.move id, bbox
+    ## BBox update (alternative to DBVT)
+    if obj.type == 'pen' and options? and
+       not (options.width or options.tx or options.ty)  # only points are added
+      bbox = @bbox[id]
+      for i in [options.start...obj.pts.length]
+        {x, y} = obj.pts[i]
+        x += obj.tx if obj.tx?
+        y += obj.ty if obj.tx?
+        bbox = bbox.union (BBox.fromPoint {x, y}).fattened (obj.width / 2)
       @bbox[id] = bbox
-      @dbvt.move id, bbox
+    else
+      @bbox[id] = dom.svgBBox @board.svg, elt, @board.root
   delete: (obj, noWarn) ->
     id = @id obj
     unless @dom[id]?
@@ -498,8 +509,8 @@ export class RenderObjects
       return
     @dom[id].remove()
     delete @dom[id]
-    @dbvt.remove id
-    delete @bbox[id]
+    #@dbvt.remove id
+    #delete @bbox[id]
     tools.text.stop() if id == pointers.text
     @texDelete id if @texById[id]?
   texDelete: (id) ->

@@ -7,7 +7,6 @@ import {defaultTransform} from './Board'
 import {Grid, defaultGridType} from './Grid'
 import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
-import dom from './lib/dom'
 import storage from './lib/storage'
 
 noDiff =
@@ -52,10 +51,8 @@ export class Page
     @remotesObserver.stop()
   data: ->
     Pages.findOne @id
-  id2dom: (id) ->
-    @render.dom[id]
   observeObjects: ->
-    @render = new RenderObjects @board
+    @board.render = @render = new RenderObjects @board
     #dbvt_svg = dom.create 'g'
     @objectsObserver = Objects.find
       room: @room.id

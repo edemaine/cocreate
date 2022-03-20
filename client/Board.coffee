@@ -31,6 +31,7 @@ export class Board
     @svg.appendChild @root = dom.create 'g'
     @transform = defaultTransform()
     @selection = new Selection @
+    ## Page additionally sets @render to the current RenderObjects.
     ## historyBoard additionally sets @objects to mapping of ids to objects.
     ## Can't call @resize() until mainBoard gets set, after this constructor
   clear: ->
@@ -42,6 +43,12 @@ export class Board
     ## @bounding maintains client bounding box (top/left/bottom/right) of board,
     ## computed from the currently visible board (maybe not this one).
     @bounding = currentBoard().svg.getBoundingClientRect()
+
+  findObject: (id) ->
+    if @objects?  # history board
+      @objects[id]
+    else
+      Objects.findOne id
 
   ## Helpers to turn events into points
   eventToPoint: (e) ->

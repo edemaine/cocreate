@@ -66,7 +66,8 @@ defineTool
       else
         historyBoard.clear()
         historyBoard.objects = {}
-        historyRender.current = new RenderObjects historyBoard
+        historyBoard.render = historyRender.current =
+          new RenderObjects historyBoard
         apply = diffs[...target]
       return if apply.length == 0
       lastTarget.current = target

@@ -117,17 +117,21 @@ defineTool
     h = pointers[e.pointerId]
     if h?.selector?
       board = currentBoard()
-      rect = dom.pointsToRect h.start, board.eventToPoint(e), minSvgSize
-
-      ## Now that we've traversed the DOM, modify the selection
-      selection = currentBoard().selection
-      query = BBox.fromRect rect
-      for id from currentPage.get().render.dbvt.query query
-        if intersects query, Objects.findOne(id), currentPage.get().render.bbox[id]
+      query = BBox.fromPoints h.start, board.eventToPoint(e)
+      selection = board.selection
+      render = board.render
+      for id of render.dom
+      #for id from render.dbvt.query query
+        bbox = render.bbox[id]
+        continue unless query.intersects bbox  # quick filter without DBVT
+        obj = board.findObject id
+        console.log 'select', id, obj unless obj?
+        continue unless obj?
+        if intersects query, obj, bbox
           if selection.has id  # Toggle selection
             selection.remove id
           else
-            h.highlight currentPage.get().id2dom id
+            h.highlight render.dom[id]
             selection.add h
       selection.setAttributes()
       h.selector.remove()
