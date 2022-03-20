@@ -1,6 +1,6 @@
 import {defineTool} from './defineTool'
 import {currentRoom, currentPage, setPageId} from '../AppState'
-import {gridDefault} from '../Grid'
+import {defaultGrid, defaultGridType} from '../Grid'
 
 defineTool
   name: 'pagePrev'
@@ -32,13 +32,11 @@ defineTool
     return unless page?
     index = currentRoom.get()?.pageIndex page
     return unless index?
+    data = page.data()
     Meteor.call 'pageNew',
       room: currentRoom.get().id
-      grid:
-        if (data = page.data())?
-          Boolean data.grid
-        else
-          gridDefault
+      grid: data?.grid ? defaultGrid
+      gridType: data?.gridType ? defaultGridType
     , index+1
     , (error, pageId) ->
       if error?

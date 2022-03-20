@@ -3,10 +3,10 @@ import debounce from 'debounce'
 
 import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
-import {snapPoint} from './settings'
 import {tools} from './tools'
 import {currentWidth} from './width'
-import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from '../AppState'
+import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from '../AppState'
+import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
 import {Ctrl, Alt, firefox} from '../lib/platform'
@@ -69,8 +69,8 @@ defineTool
     h.moved = null
     h.edit = throttle.func (diffs) ->
       Meteor.call 'objectsEdit', (diff for id, diff of diffs)
-    , (older = {}, newer) ->
-      Object.assign older, newer
+    , ([older], [newer]) ->
+      [Object.assign older, newer]
     ## Check for clicking on a selected object, to ensure dragging selection
     ## works even when another object is more topmost.
     ## Also check for clicking within the selection outline.
@@ -94,7 +94,7 @@ defineTool
     ## except that selection outline doesn't count when we
     ## shift/ctrl/meta-click (toggle)
     if h.id? or (outline? and not toggle)
-      h.start = snapPoint h.start  # don't snap selection rectangle
+      h.start = maybeSnapPointToGrid h.start  # don't snap selection rectangle
       if h.id?  # have something highlighted, possibly just now
         unless selection.has h.id
           pointers.objects[h.id] = Objects.findOne h.id
@@ -155,7 +155,8 @@ defineTool
         dom.attr h.selector, dom.pointsToRect h.start, here
       else if distanceThreshold h.down, e, dragDist
         h.down = true
-        here = snapPoint currentBoard().eventToOrthogonalPoint e, h.start
+        here = maybeSnapPointToGrid currentBoard().eventToPoint e
+        here = orthogonalPoint here, e, h.start
         ## Don't set h.moved out here in case no objects selected
         diffs = {}
         for id, obj of pointers.objects when obj?
@@ -184,15 +185,16 @@ defineTool
   hotkey: 'p'
   down: (e) ->
     return if pointers[e.pointerId]
+    object =
+      room: currentRoom.get().id
+      page: currentPage.get().id
+      type: 'pen'
+      pts: [currentBoard().eventToPointW e]
+      color: currentColor.get()
+      width: currentWidth.get()
+    object.opacity = currentOpacity.get() if currentOpacityOn.get()
     pointers[e.pointerId] =
-      id: Meteor.apply 'objectNew', [
-        room: currentRoom.get().id
-        page: currentPage.get().id
-        type: 'pen'
-        pts: [currentBoard().eventToPointW e]
-        color: currentColor.get()
-        width: currentWidth.get()
-      ], returnStubValue: true
+      id: Meteor.apply 'objectNew', [object], returnStubValue: true
       push: throttle.method 'objectPush', ([older], [newer]) ->
         console.assert older.id == newer.id
         older.pts.push ...newer.pts
@@ -216,59 +218,39 @@ defineTool
         for e2 in e.getCoalescedEvents?() ? [e]
           currentBoard().eventToPointW e2
 
-defineTool
-  name: 'segment'
-  category: 'mode'
-  icon: 'segment'
-  hotspot: [0.0625, 0.9375]
-  help: <>Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>{Alt}</kbd> to center at first point.</>
-  hotkey: ['l', '\\']
-  down: (e) ->
-    return if pointers[e.pointerId]
-    origin = snapPoint currentBoard().eventToPoint e
-    pointers[e.pointerId] =
-      origin: origin
-      id: Meteor.apply 'objectNew', [
-        room: currentRoom.get().id
-        page: currentPage.get().id
-        type: 'poly'
-        pts: [origin, origin]
-        color: currentColor.get()
-        width: currentWidth.get()
-      ], returnStubValue: true
-      edit: throttle.method 'objectEdit'
-  up: (e) ->
-    return unless pointers[e.pointerId]
-    pointers[e.pointerId].edit.flush()
-    undoStack.push
-      type: 'new'
-      obj: Objects.findOne pointers[e.pointerId].id
-    delete pointers[e.pointerId]
-  move: (e) ->
-    return unless pointers[e.pointerId]
-    {origin, id, alt, last, edit} = pointers[e.pointerId]
-    pts =
-      1: snapPoint currentBoard().eventToOrthogonalPoint e, origin
-    ## When holding Alt/Option, make origin be the center.
-    if e.altKey
-      pts[0] = symmetricPoint pts[1], origin
-    else if alt  # was holding down Alt, go back to original first point
-      pts[0] = origin
-    pointers[e.pointerId].alt = e.altKey
-    return if JSON.stringify(last) == JSON.stringify(pts)
-    pointers[e.pointerId].last = pts
-    edit
-      id: id
-      pts: pts
-
 symmetricPoint = (pt, origin) ->
   x: 2*origin.x - pt.x
   y: 2*origin.y - pt.y
 
-rectLikeTool = (type) ->
+equalXYPoint = (pt, e, origin) ->
+  ## When holding Shift, constrain 1:1 aspect ratio from origin, following
+  ## the largest delta and maintaining their signs (like Illustrator).
+  if e.shiftKey
+    dx = pt.x - origin.x
+    dy = pt.y - origin.y
+    adx = Math.abs dx
+    ady = Math.abs dy
+    if adx > ady
+      pt.y = origin.y + adx * (Math.sign(dy) or 1)
+    else if adx < ady
+      pt.x = origin.x + ady * (Math.sign(dx) or 1)
+  pt
+
+orthogonalPoint = (pt, e, origin) ->
+  ## Force horizontal/vertical line from origin when holding shift
+  if e.shiftKey
+    dx = Math.abs pt.x - origin.x
+    dy = Math.abs pt.y - origin.y
+    if dx > dy
+      pt.y = origin.y
+    else
+      pt.x = origin.x
+  pt
+
+rectLikeTool = (type, fillable, constrain) ->
   down: (e) ->
     return if pointers[e.pointerId]
-    origin = snapPoint currentBoard().eventToPoint e
+    origin = maybeSnapPointToGrid currentBoard().eventToPoint e
     object =
       room: currentRoom.get().id
       page: currentPage.get().id
@@ -276,11 +258,15 @@ rectLikeTool = (type) ->
       pts: [origin, origin]
       color: currentColor.get()
       width: currentWidth.get()
-    object.fill = currentFill.get() if currentFillOn.get()
+    object.fill = currentFill.get() if fillable and currentFillOn.get()
+    object.opacity = currentOpacity.get() if currentOpacityOn.get()
     pointers[e.pointerId] =
       origin: origin
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
-      edit: throttle.method 'objectEdit'
+      edit: throttle.method 'objectEdit', ([edit1], [edit2]) ->
+        ## Add older pts[0] updates to newer updates
+        edit2.pts = Object.assign {}, edit1.pts, edit2.pts
+        [edit2]
   up: (e) ->
     return unless pointers[e.pointerId]
     pointers[e.pointerId].edit.flush()
@@ -291,8 +277,10 @@ rectLikeTool = (type) ->
   move: (e) ->
     return unless pointers[e.pointerId]
     {id, origin, alt, last, edit} = pointers[e.pointerId]
+    pt = maybeSnapPointToGrid currentBoard().eventToPoint e
+    pt = constrain pt, e, origin
     pts =
-      1: snapPoint currentBoard().eventToConstrainedPoint e, origin
+      1: pt
     ## When holding Alt/Option, make origin be the center.
     if e.altKey
       pts[0] = symmetricPoint pts[1], origin
@@ -305,7 +293,15 @@ rectLikeTool = (type) ->
       id: id
       pts: pts
 
-defineTool Object.assign rectLikeTool('rect'),
+defineTool Object.assign rectLikeTool('poly', false, orthogonalPoint),
+  name: 'segment'
+  category: 'mode'
+  icon: 'segment'
+  hotspot: [0.0625, 0.9375]
+  help: <>Draw straight line segment between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to horizontal/vertical, <kbd>{Alt}</kbd> to center at first point.</>
+  hotkey: ['l', '\\']
+
+defineTool Object.assign rectLikeTool('rect', true, equalXYPoint),
   name: 'rect'
   category: 'mode'
   icon: 'rect'
@@ -314,7 +310,7 @@ defineTool Object.assign rectLikeTool('rect'),
   help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point.</>
   hotkey: 'r'
 
-defineTool Object.assign rectLikeTool('ellipse'),
+defineTool Object.assign rectLikeTool('ellipse', true, equalXYPoint),
   name: 'ellipse'
   category: 'mode'
   icon: 'ellipse'
@@ -455,15 +451,16 @@ defineTool
       mainBoard.selection.setAttributes()
       text = Objects.findOne(pointers.text)?.text ? ''
     else
-      pointers.text = Meteor.apply 'objectNew', [
+      object =
         room: currentRoom.get().id
         page: currentPage.get().id
         type: 'text'
-        pts: [snapPoint currentBoard().eventToPoint e]
+        pts: [maybeSnapPointToGrid currentBoard().eventToPoint e]
         text: text = ''
         color: currentColor.get()
         fontSize: currentFontSize.get()
-      ], returnStubValue: true
+      object.opacity = currentOpacity.get() if currentOpacityOn.get()
+      pointers.text = Meteor.apply 'objectNew', [object], returnStubValue: true
       mainBoard.selection.addId pointers.text
       undoStack.push pointers.undoable =
         type: 'new'
@@ -525,7 +522,8 @@ defineTool
         return unless obj?
         unless old?
           obj.pts = [pointers.point ?
-                      snapPoint currentBoard().relativePoint 0.25, 0.25]
+                      maybeSnapPointToGrid currentBoard().relativePoint 0.25, 0.25]
+          obj.opacity = currentOpacity.get() if currentOpacityOn.get()
           undoStack.pushAndDo pointers.undoable =
             type: 'new'
             obj: obj
@@ -583,7 +581,7 @@ defineTool
       mainBoard.selection.setAttributes()
       url = Objects.findOne(pointers.image)?.url ? ''
     else
-      pointers.point = snapPoint currentBoard().eventToPoint e
+      pointers.point = maybeSnapPointToGrid currentBoard().eventToPoint e
       url = ''
     @resetInput true, url
   move: (e) ->

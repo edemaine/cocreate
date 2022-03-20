@@ -2,6 +2,7 @@
 ## current state.  This helps avoids import cycles.
 
 import {ReactiveVar} from 'meteor/reactive-var'
+import {defaultGrid, defaultGridType} from '/lib/grid'
 
 routerHistory = null
 export setRouterHistory = (history) -> routerHistory = history
@@ -16,6 +17,11 @@ export setPageId = (id) ->
   return if id == currentPageId.get()
   routerHistory.push "#{routerHistory.location.pathname}##{id}"
 
+export currentGrid = ->
+  currentPage.get()?.data()?.grid ? defaultGrid
+export currentGridType = ->
+  currentPage.get()?.data()?.gridType ? defaultGridType
+
 export currentTool = new ReactiveVar 'pan'
 export historyMode = new ReactiveVar false
 
@@ -23,6 +29,9 @@ export historyMode = new ReactiveVar false
 export currentColor = new ReactiveVar
 export currentFill = new ReactiveVar
 export currentFillOn = new ReactiveVar
+
+export currentOpacity = new ReactiveVar 0.5
+export currentOpacityOn = new ReactiveVar
 
 ## Initialized in ./tools/font.coffee:
 export currentFontSize = new ReactiveVar

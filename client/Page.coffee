@@ -7,11 +7,18 @@
 import {Tracker} from 'meteor/tracker'
 
 import {defaultTransform} from './Board'
-import {Grid} from './Grid'
+import {Grid, defaultGridType} from './Grid'
 import {RenderObjects} from './RenderObjects'
 import {RenderRemotes} from './RenderRemotes'
 import {Aabb, Dbvt} from './Dbvt'
 import storage from './lib/storage'
+
+noDiff =
+  _id: true       # should never change
+  type: true      # should never change
+  pts: true       # use `start` instead
+  created: true   # irrelevant to rendering, not properly compared
+  updated: true   # irrelevant to rendering
 
 export class Page
   constructor: (@id, @room, @board, @remoteSVG) ->
@@ -32,7 +39,13 @@ export class Page
       @transform.set @board.transform
     ## Automatically update grid
     @auto = Tracker.autorun =>
-      unless @gridMode == (gridMode = @data()?.grid)
+      data = @data()
+      gridMode =
+        if data?.grid
+          data.gridType ? defaultGridType
+        else
+          false
+      unless @gridMode == gridMode
         @gridMode = gridMode
         Tracker.nonreactive => @grid.update()
   stop: ->
@@ -68,9 +81,18 @@ export class Page
         objMap[obj._id] = obj
         options = {}
         if old.pts?
-          ## Assuming that pen's `pts` field changes only by appending
-          options.start = old.pts.length
-        for own key of obj when key != 'pts'
+          if old.type == 'pen'
+            ## Assuming that pen's `pts` field changes only by appending
+            options.start = old.pts.length
+          else
+            ## For other types such as `poly`, `rect`, `ellipse`, do a diff
+            for start in [0...old.pts.length]
+              oldPt = old.pts[start]
+              newPt = obj.pts[start]
+              if oldPt.x != newPt.x or oldPt.y != newPt.y or oldPt.w != newPt.w
+                break
+            options.start = start
+        for own key of obj when key not of noDiff
           options[key] = obj[key] != old[key]
         render.render obj, options
         ## AABB update

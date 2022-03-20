@@ -2,8 +2,9 @@ import React, {useEffect, useLayoutEffect, useRef} from 'react'
 import {useParams, useHistory, useLocation} from 'react-router-dom'
 import {useTracker} from 'meteor/react-meteor-data'
 
-import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize} from './AppState'
+import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from './AppState'
 import {Board} from './Board'
+import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
 import {Page} from './Page'
 import {PageList} from './PageList'
@@ -13,11 +14,11 @@ import {undoStack} from './UndoStack'
 import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouch} from './tools/tools'
 import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
-import {snapPoint} from './tools/settings'
 import {useHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
+import storage from './lib/storage'
 
 onResize = ->
   mainBoard.resize()
@@ -73,18 +74,18 @@ export DrawApp = React.memo ->
     id = currentPageId.get()
     hashId = location.hash?[1..]
     pages = room?.data()?.pages
+    pageStorage = new storage.StringVariable "#{roomId}.page", undefined, false
     ## Check for initial or changed hash indicating page ID
     if hashId
       if id != hashId and pages?
         if hashId in pages
           currentPageId.set hashId
-          window?.localStorage?.setItem? "#{roomId}.page", hashId
+          pageStorage.set hashId
         else if not loading ## Invalid page hash: redirect to remove from URL
           Meteor.defer -> locationHistory.replace location.path
     else if not id and pages?.length
       ## Use last page recorded in localStorage if there is one.
-      if (storageId = window?.localStorage?.getItem? "#{roomId}.page") and
-         storageId in pages
+      if (storageId = pageStorage.get()) and storageId in pages
         currentPageId.set storageId
       else
         ## Auto load first page by default
@@ -135,6 +136,7 @@ export DrawApp = React.memo ->
       color: currentColor.get()
     remote.cursor = currentBoard().eventToPointW e if e?
     remote.fill = currentFill.get() if currentFillOn.get()
+    remote.opacity = currentOpacity.get() if currentOpacityOn.get()
     remotes.update remote
   useEffect ->
     dom.listen mainBoardRef.current, pointermove: (e) ->
@@ -183,6 +185,10 @@ export DrawApp = React.memo ->
         e.preventDefault()
         return if restrictTouch e
         tools[currentTool.get()].move? e
+      touchmove: (e) ->
+        ## This workaround fixes pointer events on iOS with Scribble enabled.
+        ## See https://mikepk.com/2020/10/iOS-safari-scribble-bug/
+        e.preventDefault()
       contextmenu: (e) ->
         ## Prevent right click from bringing up context menu, as it interferes
         ## with e.g. drawing.
@@ -237,8 +243,7 @@ export DrawApp = React.memo ->
             if currentTool.get() != 'pan' and not middleDown and not spaceDown 
               spaceDown = pushTool 'pan'
           when 'd', 'D'  ## duplicate
-            if (e.ctrlKey or e.metaKey) and
-               currentBoard()?.selection?.nonempty()
+            if (e.ctrlKey or e.metaKey) and currentTool.get() == 'select'
               e.preventDefault()  # ctrl-D bookmarks on Chrome
               currentBoard().selection.duplicate()
           when 'Escape'
@@ -299,7 +304,7 @@ export DrawApp = React.memo ->
           ## through all items during `tryAddImage` seems to clear text content.
           text = e.clipboardData.getData 'text/plain'
           obj =
-            pts: [snapPoint currentBoard().relativePoint 0.25, 0.25]
+            pts: [maybeSnapPointToGrid currentBoard().relativePoint 0.25, 0.25]
           ## First check for image paste
           if (image = await tryAddImage e.clipboardData.items, obj)?
             setSelection [image._id]
@@ -324,7 +329,7 @@ export DrawApp = React.memo ->
     dragDepth = 0
     all = (e) ->
       e.preventDefault()
-      e.dataTransfer.dropEffect = 'copy'
+      e.dataTransfer.dropEffect = 'link'
     dom.listen mainBoardRef.current,
       dragenter: (e) ->
         all e
@@ -341,10 +346,11 @@ export DrawApp = React.memo ->
         document.getElementById('dragzone').classList.remove 'drag'
       drop: (e) ->
         all e
+        e.stopPropagation()
         dragDepth = 0
         document.getElementById('dragzone').classList.remove 'drag'
         tryAddImage e.dataTransfer.items,
-          pts: [snapPoint currentBoard().eventToPoint e]
+          pts: [maybeSnapPointToGrid currentBoard().eventToPoint e]
   , []
 
   ## Initialize tools (after boards are created)
@@ -360,6 +366,10 @@ export DrawApp = React.memo ->
     tools[tool].startEffect?()
   , [tool]
   useEffect onResize, [tool]  # text and image tools affect layout
+
+  opacityOn = useTracker ->
+    currentOpacityOn.get()
+  , []
 
   history = useTracker ->
     historyMode.get()
@@ -421,6 +431,12 @@ export DrawApp = React.memo ->
               <ToolCategory category="width" placement="top"/>
             </div>
           }
+          <div id="opacities" className="subpalette">
+            <ToolCategory category="opacity" placement="top"/>
+            {if opacityOn
+              <ToolCategory category="opacities" placement="top"/>
+            }
+          </div>
           <div id="colors" className="subpalette">
             <ToolCategory category="color" placement="top"/>
           </div>

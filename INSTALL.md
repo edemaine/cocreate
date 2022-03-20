@@ -7,10 +7,9 @@ These instructions on based on the more complicated
 
 Here is how to get a **local test server** running:
 
-1. **[Install Meteor](https://www.meteor.com/install):**
-   `curl https://install.meteor.com/ | sh` on UNIX,
-   `choco install meteor` on Windows (in administrator command prompt
-   after [installing Chocolatey](https://chocolatey.org/install))
+1. **[Install Meteor](https://docs.meteor.com/install.html):**
+   `npm install -g meteor` or `sudo npm install -g meteor --unsafe-perm`.
+   Prefix with `arch -x86_64` on Apple M1.
 2. **Download Cocreate:** `git clone https://github.com/edemaine/cocreate.git`
 3. **Run meteor:**
    * `cd cocreate`

@@ -7,6 +7,71 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-03-18
+
+* Selecting, dragging, and deleting many objects at once is much faster now.
+  [[#196](https://github.com/edemaine/coauthor/pull/196)]
+* Support dragging images from other pages into Cocreate, creating image link
+  (previously, only dragging links to image URLs worked).
+* Fix rendering of zero-width/height rectangles and ellipses in Chrome.
+  [[#198](https://github.com/edemaine/coauthor/pull/198)]
+
+## 2022-03-16
+
+* Fix LaTeX rendering in Time Travel view.
+* Speed up time travel by large temporal distances.
+
+## 2021-09-14
+
+* Fix paste and duplicate not working.
+
+## 2021-09-12
+
+* Partial transparency/opacity attribute for all objects / drawing modes.
+  [[#193](https://github.com/edemaine/coauthor/pull/193)]
+
+## 2021-07-14
+
+* Improved LaTeX rendering via MathJax 3.2.0
+
+## 2021-06-09
+
+* Fix Cocreate on iPads with Pencil's Scribble feature enabled.
+  [[#157](https://github.com/edemaine/coauthor/issues/158)]
+
+## 2021-06-02
+
+* Triangular grid feature, including reasonable snapping behavior
+  [[#21](https://github.com/edemaine/cocreate/issues/21)]
+* Avoid one-dimensional ellipses and rectangles when holding <kbd>Shift</kbd>.
+
+## 2021-06-01
+
+* Support incognito mode by handling lack of localStorage
+
+## 2021-05-30
+
+* Default line width changed from 5 to 3.
+  This is better for pen drawing, and gives more room to grow.
+  [[#172](https://github.com/edemaine/cocreate/issues/172)]
+* Fix drawing horizontal and vertical lines by holding <kbd>Shift</kbd>.
+  [[#187](https://github.com/edemaine/cocreate/issues/187)]
+* Prevent <kbd>Ctrl-D</kbd> from bookmarking page when using Select tool, even
+  if duplicating an empty selection.  (Other tools can still trigger bookmark.)
+  [[#186](https://github.com/edemaine/cocreate/issues/186)]
+
+## 2021-05-06
+
+* Fix <kbd>Alt</kbd> key behavior when drawing rectangles, ellipses,
+  and segments
+  [[#182](https://github.com/edemaine/cocreate/issues/182)]
+* Fix pan tool when clicking on grid lines
+  [[#180](https://github.com/edemaine/cocreate/issues/180)]
+
+## 2021-04-30
+
+* Fix SVG export with mixture of text and math
+
 ## 2021-04-28
 
 * You can now link to a specific page of a Cocreate board.  You can copy the

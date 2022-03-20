@@ -23,6 +23,7 @@ Meteor.methods
       page: String
       tool: String
       color: String
+      opacity: Match.Optional Number
       fill: Match.Optional String
       cursor: Match.Optional
         x: Number

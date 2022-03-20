@@ -1,8 +1,7 @@
 import {Tracker} from 'meteor/tracker'
 
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage} from '../AppState'
-import {gridSize} from '../Grid'
+import {currentRoom, currentPage, currentGrid, currentGridType} from '../AppState'
 import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
@@ -53,13 +52,24 @@ defineTool
     dark.set not dark.get()
 
 defineTool
-  name: 'grid'
+  name: 'gridSquare'
   category: 'setting'
   icon: 'grid'
-  help: 'Toggle grid/graph paper'
-  active: -> currentPage.get()?.data()?.grid
+  help: 'Toggle square grid/graph paper'
+  active: ->
+    currentGrid() and currentGridType() == 'square'
   click: ->
-    Meteor.call 'gridToggle', currentPage.get().id
+    Meteor.call 'gridToggle', currentPage.get().id, 'square'
+
+defineTool
+  name: 'gridTriangle'
+  category: 'setting'
+  icon: 'grid-tri'
+  help: 'Toggle triangular grid paper'
+  active: ->
+    currentGrid() and currentGridType() == 'triangle'
+  click: ->
+    Meteor.call 'gridToggle', currentPage.get().id, 'triangle'
 
 defineTool
   name: 'gridSnap'
@@ -71,9 +81,3 @@ defineTool
   click: ->
     return unless (room = currentRoom.get())?
     room.gridSnap.set not room.gridSnap.get()
-
-export snapPoint = (pt) ->
-  if currentRoom.get()?.gridSnap.get()
-    pt.x = gridSize * Math.round pt.x / gridSize
-    pt.y = gridSize * Math.round pt.y / gridSize
-  pt

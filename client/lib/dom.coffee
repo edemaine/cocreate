@@ -26,8 +26,11 @@ export attr = (elt, attrs) ->
   if Array.isArray(elt) or elt instanceof NodeList # output of querySelectorAll
     attr sub, attrs for sub in elt when sub?
   else
-    for key, value of attrs when value?
-      elt.setAttribute key, value
+    for key, value of attrs
+      if value?
+        elt.setAttribute key, value
+      else
+        elt.removeAttribute key
 
 export prop = (elt, props) ->
   if Array.isArray elt

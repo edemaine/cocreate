@@ -14,7 +14,8 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   **No accounts required**<sup>★</sup>.
 * Works on computers, tablets, and phones **without any software installation**
   (use any modern web browser, such as Chrome)
-* **See everyone's cursors**, with their names, updated live
+* **See everyone's cursors**, with their names and what page they're on,
+  updated live
 * See everyone's drawing **while they draw**<sup>★</sup>
   * **Freehand pen** drawing, with **pressure sensitivity**<sup>★</sup>
     for supporting devices (e.g., Wacom, Surface, iPad Pencil)
@@ -26,9 +27,9 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     and basic **Markdown formatting**<sup>★</sup>
   * **Image** (PNG/JPG/GIF/SVG) embedding from other websites
     (e.g., Imgur or Coauthor) for drawing on top of images
-  * Other basic tools: pan, zoom, eraser
+  * Other basic tools: pan, zoom, zoom to fit<sup>★</sup>, eraser
   * Basic settings: line thickness (scaling correctly with zoom),
-    color palette, fill, font size
+    opacity<sup>★</sup>, color palette, fill, font size
 * **Vector** representation:
   * **Select, edit, move, duplicate<sup>★</sup>, delete** existing objects,
     including **rectangular select**<sup>★</sup>
@@ -36,10 +37,14 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     past and pasting into the present
   * Export as **SVG**<sup>★</sup>
 * **Multiple pages**<sup>★</sup>
-  * **Page duplication**<sup>★</sup> (for animation or exploring alternatives)
-  * Basic **grid** and **grid snapping**<sup>★</sup>
+  * **Page duplication**<sup>★</sup> (for separating ideas/alternatives,
+    animation, and efficiency)
+  * Can link to specific pages<sup>★</sup>
+  * **Grid** backgrounds: **Square** and **triangular**<sup>★</sup>
+    with optional **grid snapping**<sup>★</sup>
 * **Undo/redo** (of your own operations)
 * **Time travel**<sup>★</sup> to see entire past history of the board
+  (and copy/paste to present)
 * **Keyboard shortcuts**<sup>★</sup>
 * **Minimalist** user interface leaves lots of room for drawing,
   without hiding features behind dropdowns,

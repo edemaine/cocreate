@@ -231,7 +231,7 @@ Use your browser's standard clipboard operations; with a keyboard:
 
 In addition, Cocreate offers two nonclipboard operations:
 
-* You can **duplicate** the selected objects (with a one-grid-square horizontal
+* You can **duplicate** the selected objects (with a one-grid-cell horizontal
   and vertical shift) via <kbd>Ctrl-D</kbd> or <kbd>Command-D</kbd> on a Mac.
 * You can **delete** the selected objects by pressing the <kbd>Delete</kbd>
   or <kbd>Backspace</kbd> key.
@@ -492,20 +492,34 @@ Dark mode approximately preserves the hue of colors, but the brightness is
 inverted, so one user's "bright blue" is another user's "dark blue".
 As a warning, reds and purples currently look somewhat similar in dark mode.
 
-### <img src="icons/grid.svg" width="18" alt="Grid Icon"> Grid Toggle
+### <img src="icons/grid.svg" width="18" alt="Square Grid Icon"> Square Grid Toggle
 
 This button toggles whether the current page has a square grid like graph paper.
-(Currently, the grid cannot be configured.)
+(Currently, the grid size cannot be configured.)
 This change affects everyone, but it affects only the current page.
 
 When you create a
 [<img src="icons/plus-square.svg" width="18" alt="New Page Icon"> New Page](#-new-page),
-it has a grid or not according to the current page.
+it has the same grid (or no grid) according to the current page.
+
+### <img src="icons/grid-tri.svg" width="18" alt="Triangular Grid Icon"> Triangular Grid Toggle
+
+This button toggles whether the current page has an equilateral triangle grid.
+(Currently, the grid size cannot be configured.)
+This change affects everyone, but it affects only the current page.
+
+When you create a
+[<img src="icons/plus-square.svg" width="18" alt="New Page Icon"> New Page](#-new-page),
+it has the same grid (or no grid) according to the current page.
 
 ### <img src="icons/grid-snap.svg" width="18" alt="Grid Snap Icon"> Grid Snap Toggle
 
-This button toggles "snapping" geometry to the grid (the same grid drawn by
-the [<img src="icons/grid.svg" width="18" alt="Grid Icon"> Grid Toggle](#-grid-toggle)).
+This button toggles "snapping" geometry to the current grid,
+as selected via
+[<img src="icons/grid.svg" width="18" alt="Square Grid Icon"> Square Grid Toggle](#-square-grid-toggle)
+or
+[<img src="icons/grid-tri.svg" width="18" alt="Triangular Grid Icon"> Triangular Grid Toggle](#-triangular-grid-toggle).
+(Even if the grid is invisible, the last chosen grid defines the snapping behavior.)
 [<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool),
 [<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool), and
 [<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool)
@@ -514,7 +528,7 @@ The [<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen Tool](#-pen-
 is unaffected by grid snapping.
 
 [<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Selecting](#-select-tool)
-and dragging objects will move by multiples of grid squares.
+and dragging objects will move by multiples of grid cells.
 This can be useful in combination when duplicating objects, which shift
 by exactly one grid dimension down and right, so you can use grid-snapped
 dragging to get them back into perfect alignment with the original.
@@ -726,11 +740,29 @@ the line-width choices are replaced by font-size choices.
 These control the size of the entire text object.
 Currently, you have seven integral choices.
 
+### <img src="icons/highlighter.svg" width="18" alt="Transparent Icon"> Transparent Toggle
+
+This button toggles whether objects are partially transparent/opaque.
+Click/tap the button to switch between the normal fully opaque mode
+(when the button is "out") and partially transparent/opaque mode
+(when the button is "in").
+In partially transparent/opaque mode, three additional buttons will display
+for selecting among 25%, 50%, or 75% opacity.
+This setting will affect both stroke and fill opacity for fillable objects:
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool)
+and
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+
+Currently,
+[<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool)
+does not support pressure sensitivity together with opacity.
+Make pen objects fully opaque to see their pressure-dependent width.
+
 ### <img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill / <img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill Toggle
 
 This button controls whether objects have a fill color or are hollow
 (transparent inside).
-Click/tab the button to switch between
+Click/tap the button to switch between
 <img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill and
 <img src="icons/tint-slash.svg" width="18" alt="No Fill Icon"> No Fill.
 The button's icon will be colored according to the current fill color,

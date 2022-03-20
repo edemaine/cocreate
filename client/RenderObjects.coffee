@@ -7,6 +7,12 @@ import icons from './lib/icons'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
 
+## Chrome seems to truncate SVG rects and ellipses to zero and not render
+## (or incorrectly render) when their width/height/radii is less than this
+## threshold, so we round up to this minimum.
+## (Actually, radii can go down to half this, but this is good enough.)
+minSvgSize = 0.000001
+
 export class RenderObjects
   constructor: (@board) ->
     @root = @board.root
@@ -24,16 +30,20 @@ export class RenderObjects
     ###
     obj.id ? obj._id ? obj
   renderPen: (obj, options) ->
+    transparent = obj.opacity? and obj.opacity != 1
     ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
-    ## Redraw from scratch if no `start` specified, or if color or width changed
+    ## Redraw from scratch if no `start` specified, or if color/width/opacity
+    ## changed, or object has any transparency.
     start = 0
-    if options?.start?
-      start = options.start unless options.color or options.width
+    if options?.start? and not (options.color or options.width or options.opacity or transparent)
+      start = options.start
     ## Choose between two rendering modes for this batch of points:
     ## * "Simple" mode: when all points have w == 1, use a single <polyline>
     ## * "Complex" mode: otherwise, use many <line>s
+    ## We currently also use simple mode when the pen has transparency,
+    ## to avoid overlap patterns between consecutive lines.
     simple = true
-    if simple
+    unless transparent
       for i in [start...obj.pts.length]
         unless obj.pts[i].w == 1
           simple = false
@@ -61,6 +71,7 @@ export class RenderObjects
             "#{pt.x},#{pt.y}"
         ).join ' '
         stroke: obj.color
+        'stroke-opacity': obj.opacity
         'stroke-width': obj.width
     else
       ## Draw an `edge` between consecutive dots.
@@ -85,6 +96,7 @@ export class RenderObjects
     dom.attr poly,
       points: ("#{x},#{y}" for {x, y} in obj.pts).join ' '
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
@@ -96,13 +108,15 @@ export class RenderObjects
       @root.appendChild @dom[id] = rect =
         dom.create 'rect', null, dataset: id: id
     dim = dom.pointsToRect obj.pts[0], obj.pts[1]
-    dim.width or= Number.EPSILON
-    dim.height or= Number.EPSILON
+    dim.width = minSvgSize if dim.width < minSvgSize
+    dim.height = minSvgSize if dim.height < minSvgSize
     dom.attr rect, Object.assign dim,
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linejoin': 'round'
       fill: obj.fill or 'none'
+      'fill-opacity': obj.opacity
     rect
   renderEllipse: (obj) ->
     id = @id obj
@@ -110,16 +124,20 @@ export class RenderObjects
       @root.appendChild @dom[id] = ellipse =
         dom.create 'ellipse', null, dataset: id: id
     {x, y, width, height} = dom.pointsToRect obj.pts[0], obj.pts[1]
-    rx = (width / 2) or Number.EPSILON
-    ry = (height / 2) or Number.EPSILON
+    rx = width / 2
+    rx = minSvgSize if rx < minSvgSize
+    ry = height / 2
+    ry = minSvgSize if ry < minSvgSize
     dom.attr ellipse,
       cx: x + rx
       cy: y + ry
       rx: rx
       ry: ry
       stroke: obj.color
+      'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       fill: obj.fill or 'none'
+      'fill-opacity': obj.opacity
     ellipse
   renderText: (obj, options) ->
     id = @id obj
@@ -138,8 +156,9 @@ export class RenderObjects
       transform: "translate(#{obj.pts[0].x},#{obj.pts[0].y})"
     dom.attr text,
       fill: obj.color
-      style: "font-size:#{obj.fontSize}px"
-    if not options? or options.text or options.fontSize or options.color
+      style: "font-size:#{obj.fontSize}px" +
+        if obj.opacity? then ";opacity:#{obj.opacity}" else ''
+    if not options? or options.text or options.fontSize or options.color or options.opacity
       ## Remove any leftover TeX expressions
       svgG.remove() while (svgG = g.lastChild) != text
       @texDelete id if @texById[id]?
@@ -193,16 +212,20 @@ export class RenderObjects
               out.push text[math.end...maths[i+1].start]
             else
               out.push text[math.end..]
+            attrs =
+              color: obj.color
+              fontSize: obj.fontSize
+              opacity: obj.opacity
             if (job = @tex[[math.formula, math.display]])?
               unless job.texts[id]?
-                job.texts[id] = true
+                job.texts[id] = attrs
                 jobs.push job
                 readyJobs.push {job, id} if job.svg? # already rendered
             else
               job = @tex[[math.formula, math.display]] =
                 formula: math.formula
                 display: math.display
-                texts: "#{id}": true
+                texts: "#{id}": attrs
               @texQueue.push job
               jobs.push job
               if @texQueue.length == 1  # added job while idle
@@ -217,7 +240,7 @@ export class RenderObjects
         ## See https://spec.commonmark.org/0.29/#code-spans
         text = text
         .replace /(^|[^\\`])(`+)((?!`)[^]*?[^`])\2(?!`)/g, (m, pre, left, inner) ->
-          ## Strip one leading and trailling space
+          ## Strip one leading and trailing space
           inner = inner[1..] if inner.startsWith '\u00a0'
           inner = inner[...-1] if inner.endsWith '\u00a0'
           "#{pre}<tspan class='code'>#{inner.replace /[`*_~$]/g, '\\$&'}</tspan>"
@@ -346,15 +369,14 @@ export class RenderObjects
     Precondition: `job.texts[id]` should exist.
 
     `job.texts[id]` can be one of two values:
-      * `true` means "needs to be rendered"
+      * object containing `color`, `fontSize`, and `opacity` attributes,
+        meaning "needs to be rendered with these attributes"
       * array of rendered <g> elements, one for each instance of `job`
         (in the order they appear in the text)
     This method only does work in the first case.
     ###
-    return unless job.texts[id] == true
-    object = Objects.findOne id
-    return unless object
-    fontSize = object.fontSize
+    {color, fontSize, opacity} = job.texts[id]
+    return unless fontSize?
     g = @dom[id].firstChild
     [rect, text] = g.childNodes
     dx = job.width * fontSize
@@ -368,7 +390,7 @@ export class RenderObjects
         tspanBBox = tspan.getBBox()
         g.appendChild svgG = dom.create 'g'
         svgG.innerHTML = job.svg
-        .replace /currentColor/g, object.color
+        .replace /currentColor/g, color
         x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
         y = tspanBBox.y \
           + tspanBBox.height * (1 - descender/(descender+ascender)) \
@@ -376,12 +398,13 @@ export class RenderObjects
           # not sure where the /2 comes from... exFactor?
         dom.attr svgG,
           transform: "translate(#{x} #{y}) scale(#{fontSize})"
+          style: "opacity:#{opacity}" if opacity?
         svgG
     ## The `dx` attributes set above may mean that previously rendered LaTeX
     ## <g>s need to shift horizontally.  Update their x translation.
     for job2 in @texById[id]
       continue if job == job2  # don't need to update job we just rendered
-      continue if job2.texts[id] == true  # only update already rendered jobs
+      continue if job2.texts[id].fontSize?  # only update already rendered jobs
       for tspan, i in text.querySelectorAll """tspan[data-tex="#{CSS.escape job2.formula}"][data-display="#{job2.display}"]"""
         tspanBBox = tspan.getBBox()
         x = tspanBBox.x - tspan.getAttribute('dx') + tspanBBox.width/2  # divvy up &VeryThinSpace;
@@ -415,6 +438,7 @@ export class RenderObjects
     dom.attr image,
       x: obj.pts[0].x
       y: obj.pts[0].y
+      style: "opacity:#{obj.opacity}" if obj.opacity?
     if not options? or options.url or options.proxy or options.credentials
       dom.attr image,
         href: if obj.proxy then proxyUrl obj.url else obj.url
@@ -423,32 +447,42 @@ export class RenderObjects
   render: (obj, options) ->
     ## `options` should be an object mapping changed keys of `obj` to `true`,
     ## or absent (`undefined`, not `{}`), meaning `obj` is brand new.
+    transformOnly = options? and options.start == obj.pts.length
+    for key, changed of options
+      if changed and key not in ['tx', 'ty', 'start']
+        transformOnly = false
+        break
     elt =
-      switch obj.type
-        when 'pen'
-          @renderPen obj, options
-        when 'poly'
-          @renderPoly obj, options
-        when 'rect'
-          @renderRect obj, options
-        when 'ellipse'
-          @renderEllipse obj, options
-        when 'text'
-          @renderText obj, options
-        when 'image'
-          @renderImage obj, options
-        else
-          console.warn "No renderer for object of type #{obj.type}"
+      if transformOnly
+        @dom[@id obj]
+      else
+        switch obj.type
+          when 'pen'
+            @renderPen obj, options
+          when 'poly'
+            @renderPoly obj, options
+          when 'rect'
+            @renderRect obj, options
+          when 'ellipse'
+            @renderEllipse obj, options
+          when 'text'
+            @renderText obj, options
+          when 'image'
+            @renderImage obj, options
+          else
+            console.warn "No renderer for object of type #{obj.type}"
     if (not options? or options.tx or options.ty) and elt?
       if obj.tx? or obj.ty?
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
         elt.removeAttribute 'transform'
-    @board.selection.redraw obj._id, elt if @board.selection?.has obj._id
-  delete: (obj) ->
+    if @board.selection?.has obj._id
+      @board.selection.redraw obj._id, elt, transformOnly
+  delete: (obj, noWarn) ->
     id = @id obj
     unless @dom[id]?
-      return console.warn "Attempt to delete unknown object ID #{id}?!"
+      console.warn "Attempt to delete unknown object ID #{id}?!" unless noWarn
+      return
     @dom[id].remove()
     delete @dom[id]
     tools.text.stop() if id == pointers.text
@@ -457,12 +491,14 @@ export class RenderObjects
     for job in check = @texById[id]
       delete job.texts[id]
     delete @texById[id]
-    ## After we potentially rerender text, check for expired cache jobs
+    ## After we potentially rerender text, check for expired cache jobs.
+    ## Wait 5 seconds in case we're going to use the text again soon
+    ## (e.g. when switching views in history).
     setTimeout =>
       for job in check
         unless (t for t of job.texts).length
           delete @tex[[job.formula, job.display]]
-    , 0
+    , 5000
   #has: (obj) ->
   #  (id obj) of @dom
   shouldNotExist: (obj) ->
@@ -491,6 +527,7 @@ edge = (obj, p1, p2) ->
     x2: p2.x
     y2: p2.y
     stroke: obj.color
+    'stroke-opacity': obj.opacity
     #'stroke-width': obj.width * (p1.w + p2.w) / 2
     'stroke-width': obj.width * p2.w
     ## Replace `dot` with round linecap, now set in CSS.

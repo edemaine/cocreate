@@ -38,6 +38,7 @@ Meteor.methods
       updated: Match.Optional Date
       tx: Match.Optional Number
       ty: Match.Optional Number
+      opacity: Match.Optional Match.OneOf Number, null
     switch obj?.type
       when 'pen'
         Object.assign pattern,
@@ -123,6 +124,7 @@ Meteor.methods
           return false unless /^\d+$/.test key
           check value, xyType
         true
+      opacity: Match.Optional Match.OneOf Number, null  # null to turn off
     unless obj.type == 'image'
       Object.assign pattern,
         color: Match.Optional String
@@ -131,7 +133,7 @@ Meteor.methods
         width: Match.Optional Number
     if obj.type in ['rect', 'ellipse']
       Object.assign pattern,
-        fill: Match.Optional Match.OneOf String, null
+        fill: Match.Optional Match.OneOf String, null  # null to turn off
     if obj.type == 'text'
       Object.assign pattern,
         text: Match.Optional String

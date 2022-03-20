@@ -14,7 +14,7 @@ export widths = [
   6
   7
 ]
-export currentWidth = new ReactiveVar 5
+export currentWidth = new ReactiveVar 3
 
 widthSize = 22
 

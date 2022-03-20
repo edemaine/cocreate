@@ -3,8 +3,9 @@
 ## (which often come from Highlighter).
 
 import {undoStack} from './UndoStack'
-import {gridSize} from './Grid'
+import {gridUnitOffset} from './Grid'
 import {selectColor, selectFill, selectFillOff} from './tools/color'
+import {selectOpacity, selectOpacityOff} from './tools/opacity'
 import {selectWidth} from './tools/width'
 import {selectFontSize} from './tools/font'
 import {pointers} from './tools/modes'
@@ -115,11 +116,15 @@ export class Selection
       ## Add an object to the selection before it's been rendered
       ## (triggering redraw when it gets rendered).
       @selected[id] = true
-  redraw: (id, target) ->
-    unless @selected[id] == true  # added via `addId`
-      @selected[id].remove()
-    @rehighlighter.highlight target
-    @selected[id] = @rehighlighter.select()
+  redraw: (id, target, transformOnly) ->
+    exists = @selected[id] != true  # not added via `addId`
+    if transformOnly and exists
+      @selected[id].firstChild.setAttribute 'transform',
+        target.getAttribute 'transform'
+    else
+      @selected[id].remove() if exists
+      @rehighlighter.highlight target
+      @selected[id] = @rehighlighter.select()
     @outline()
   remove: (id) ->
     unless @selected[id] == true  # added via `addId`
@@ -189,7 +194,9 @@ export class Selection
           after: "#{attrib}": value
   duplicate: ->
     return if @board.readonly
+    return unless @nonempty()
     oldIds = @ids()
+    offset = gridUnitOffset()
     newObjs =
       for id in oldIds
         obj = Objects.findOne id
@@ -198,8 +205,8 @@ export class Selection
         delete obj.created
         obj.tx ?= 0
         obj.ty ?= 0
-        obj.tx += gridSize
-        obj.ty += gridSize
+        obj.tx += offset.x
+        obj.ty += offset.y
         obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
         obj
     undoStack.push
@@ -212,6 +219,14 @@ export class Selection
     @clear()
     @addId obj._id for obj in newObjs
   outline: ->
+    ## Combine multiple `outline` operations into one update,
+    ## e.g. when adding a lot of objects to the selection.
+    return if @outlineQueued
+    @outlineQueued = true
+    @outlineTask ?= queueMicrotask =>
+      @outlineQueued = false
+      @outlineNow()
+  outlineNow: ->
     if @nonempty()
       @board.root.appendChild @rect ?= dom.create 'rect',
         class: 'outline'
@@ -235,7 +250,9 @@ export class Selection
       for value in values
         ## Special null value represents "not uniform" (or "all null"),
         ## whereas if all values are undefined, we return undefined.
-        return null unless value == example or (nullWild and not value?)
+        ## Here we treat null and undefined/absent values as the same.
+        return null unless value == example or (not value? and not example?) or\
+                           (nullWild and not value?)
       example
     if (color = uniformAttribute 'color')?  # uniform draw color
       selectColor color, true, true
@@ -243,6 +260,10 @@ export class Selection
       selectFill fill, true
     if fill == undefined  # uniform no fill
       selectFillOff()
+    if (opacity = uniformAttribute 'opacity', false)?  # uniform actual opacity
+      selectOpacity opacity, true
+    if opacity == undefined  # uniform no opacity
+      selectOpacityOff()
     if (width = uniformAttribute 'width')?  # uniform line width
       selectWidth width, true, true
     if (fontSize = uniformAttribute 'fontSize')?  # uniform font size

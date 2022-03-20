@@ -3,6 +3,7 @@ import {Mongo} from 'meteor/mongo'
 
 import {validId} from './id'
 import {checkRoom} from './rooms'
+import {defaultGridType, validGridType} from './grid'
 
 @Pages = new Mongo.Collection 'pages'
 
@@ -17,6 +18,7 @@ Meteor.methods
     check page,
       room: String
       grid: Match.Optional Boolean
+      gridType: Match.Optional Match.Where validGridType
     check index, Match.Optional Number
     unless @isSimulation
       now = new Date
@@ -51,9 +53,18 @@ Meteor.methods
       Meteor.call 'objectNew', obj
     newPageId
 
-  gridToggle: (page) ->
+  gridToggle: (page, gridType) ->
     check page, String
+    check gridType, Match.Optional Match.Where validGridType
     data = checkPage page
+    existingType = data.gridType ? defaultGridType
+    set =
+      grid:
+        if data.grid and (not gridType? or existingType == gridType)
+          false
+        else
+          true
+    set.gridType = gridType if gridType?
     Pages.update page,
-      $set: grid: not data.grid
+      $set: set
     , channel: "rooms::#{data.room}::pages"
