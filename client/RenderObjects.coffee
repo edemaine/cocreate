@@ -7,6 +7,8 @@ import icons from './lib/icons'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
 import {minSvgSize} from './BBox'
+import {BBox} from './BBox'
+import {DBVT} from './DBVT'
 
 export class RenderObjects
   constructor: (@board) ->
@@ -15,6 +17,8 @@ export class RenderObjects
     @tex = {}
     @texQueue = []
     @texById = {}
+    @bbox = {}
+    @dbvt = new DBVT()
   stop: ->
     @stopped = true
   id: (obj) ->
@@ -467,8 +471,23 @@ export class RenderObjects
         elt.setAttribute 'transform', "translate(#{obj.tx ? 0} #{obj.ty ? 0})"
       else
         elt.removeAttribute 'transform'
-    if @board.selection?.has obj._id
-      @board.selection.redraw obj._id, elt, transformOnly
+    id = @id obj
+    if @board.selection?.has id
+      @board.selection.redraw id, elt, transformOnly
+    ## DBVT update
+    unless @bbox[id]?  # new object
+      @dbvt.insert id, @bbox[id] =
+        dom.svgBBox @board.svg, elt, @board.root
+    else  # update object
+      if obj.type == 'pen' and not (options.width or options.tx or options.ty)
+        # only points are added
+        bbox = @bbox[id]
+        for i in [options.start...obj.pts.length]
+          bbox = bbox.union (BBox.fromPoint obj.pts[i]).fattened (obj.width / 2)
+      else
+        bbox = dom.svgBBox @board.svg, elt, @board.root
+      @bbox[id] = bbox
+      @dbvt.move id, bbox
   delete: (obj, noWarn) ->
     id = @id obj
     unless @dom[id]?
@@ -476,6 +495,8 @@ export class RenderObjects
       return
     @dom[id].remove()
     delete @dom[id]
+    @dbvt.remove id
+    delete @bbox[id]
     tools.text.stop() if id == pointers.text
     @texDelete id if @texById[id]?
   texDelete: (id) ->

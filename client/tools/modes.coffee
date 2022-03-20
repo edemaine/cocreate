@@ -122,8 +122,8 @@ defineTool
       ## Now that we've traversed the DOM, modify the selection
       selection = currentBoard().selection
       query = BBox.fromRect rect
-      for id from currentPage.get().dbvt.query query
-        if intersects query, Objects.findOne(id), currentPage.get().bbox[id]
+      for id from currentPage.get().render.dbvt.query query
+        if intersects query, Objects.findOne(id), currentPage.get().render.bbox[id]
           if selection.has id  # Toggle selection
             selection.remove id
           else
