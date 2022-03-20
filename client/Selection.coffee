@@ -119,8 +119,11 @@ export class Selection
   redraw: (id, target, transformOnly) ->
     exists = @selected[id] != true  # not added via `addId`
     if transformOnly and exists
-      @selected[id].firstChild.setAttribute 'transform',
-        target.getAttribute 'transform'
+      transform = target.getAttribute 'transform'
+      if transform?
+        @selected[id].firstChild.setAttribute 'transform', transform
+      else
+        @selected[id].firstChild.removeAttribute 'transform'
     else
       @selected[id].remove() if exists
       @rehighlighter.highlight target
