@@ -176,10 +176,7 @@ defineTool
     ## If we click on blank space, or shift/ctrl/meta-click within the
     ## selection rectangle, then we draw
     else  # click on blank space -> show selection rectangle
-      currentBoard().root.appendChild h.selector = dom.create 'rect',
-        class: 'selector'
-        x1: h.start.x
-        y1: h.start.y
+      h.selectorStart h.start
   up: (e) ->
     h = pointers[e.pointerId]
     if h?.selector?
@@ -200,8 +197,7 @@ defineTool
             h.highlight render.dom[id]
             selection.add h
       selection.setAttributes()
-      h.selector.remove()
-      h.selector = null
+      h.selectorClear()
     else if h?.moved
       h.edit.flush()
       undoStack.push

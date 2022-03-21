@@ -11,6 +11,11 @@ import {selectFontSize} from './tools/font'
 import {pointers} from './tools/modes'
 import dom from './lib/dom'
 
+outlineWidth = 2
+outlineDash = 2
+selectorWidth = 3
+selectorDash = 6
+
 export class Highlighter
   constructor: (@board, @type) ->
     @target = null       # <g/polyline/rect/ellipse/text>
@@ -90,12 +95,24 @@ export class Highlighter
     if @highlighted?
       @highlighted.remove()
       @target = @highlighted = @id = null
+    @selectorClear()
+  selectorStart: (start) ->
+    scale = Math.min 1, @board.transform.scale
+    @board.root.appendChild @selector = dom.create 'rect',
+      class: 'selector'
+      x1: start.x
+      y1: start.y
+      'stroke-width': selectorWidth / scale
+      'stroke-dasharray': selectorDash / scale
+  selectorClear: ->
+    return unless @selector?
+    @selector.remove()
+    @selector = null
 
 export highlighterClear = ->
   for key, highlighter of pointers
     if highlighter instanceof Highlighter
       highlighter.clear()
-      highlighter.selector?.remove()
 
 export class Selection
   constructor: (@board) ->
@@ -239,6 +256,10 @@ export class Selection
           elt
       , @board.root
       ).minSize().toRect()
+      scale = Math.min 1, @board.transform.scale
+      dom.attr @rect,
+        'stroke-width': outlineWidth / scale
+        'stroke-dasharray': outlineDash / scale
     else
       @rect?.remove()
       @rect = null
