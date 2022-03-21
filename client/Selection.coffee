@@ -263,11 +263,11 @@ export class Selection
     if (fill = uniformAttribute 'fill', false)?  # uniform actual fill color
       selectFill fill, true
     if fill == undefined  # uniform no fill
-      selectFillOff()
+      selectFillOff true
     if (opacity = uniformAttribute 'opacity', false)?  # uniform actual opacity
       selectOpacity opacity, true
     if opacity == undefined  # uniform no opacity
-      selectOpacityOff()
+      selectOpacityOff true
     if (width = uniformAttribute 'width')?  # uniform line width
       selectWidth width, true, true
     if (fontSize = uniformAttribute 'fontSize')?  # uniform font size

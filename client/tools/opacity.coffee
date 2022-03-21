@@ -59,8 +59,9 @@ export selectOpacity = (opacity, fromSelection) ->
   else
     selectDrawingTool()
 
-export selectOpacityOff = ->
+export selectOpacityOff = (fromSelection) ->
   currentOpacityOn.set false
+  return if fromSelection
   selection = currentBoard().selection
   if selection?.nonempty()
     selection.edit 'opacity', null

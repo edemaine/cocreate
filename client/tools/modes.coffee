@@ -183,7 +183,7 @@ defineTool
     h = pointers[e.pointerId]
     if h?.selector?
       board = currentBoard()
-      query = BBox.fromPoints h.start, board.eventToPoint(e)
+      query = BBox.fromPoints [h.start, board.eventToPoint(e)]
       selection = board.selection
       render = board.render
       for id of render.dom

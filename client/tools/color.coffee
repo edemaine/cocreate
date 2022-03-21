@@ -120,8 +120,9 @@ export selectFill = (color, fromSelection) ->
   else
     selectDrawingTool()
 
-export selectFillOff = ->
+export selectFillOff = (fromSelection) ->
   currentFillOn.set false
+  return if fromSelection
   selection = currentBoard().selection
   if selection?.nonempty()
     selection.edit 'fill', null
