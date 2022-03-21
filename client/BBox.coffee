@@ -1,9 +1,10 @@
 ## Axis-Aligned Bounding Box
 
 ## Chrome seems to truncate SVG rects and ellipses to zero and not render
-## (or incorrectly render) when their width/height is less than this threshold,
-## so we round up to this minimum.  (Radii can go down to half this.)
-export minSvgSize = 0.000001
+## (or incorrectly render) when their width or height is less than 0.000001.
+## But if both width and height are small, rects need to be at least 0.0001
+## and ellipses need to be at least 0.1 in diameter (0.05 in radius).
+export minSvgSize = 0.1
 
 export class BBox
   constructor: (@minX, @minY, @maxX, @maxY) ->
