@@ -82,6 +82,7 @@ defineTool
 ## when the event wouldn't be sent to the actual tool.
 defineTool
   name: 'multitouch'
+  category: 'hidden'
   pointers: {}
   down: (e) ->
     point = currentBoard().eventToRawPoint e
