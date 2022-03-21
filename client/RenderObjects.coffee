@@ -507,8 +507,8 @@ export class RenderObjects
       return
     @dom[id].remove()
     delete @dom[id]
+    delete @bbox[id]
     #@dbvt.remove id
-    #delete @bbox[id]
     tools.text.stop() if id == pointers.text
     @texDelete id if @texById[id]?
   texDelete: (id) ->
