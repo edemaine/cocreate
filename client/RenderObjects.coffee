@@ -484,7 +484,7 @@ export class RenderObjects
     #    for i in [options.start...obj.pts.length]
     #      {x, y} = obj.pts[i]
     #      x += obj.tx if obj.tx?
-    #      y += obj.ty if obj.tx?
+    #      y += obj.ty if obj.ty?
     #      bbox = bbox.union (BBox.fromPoint {x, y}).fattened (obj.width / 2)
     #  else
     #    bbox = dom.svgBBox @board.svg, elt, @board.root
@@ -493,13 +493,11 @@ export class RenderObjects
     ## BBox update (alternative to DBVT)
     if obj.type == 'pen' and options? and
        not (options.width or options.tx or options.ty)  # only points are added
-      bbox = @bbox[id]
-      for i in [options.start...obj.pts.length]
-        {x, y} = obj.pts[i]
-        x += obj.tx if obj.tx?
-        y += obj.ty if obj.tx?
-        bbox = bbox.union (BBox.fromPoint {x, y}).fattened (obj.width / 2)
-      @bbox[id] = bbox
+      @bbox[id] = @bbox[id].union(
+        BBox.fromPoints obj.pts[options.start...obj.pts.length]
+        .translate obj.tx ? 0, obj.ty ? 0
+        .fattened obj.width / 2
+      ) unless options.start == obj.pts.length
     else
       @bbox[id] = dom.svgBBox @board.svg, elt, @board.root
   delete: (obj, noWarn) ->

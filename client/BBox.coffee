@@ -12,7 +12,7 @@ export class BBox
     new BBox pt.x, pt.y, pt.x, pt.y
   @fromExtremePoints: (min, max) ->  # assumes min and max are in order
     new BBox min.x, min.y, max.x, max.y
-  @fromPoints: (...pts) ->
+  @fromPoints: (pts) ->
     minX = minY = Infinity
     maxX = maxY = -Infinity
     for {x, y} in pts
@@ -64,9 +64,8 @@ export class BBox
     @minX <= pt.x and @maxX >= pt.x and @minY <= pt.y and @maxY >= pt.y
 
   union: (other) ->
-    new BBox \
-      (Math.min @minX, other.minX), (Math.min @minY, other.minY), \
-      (Math.max @maxX, other.maxX), (Math.max @maxY, other.maxY),
+    new BBox (Math.min @minX, other.minX), (Math.min @minY, other.minY),
+             (Math.max @maxX, other.maxX), (Math.max @maxY, other.maxY)
   @union: (bboxes) ->
     minX = minY = Infinity
     maxX = maxY = -Infinity
