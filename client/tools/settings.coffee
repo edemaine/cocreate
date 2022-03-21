@@ -20,7 +20,7 @@ Tracker.autorun ->
 defineTool
   name: 'touch'
   category: 'setting'
-  icon: 'hand-pointer'
+  icon: 'touch-draw'
   help: 'Toggle drawing with touch. Disable when using a pen-enabled device to ignore palm resting on screen; then touch will only work with pan and select tools, and multitouch will pan/zoom in drawing modes.'
   active: -> touchDraw.get()
   click: ->
