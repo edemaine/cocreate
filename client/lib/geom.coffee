@@ -17,3 +17,8 @@ export distance = (p, q) ->
   dx = p.x - q.x
   dy = p.y - q.y
   Math.sqrt dx * dx + dy * dy
+
+export distanceThreshold = (p, q, t) ->
+  dx = p.x - q.x
+  dy = p.y - q.y
+  dx * dx + dy * dy >= t * t

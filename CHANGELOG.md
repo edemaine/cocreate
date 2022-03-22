@@ -7,6 +7,14 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-03-22
+
+* Dots are now easy to draw by clicking (without dragging) with the Ellipse or
+  Rectangle tool, making small circles or squares centered at the click point.
+  Dots can be colored and/or filled.
+  The dot size is proportional to the line width.
+  [[#175](https://github.com/edemaine/cocreate/issues/175)]
+
 ## 2022-03-20
 
 * Multitouch pan/zoom in pan mode, and in drawing modes when

@@ -272,10 +272,13 @@ and you can play with these toggles while you're drawing a line.
 
 The Rectangle Tool is a drawing mode that lets you draw perfect
 axis-aligned rectangles (or squares).
+If you click/tap and release on one point (without dragging),
+you get a small square "dot" centered at the point,
+whose size is proportional to the current line width.
 If you click/tap on one point, drag to another point, and release,
 then you get the rectangle with those two points as opposite corners.
 
-If you hold <kbd>Shift</kbd>, then
+If you hold <kbd>Shift</kbd> while dragging, then
 the rectangle will be constrained to be a square (1:1 aspect ratio).
 If you hold <kbd>Alt</kbd> or <kbd>Option</kbd> on Mac, then
 the rectangle will be centered at the first point and have the second point
@@ -288,11 +291,14 @@ and you can play with these toggles while you're drawing a rectangle.
 
 The Ellipse Tool is a drawing mode that lets you draw perfect
 axis-aligned ellipses (or circles).
+If you click/tap and release on one point (without dragging),
+you get a small circular "dot" centered at the point,
+whose size is proportional to the current line width.
 If you click/tap on one point, drag to another point, and release,
 then you get the ellipse inscribed in the axis-aligned rectangle
 having those two points as opposite corners.
 
-If you hold <kbd>Shift</kbd>, then
+If you hold <kbd>Shift</kbd> while dragging, then
 the ellipse will be constrained to be a circle (1:1 aspect ratio).
 If you hold <kbd>Alt</kbd> or <kbd>Option</kbd> on Mac, then
 the ellipse will be centered at the first point and have the second point

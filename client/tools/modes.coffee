@@ -10,7 +10,7 @@ import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
 import dom from '../lib/dom'
-import {average, centroid, distance} from '../lib/geom'
+import {average, centroid, distance, distanceThreshold} from '../lib/geom'
 import {Ctrl, Alt} from '../lib/platform'
 import throttle from '../lib/throttle'
 import {BBox, minSvgSize} from '../BBox'
@@ -18,10 +18,12 @@ import {intersects} from '../Collision'
 
 export pointers = {}   # maps pointerId to tool-specific data
 
-eraseDist = 2   # require movement by this many pixels before erasing swipe
-dragDist = 2    # require movement by this many pixels before select drags
+# Require movement by this many client pixels...
+eraseDist = 4   # ...before erasing swipe
+dragDist = 4    # ...before select drags
+dotDist = 4     # ...before rect/ellipse leave dot mode
 
-distanceThreshold = (p, q, t) ->
+eventDistanceThreshold = (p, q, t) ->
   return false if not p or not q
   return true if p == true or q == true
   dx = p.clientX - q.clientX
@@ -219,7 +221,7 @@ defineTool
       if h.selector?
         here = currentBoard().eventToPoint e
         dom.attr h.selector, dom.pointsToRect h.start, here, minSvgSize
-      else if distanceThreshold h.down, e, dragDist
+      else if eventDistanceThreshold h.down, e, dragDist
         h.down = true
         here = maybeSnapPointToGrid currentBoard().eventToPoint e
         here = orthogonalPoint here, e, h.start
@@ -317,17 +319,27 @@ rectLikeTool = (type, fillable, constrain) ->
   down: (e) ->
     return if pointers[e.pointerId]
     origin = maybeSnapPointToGrid currentBoard().eventToPoint e
+    width = currentWidth.get()
+    if type == 'poly'
+      pts = [origin, origin]
+    else  # start rect and ellipse as dot
+      pts = [
+        {x: origin.x - 2*width, y: origin.y - 2*width}
+        {x: origin.x + 2*width, y: origin.y + 2*width}
+      ]
     object =
       room: currentRoom.get().id
       page: currentPage.get().id
       type: type
-      pts: [origin, origin]
+      pts: pts
       color: currentColor.get()
-      width: currentWidth.get()
+      width: width
     object.fill = currentFill.get() if fillable and currentFillOn.get()
     object.opacity = currentOpacity.get() if currentOpacityOn.get()
     pointers[e.pointerId] =
       origin: origin
+      start: e
+      dot: true
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
       edit: throttle.method 'objectEdit', ([edit1], [edit2]) ->
         ## Add older pts[0] updates to newer updates
@@ -342,15 +354,21 @@ rectLikeTool = (type, fillable, constrain) ->
     delete pointers[e.pointerId]
   move: (e) ->
     return unless pointers[e.pointerId]
-    {id, origin, alt, last, edit} = pointers[e.pointerId]
+    {id, origin, start, dot, alt, last, edit} = pointers[e.pointerId]
+    # Stay in dot mode until we drag a nontrivial distance
+    return if dot and not eventDistanceThreshold e, start, dotDist
     pt = maybeSnapPointToGrid currentBoard().eventToPoint e
     pt = constrain pt, e, origin
+    # Stay in dot mode until grid snapping lets us escape the origin
+    return if dot and not distanceThreshold pt, origin, minSvgSize
+    pointers[e.pointerId].dot = false  # Passed threshold from now on
     pts =
       1: pt
     ## When holding Alt/Option, make origin be the center.
     if e.altKey
       pts[0] = symmetricPoint pts[1], origin
-    else if alt  # was holding down Alt, go back to original first point
+    else if alt or dot  # was holding down Alt or was in dot mode
+      # => go back to original first point
       pts[0] = origin
     pointers[e.pointerId].alt = e.altKey
     return if JSON.stringify(last) == JSON.stringify(pts)
@@ -373,7 +391,7 @@ defineTool Object.assign rectLikeTool('rect', true, equalXYPoint),
   icon: 'rect'
   iconFill: 'rect-fill'
   hotspot: [0.0625, 0.883]
-  help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point.</>
+  help: <>Draw axis-aligned rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to square, <kbd>{Alt}</kbd> to center at first point. Click without dragging to center a square dot proportional to line width.</>
   hotkey: 'r'
 
 defineTool Object.assign rectLikeTool('ellipse', true, equalXYPoint),
@@ -382,7 +400,7 @@ defineTool Object.assign rectLikeTool('ellipse', true, equalXYPoint),
   icon: 'ellipse'
   iconFill: 'ellipse-fill'
   hotspot: [0.201888, 0.75728]
-  help: <>Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to circle, <kbd>{Alt}</kbd> to center at first point.</>
+  help: <>Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to circle, <kbd>{Alt}</kbd> to center at first point. Click without dragging to center a circular dot proportional to line width.</>
   hotkey: 'o'
 
 defineTool
@@ -424,7 +442,7 @@ defineTool
     h = pointers[e.pointerId]
     target = h.eventCoalescedTop e
     if target?
-      if distanceThreshold h.down, e, eraseDist
+      if eventDistanceThreshold h.down, e, eraseDist
         h.down = true
         h.deleted.push Objects.findOne target.dataset.id
         Meteor.call 'objectDel', target.dataset.id
