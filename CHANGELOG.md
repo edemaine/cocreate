@@ -14,6 +14,8 @@ instead of version numbers.
   Dots can be colored and/or filled.
   The dot size is proportional to the line width.
   [[#175](https://github.com/edemaine/cocreate/issues/175)]
+* New experimental half-grid snapping feature.  This doesn't change the grid
+  visually, but lets you snap to half-grid positions.
 
 ## 2022-03-20
 

@@ -82,3 +82,14 @@ defineTool
   click: ->
     return unless (room = currentRoom.get())?
     room.gridSnap.set not room.gridSnap.get()
+
+defineTool
+  name: 'gridHalfSnap'
+  category: 'setting'
+  icon: 'grid-half-snap'
+  help: 'Toggle snapping to half-grid positions in addition to grid positions (when grid snapping is turned on)'
+  hotkey: '%'
+  active: -> currentRoom.get()?.gridHalfSnap.get()
+  click: ->
+    return unless (room = currentRoom.get())?
+    room.gridHalfSnap.set not room.gridHalfSnap.get()

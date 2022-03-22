@@ -554,6 +554,16 @@ Cocreate remembers the last choice you made for this setting on each board
 (via the browser's local storage), so you can quickly resume drawing in the
 same style as before.
 
+### <img src="icons/grid-half-snap.svg" width="18" alt="Grid Half Snap Icon"> Grid Half Snap Toggle
+
+When the
+[<img src="icons/grid-snap.svg" width="18" alt="Grid Snap Icon"> Grid Snap Toggle](#-grid-snap-toggle)
+is turned on, this button toggles a modified behavior where the snapping
+is to the half-grid.  The grid doesn't change visually, but the snapping
+behavior is one level finer.  With the square grid, this lets you snap to
+the centers of edges and squares.  With the triangular grid, this lets you
+snap to the centers of edges.
+
 ### <img src="icons/clipboard-link.svg" width="18" alt="Share Link Icon"> Share Link
 
 This button aims to make it easy to share the link to this Cocreate

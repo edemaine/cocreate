@@ -11,6 +11,7 @@ export class Room
     @waiting = new ReactiveVar 0
     @sub = Meteor.subscribe 'room', @id, onStop: => @stop()
     @gridSnap = new storage.Variable "#{@id}.gridSnap", false
+    @gridHalfSnap = new storage.Variable "#{@id}.gridHalfSnap", false
   stop: ->
     @stopped.set true
     @gridSnap.stop()

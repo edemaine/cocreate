@@ -23,23 +23,28 @@ roundRange = (min, max, gap) ->
 
 export maybeSnapPointToGrid = (pt) ->
   if currentRoom.get()?.gridSnap.get()
-    snapPointToGrid pt
+    snapPointToGrid pt, currentRoom.get().gridHalfSnap.get()
   else
     pt
 
-export snapPointToGrid = (pt, gridType = currentGridType()) ->
+export snapPointToGrid = (pt, isHalf, gridType = currentGridType()) ->
+  if isHalf
+    half = 0.5
+  else
+    half = 1
   switch gridType
     when 'square'
-      pt.x = round pt.x, gridSize
-      pt.y = round pt.y, gridSize
+      pt.x = round pt.x, gridSize * half
+      pt.y = round pt.y, gridSize * half
     when 'triangle'
-      #pt.y = round pt.y, gridSize * hrt3
-      r = Math.round pt.y / triangleVerticalGridSize
-      pt.y = r * triangleVerticalGridSize
+      #pt.y = round pt.y, gridSize * half * hrt3
+      r = Math.round pt.y / (triangleVerticalGridSize * half)
+      pt.y = r * (triangleVerticalGridSize * half)
       if r % 2 == 0
-        pt.x = round pt.x, gridSize
+        pt.x = round pt.x, gridSize * half
       else
-        pt.x = halfGridSize + round pt.x - halfGridSize, gridSize
+        pt.x = (halfGridSize * half) +
+               round pt.x - (halfGridSize * half), gridSize * half
   pt
 
 export gridUnitOffset = (gridType = currentGridType()) ->
