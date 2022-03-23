@@ -411,7 +411,7 @@ export class RenderObjects
     {x, y, width, height} = g.getBBox()
     dom.attr rect, {x, y, width, height}
     ## Update selected copies
-    @board.selection.redraw id, @dom[id] if @board.selection?.has id
+    @updated id
     pointers.cursorUpdate?() if id == pointers.text
   texJob: ->
     return unless @texQueue.length
@@ -428,7 +428,7 @@ export class RenderObjects
           icons.svgIcon 'exclamation-rect',
             width: '64px'
             height: '64px'
-        @board.selection.redraw id, @dom[id] if @board.selection?.has id
+        @updated id
     dom.attr image,
       x: obj.pts[0].x
       y: obj.pts[0].y
@@ -471,8 +471,7 @@ export class RenderObjects
       else
         elt.removeAttribute 'transform'
     id = @id obj
-    if @board.selection?.has id
-      @board.selection.redraw id, elt, transformOnly
+    @updated id, transformOnly
     ## DBVT update
     #unless @bbox[id]?  # new object
     #  @dbvt.insert id, @bbox[id] =
@@ -511,6 +510,7 @@ export class RenderObjects
     #@dbvt.remove id
     tools.text.stop() if id == pointers.text
     @texDelete id if @texById[id]?
+    @updated id
   texDelete: (id) ->
     for job in check = @texById[id]
       delete job.texts[id]
@@ -535,6 +535,13 @@ export class RenderObjects
     if id of @dom
       console.warn "Duplicate object with ID #{id}?!"
       delete @dom[id]
+  updated: (id, transformOnly) ->
+    if @board.selection?.has id
+      if (elt = @dom[id])?
+        @board.selection.redraw id, elt, transformOnly
+      else
+        @board.selection.remove id
+    @board.highlighters[id]?.clear()
 
 ###
 dot = (obj, p) ->

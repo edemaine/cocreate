@@ -74,11 +74,11 @@ export clickTool = (toolSpec, e) ->
 export stopTool = (options) ->
   tools[currentTool.get()]?.stop?() unless options?.noStop
   delete pointers[key] for own key of pointers
+  highlighterClear()
   unless options?.noStart or options?.noStop
     ## Save previous tool's selection before clearing it
     selected = mainBoard.selection.ids()
     mainBoard.selection.clear()
-    highlighterClear()
     selected
 
 export resumeTool = (options) ->

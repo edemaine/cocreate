@@ -67,6 +67,8 @@ export class Highlighter
     @clear()
     @target = target
     @id = target.dataset.id
+    @board.highlighters[@id]?.clear()
+    @board.highlighters[@id] = @
     @highlighted ?= dom.create 'g', class: 'highlight'
     @board.root.appendChild @highlighted  # ensure on top
     doubler = (match, left, number, right) -> "#{left}#{2 * number}#{right}"
@@ -89,11 +91,14 @@ export class Highlighter
       @highlight target
     selected = @highlighted
     selected?.setAttribute 'class', 'selected'
+    ## Simulate most of `clear` method except for @highlighted.remove()
+    delete @board.highlighters[@id]
     @target = @highlighted = @id = null
     selected
   clear: ->
     if @highlighted?
       @highlighted.remove()
+      delete @board.highlighters[@id]
       @target = @highlighted = @id = null
     @selectorClear()
   selectorStart: (start) ->
@@ -134,6 +139,7 @@ export class Selection
       ## (triggering redraw when it gets rendered).
       @selected[id] = true
   redraw: (id, target, transformOnly) ->
+    ## Passing target = undefined means "deleted".
     exists = @selected[id] != true  # not added via `addId`
     if transformOnly and exists
       transform = target.getAttribute 'transform'
@@ -150,6 +156,7 @@ export class Selection
     unless @selected[id] == true  # added via `addId`
       @selected[id].remove()
     delete @selected[id]
+    @onRemove? id
     @outline()
   clear: ->
     @remove id for id of @selected

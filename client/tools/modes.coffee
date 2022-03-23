@@ -508,7 +508,12 @@ defineTool
     pointers.highlight = new Highlighter currentBoard(), 'text'
     pointers.undoable = null
     pointers.text = null
+    currentBoard().onRemove = (id) =>
+      if pointers.text == id  # someone deleted text object while selected
+        @stop()
+        @start()
   stop: ->
+    delete currentBoard().onRemove
     pointers.cursor?.remove()
     pointers.cursor = null
     return unless (id = pointers.text)?

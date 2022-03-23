@@ -31,6 +31,9 @@ export class Board
     @svg.appendChild @root = dom.create 'g'
     @transform = defaultTransform()
     @selection = new Selection @
+    ## Map from Object `_id` to a `Highlighter` instance
+    ## that is currently highlighting that object.
+    @highlighters = {}
     ## Page additionally sets @render to the current RenderObjects.
     ## historyBoard additionally sets @objects to mapping of ids to objects.
     ## Can't call @resize() until mainBoard gets set, after this constructor
