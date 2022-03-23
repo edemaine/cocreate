@@ -1,9 +1,9 @@
 ## Grid rendering and snapping
 
 import dom from './lib/dom'
+import {closer, transposeXY} from './lib/geom'
 import {currentGridType, currentRoom} from './AppState'
 import {BBox} from './BBox'
-
 export {defaultGrid, defaultGridType} from '/lib/grid'
 
 export gridSize = 37.76
@@ -34,18 +34,27 @@ export snapPointToGrid = (pt, isHalf, gridType = currentGridType()) ->
     half = 1
   switch gridType
     when 'square'
-      pt.x = round pt.x, gridSize * half
-      pt.y = round pt.y, gridSize * half
+      x: round pt.x, gridSize * half
+      y: round pt.y, gridSize * half
     when 'triangle'
-      #pt.y = round pt.y, gridSize * half * hrt3
-      r = Math.round pt.y / (triangleVerticalGridSize * half)
-      pt.y = r * (triangleVerticalGridSize * half)
-      if r % 2 == 0
-        pt.x = round pt.x, gridSize * half
-      else
-        pt.x = (halfGridSize * half) +
-               round pt.x - (halfGridSize * half), gridSize * half
-  pt
+      triSnap = (pt, scale) ->
+        r = Math.round pt.y / (triangleVerticalGridSize * scale)
+        x:
+          if r % 2 == 0
+            round pt.x, gridSize * scale
+          else
+            (halfGridSize * scale) +
+              round pt.x - (halfGridSize * scale), gridSize * scale
+        y: r * (triangleVerticalGridSize * scale)
+      rounded = triSnap pt, half
+      if isHalf
+        ## Check for closer match to the center of a triangle.
+        ## These are on a hex grid, but also on a rotated/xy-flipped
+        ## triangular grid of scale 1/sqrt(3), whose other points
+        ## are in the already-searched grid so doesn't hurt to include.
+        rounded = closer pt, rounded,
+          transposeXY triSnap transposeXY(pt), 1/Math.sqrt 3
+      rounded
 
 export gridUnitOffset = (gridType = currentGridType()) ->
   switch gridType

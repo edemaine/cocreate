@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-03-23
+
+* Triangular half-grid snapping now includes triangle centers.
+  [[#21](https://github.com/edemaine/cocreate/issues/21)]
+
 ## 2022-03-22
 
 * Dots are now easy to draw by clicking (without dragging) with the Ellipse or
@@ -16,6 +21,7 @@ instead of version numbers.
   [[#175](https://github.com/edemaine/cocreate/issues/175)]
 * New experimental half-grid snapping feature.  This doesn't change the grid
   visually, but lets you snap to half-grid positions.
+  [[#21](https://github.com/edemaine/cocreate/issues/21)]
 
 ## 2022-03-20
 
