@@ -560,9 +560,8 @@ When the
 [<img src="icons/grid-snap.svg" width="18" alt="Grid Snap Icon"> Grid Snap Toggle](#-grid-snap-toggle)
 is turned on, this button toggles a modified behavior where the snapping
 is to the half-grid.  The grid doesn't change visually, but the snapping
-behavior is one level finer.  With the square grid, this lets you snap to
-the centers of edges and squares.  With the triangular grid, this lets you
-snap to the centers of edges.
+behavior is one level finer.  In both the square and triangular grid,
+this lets you snap to the centers of edges and cells (squares or triangles).
 
 ### <img src="icons/clipboard-link.svg" width="18" alt="Share Link Icon"> Share Link
 
