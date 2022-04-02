@@ -1,4 +1,3 @@
-import React from 'react'
 import {Tracker} from 'meteor/tracker'
 import {ReactiveVar} from 'meteor/reactive-var'
 
@@ -46,7 +45,7 @@ defineTool
   category: 'color'
   help: <>Toggle filling of rectangles and ellipses. <kbd>Shift</kbd>-click a color to set fill color.</>
   active: -> currentFillOn.get()
-  icon: -> # eslint-disable-line react/display-name
+  icon: ->
     if currentFillOn.get()
       icons.modIcon 'tint', fill: currentFill.get()
     else
@@ -68,31 +67,31 @@ for color in colors
     defineTool
       name: "color:#{color}"
       category: 'color'
-      className: 'attrib'
+      class: 'attrib'
       active: -> currentColor.get() == color
-      icon: -> # eslint-disable-line react/display-name
-        <div className="color" style={backgroundColor: color}/>
+      icon: ->
+        <div class="color" style={'background-color': color}/>
       click: (e) -> selectColorOrFill e, color
 
 customColor = new ReactiveVar '#808080'
-customColorRef = React.createRef()
+customColorRef = null
 
 defineTool
   name: 'customColor'
   category: 'color'
-  className: 'attrib'
+  class: 'attrib'
   help: <>Custom colors. Select the rainbow icon to change the custom color (via browser-specific color selector). Select the colored outer rim to re-use the previously chosen color. Use the Select tool to grab colors from existing objects.</>
   active: -> currentColor.get() == customColor.get()
-  icon: -> # eslint-disable-line react/display-name
+  icon: ->
     onSet = (e) ->
       e.stopPropagation()
-      customColorRef.current.querySelector('input').click()
+      customColorRef.querySelector('input').click()
     onInput = (e) ->
       selectColor e.target.value
     color = customColor.get()
-    <div className="custom color" style={backgroundColor: color}
+    <div class="custom color" style={'background-color': color}
      ref={customColorRef}>
-      <div className="set" onClick={onSet}/>
+      <div class="set" onClick={onSet}/>
       <input type="color" onInput={onInput} value={color}/>
     </div>
   click: (e) ->

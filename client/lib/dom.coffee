@@ -44,7 +44,7 @@ export prop = (elt, props) ->
       else
         elt[key] = value
 
-## Returns a corresponding removeEventListener callback suitable for useEffect
+## Returns a corresponding removeEventListener callback suitable for onCleanup
 export listen = (elt, events, now) ->
   if Array.isArray(elt) or elt instanceof NodeList
     callbacks =

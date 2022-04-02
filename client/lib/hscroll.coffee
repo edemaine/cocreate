@@ -1,6 +1,6 @@
 ## Make scroll wheel automatically scroll horizontally in horizontal palettes
 
-import {useEffect} from 'react'
+import {createEffect, onCleanup} from 'solid-js'
 
 scrolling = {}
 scrollDuration = 250
@@ -20,7 +20,7 @@ onWheel = (e) ->
     scrolling[elt.id] ?= {}
     unless scrolling[elt.id].request?
       scrolling[elt.id].origin = scrolling[elt.id].target = elt.scrollLeft
-    scrolling[elt.id].target = \
+    scrolling[elt.id].target =
       Math.max 0,
       Math.min elt.scrollWidth - elt.clientWidth,
       scrolling[elt.id].target + delta
@@ -35,8 +35,7 @@ onWheel = (e) ->
         else
           scrolling[elt.id].request = scrolling[elt.id].begin = null
 
-export useHorizontalScroll = (ref) ->
-  useEffect ->
-    ref.current?.addEventListener 'wheel', onWheel, passive: false
-    -> ref.current?.removeEventListener 'wheel', onWheel
-  , [ref.current]
+export createHorizontalScroll = (ref) ->
+  createEffect ->
+    ref().addEventListener 'wheel', onWheel, passive: false
+    onCleanup -> ref().removeEventListener 'wheel', onWheel

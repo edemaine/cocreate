@@ -1,8 +1,8 @@
-import React, {useEffect, useLayoutEffect, useRef} from 'react'
-import {useParams, useHistory, useLocation} from 'react-router-dom'
-import {useTracker} from 'meteor/react-meteor-data'
+import {createEffect, createRenderEffect, on as on_, onCleanup, onMount, Match, Show, Switch} from 'solid-js'
+import {useLocation, useParams, useNavigate} from 'solid-app-router'
+import {createTracker} from 'solid-meteor-data'
 
-import {setRouterHistory, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from './AppState'
+import {setRouterNavigate, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from './AppState'
 import {Board} from './Board'
 import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
@@ -14,7 +14,7 @@ import {undoStack} from './UndoStack'
 import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouchDraw} from './tools/tools'
 import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
-import {useHorizontalScroll} from './lib/hscroll'
+import {createHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
@@ -24,65 +24,64 @@ onResize = ->
   mainBoard.resize()
   historyBoard.resize()
   currentPage.get()?.resize()
-  undefined
 
-export DrawApp = React.memo ->
+export DrawApp = ->
+  ## Room data structure
+  params = useParams()
+  createRenderEffect ->
+    currentRoom.set new Room params.roomId
+    currentPageId.set null  # reset currentPage
+    onCleanup ->
+      currentRoom.get().stop()
+      currentRoom.set null
+
+  ## Test whether room is bad (and not still loading)
+  bad = createTracker -> currentRoom.get()?.bad()
+
+  <Show when={not bad()} fallback={<BadRoom/>}>
+    <DrawAppRoom/>
+  </Show>
+
+export DrawAppRoom = ->
   ## Board data structures
-  mainBoardRef = useRef()
-  historyBoardRef = useRef()
-  useEffect ->
-    setMainBoard new Board mainBoardRef.current
-    setHistoryBoard new Board historyBoardRef.current, true  # read-only
+  mainBoardRef = historyBoardRef = null
+  onMount ->
+    setMainBoard new Board mainBoardRef
+    setHistoryBoard new Board historyBoardRef, true  # read-only
     onResize()
     window.addEventListener 'resize', onResize
     #observer = new ResizeObserver onResize
-    #observer.observe mainBoardRef.current
-    #observer.observe historyBoardRef.current
+    #observer.observe mainBoardRef
+    #observer.observe historyBoardRef
     #observer.observe document.getElementById('center')
-    ->
+    onCleanup ->
       window.removeEventListener 'resize', onResize
       #observer.disconnect()
       historyBoard.destroy()
       mainBoard.destroy()
-  , []
 
-  ## Room data structure
-  {roomId} = useParams()
-  useLayoutEffect ->
-    currentRoom.set new Room roomId
-    currentPageId.set null  # reset currentPage
-    ->
-      currentRoom.get().stop()
-      currentRoom.set null
-  , [roomId]
-
-  ## Test whether room is loading and/or bad
-  room = useTracker ->
-    currentRoom.get()
-  , []
-  {loading, bad} = useTracker ->
-    return {} unless room?
-    loading: room.loading()
-    bad: room.bad()
-  , [room]
+  ## Test whether room is loading
+  room = createTracker -> currentRoom.get()
+  loading = createTracker -> room()?.loading()
 
   ## Page data structure, and stop/resume current tool
+  params = useParams()
   location = useLocation()
-  locationHistory = useHistory()
-  setRouterHistory locationHistory
-  pageId = useTracker ->
+  navigate = useNavigate()
+  setRouterNavigate navigate
+  pageId = createTracker ->
     id = currentPageId.get()
-    hashId = location.hash?[1..]
-    pages = room?.data()?.pages
-    pageStorage = new storage.StringVariable "#{roomId}.page", undefined, false
+    hashId = location.hash
+    pages = room()?.data()?.pages
+    pageStorage = new storage.StringVariable "#{params.roomId}.page", undefined, false
     ## Check for initial or changed hash indicating page ID
     if hashId
       if id != hashId and pages?
         if hashId in pages
           currentPageId.set hashId
           pageStorage.set hashId
-        else if not loading ## Invalid page hash: redirect to remove from URL
-          Meteor.defer -> locationHistory.replace location.path
+        else if not loading() ## Invalid page hash: redirect to remove from URL
+          Meteor.defer -> navigate location.pathname, replace: true
     else if not id and pages?.length
       ## Use last page recorded in localStorage if there is one.
       if (storageId = pageStorage.get()) and storageId in pages
@@ -91,40 +90,36 @@ export DrawApp = React.memo ->
         ## Auto load first page by default
         currentPageId.set pages[0]
     id
-  , [room, location.hash, loading]
-  remotesRef = useRef()
-  useEffect -> # wait for mainBoard to be set
-    return unless pageId?
-    currentPage.set new Page pageId, room, mainBoard, remotesRef.current
+  remotesRef = null
+  createEffect -> # wait for mainBoard to be set
+    return unless pageId()?
+    currentPage.set new Page pageId(), room(), mainBoard, remotesRef
     resumeTool()
-    ->
+    onCleanup ->
       stopTool()  # stop current tool
       currentPage.get()?.stop()
       currentPage.set null
-  , [room, pageId, mainBoard]
 
   ## Horizontal scroll wheel behavior
-  topRef = useRef()
-  attribsRef = useRef()
-  useHorizontalScroll topRef
-  useHorizontalScroll attribsRef
+  topRef = attribsRef = null
+  createHorizontalScroll -> topRef
+  createHorizontalScroll -> attribsRef
 
   ## Work around https://bugzilla.mozilla.org/show_bug.cgi?id=764076
-  toolsRef = useRef()
-  useEffect ->
+  toolsRef = null
+  onMount ->
     window.addEventListener 'resize', onToolsResize = ->
       paletteSize = getComputedStyle document.documentElement
       .getPropertyValue '--palette-size'
       .replace /px$/, ''
       paletteSize = parseInt paletteSize
-      if toolsRef.current.scrollHeight > toolsRef.current.clientHeight
-        if toolsRef.current.offsetWidth == paletteSize
-          toolsRef.current.style.width = "#{paletteSize + toolsRef.current.offsetWidth - toolsRef.current.clientWidth}px"
+      if toolsRef.scrollHeight > toolsRef.clientHeight
+        if toolsRef.offsetWidth == paletteSize
+          toolsRef.style.width = "#{paletteSize + toolsRef.offsetWidth - toolsRef.clientWidth}px"
       else
-        toolsRef.current.style.width = null
+        toolsRef.style.width = null
+    onCleanup -> window.removeEventListener 'resize', onToolsResize
     onToolsResize()
-    -> window.removeEventListener 'resize', onToolsResize
-  , []
 
   ## Update our remote cursor
   updateRemote = (e) ->
@@ -138,25 +133,22 @@ export DrawApp = React.memo ->
     remote.fill = currentFill.get() if currentFillOn.get()
     remote.opacity = currentOpacity.get() if currentOpacityOn.get()
     remotes.update remote
-  useEffect ->
-    dom.listen mainBoardRef.current, pointermove: (e) ->
+  onMount ->
+    onCleanup dom.listen mainBoardRef, pointermove: (e) ->
       return unless currentRoom.get()? and currentPage.get()?
       return unless currentBoard() == mainBoard
       return if restrictTouchDraw e
       updateRemote e
-  , []
   ## Cursorless update when page changes
-  useEffect ->
-    return unless room? and pageId?
+  createEffect ->
+    return unless room()? and pageId()?
     updateRemote()
-    undefined
-  , [room, pageId]
 
-  useEffect ->
+  onMount ->
     ## Pointer event handlers used on both boards
     middleDown = null
     spaceDown = null
-    dom.listen [mainBoardRef.current, historyBoardRef.current],
+    onCleanup dom.listen [mainBoardRef, historyBoardRef],
       pointerdown: (e) ->
         e.preventDefault()
         return tools.multitouch.down? e if restrictTouchDraw e
@@ -224,7 +216,7 @@ export DrawApp = React.memo ->
             x: transform.x - deltaX / transform.scale
             y: transform.y - deltaY / transform.scale
     ## Keyboard and copy/paste
-    dom.listen window,
+    onCleanup dom.listen window,
       keydown: (e) ->
         return if e.target.classList.contains 'modal'
         switch e.key
@@ -322,15 +314,14 @@ export DrawApp = React.memo ->
                 color: currentColor.get()
                 fontSize: currentFontSize.get()
             setSelection [obj._id]
-  , []
 
   ## Drag and drop
-  useEffect ->
+  onMount ->
     dragDepth = 0
     all = (e) ->
       e.preventDefault()
       e.dataTransfer.dropEffect = 'link'
-    dom.listen mainBoardRef.current,
+    onCleanup dom.listen mainBoardRef,
       dragenter: (e) ->
         all e
         return if dragDepth++
@@ -351,126 +342,113 @@ export DrawApp = React.memo ->
         document.getElementById('dragzone').classList.remove 'drag'
         tryAddImage e.dataTransfer.items,
           pts: [maybeSnapPointToGrid currentBoard().eventToPoint e]
-  , []
 
   ## Initialize tools (after boards are created)
-  useEffect ->
-    toolSpec.init?() for tool, toolSpec of tools
-  , []
+  onMount ->
+    toolSpec.init?() for toolName, toolSpec of tools
 
   ## Tool-specific effect hook
-  tool = useTracker ->
-    currentTool.get()
-  , []
-  useEffect ->
-    tools[tool].startEffect?()
-  , [tool]
-  useEffect onResize, [tool]  # text and image tools affect layout
+  tool = createTracker -> currentTool.get()
+  createEffect ->
+    tools[tool()].startEffect?()
+  createEffect on_ tool, onResize  # text and image tools affect layout
 
-  opacityOn = useTracker ->
-    currentOpacityOn.get()
-  , []
+  opacityOn = createTracker -> currentOpacityOn.get()
 
-  history = useTracker ->
-    historyMode.get()
-  , []
-  useLayoutEffect ->
+  history = createTracker -> historyMode.get()
+  createEffect ->
     ## Maintain history class on <body>, which adds sepia tone
-    dom.classSet document.body, 'history', history
+    dom.classSet document.body, 'history', history()
     ## Preserve transform between two boards when switching history mode
-    ->
-      if history
-        mainBoard.setTransform historyBoard.transform
-      else
+    onCleanup ->
+      if history()
         historyBoard.setTransform mainBoard.transform
-  , [history]
-
-  return <BadRoom/> if bad and not loading
+      else
+        mainBoard.setTransform historyBoard.transform
 
   <div id="container">
-    <div id="tools" className="vertical palette" ref={toolsRef}>
+    <div id="tools" class="vertical palette" ref={toolsRef}>
       <ToolCategory category="undo" placement="right"/>
       <ToolCategory category="mode" placement="right"/>
-      <div className="spacer"/>
+      <div class="spacer"/>
       <ToolCategory category="setting" placement="right"/>
       <ToolCategory category="room" placement="right"/>
       <ToolCategory category="download" placement="right"/>
       <ToolCategory category="settings" placement="right"/>
       <ToolCategory category="link" placement="right"/>
     </div>
-    <div id="pages" className="top horizontal palette" ref={topRef}>
+    <div id="pages" class="top horizontal palette" ref={topRef}>
       <ToolCategory category="zoom" placement="bottom"/>
-      <div className="spacer"/>
+      <div class="spacer"/>
       <PageList/>
       <ToolCategory category="page" placement="bottom"/>
-      <div className="spacer"/>
+      <div class="spacer"/>
       <Name/>
     </div>
-    <div id="bottom" className="horizontal super palette">
-      {if tool == 'text'
-        <div id="text" className="horizontal palette">
+    <div id="bottom" class="horizontal super palette">
+      <Show when={tool() == 'text'}>
+        <div id="text" class="horizontal palette">
           <textarea id="textInput" type="text" placeholder='(type text here)'/>
         </div>
-      }
-      {if history
-        <div id="history" className="horizontal palette">
-          <tools.history.Slider/>
-        </div>
-      else if tool == 'image'
-        <div id="imageUrl" className="horizontal palette">
-          <input id="urlInput" type="text" placeholder='(enter image URL here)'/>
-        </div>
-      else
-        <div id="attribs" className="horizontal palette" ref={attribsRef}>
-          {if tool == 'text'
-            <div id="fontSizes" className="subpalette">
-              <ToolCategory category="fontSize" placement="top"/>
-            </div>
-          else
-            <div id="widths" className="subpalette">
-              <ToolCategory category="width" placement="top"/>
-            </div>
-          }
-          <div id="opacities" className="subpalette">
-            <ToolCategory category="opacity" placement="top"/>
-            {if opacityOn
-              <ToolCategory category="opacities" placement="top"/>
+      </Show>
+      <Switch>
+        <Match when={history()}>
+          <div id="history" class="horizontal palette">
+            <tools.history.Slider/>
+          </div>
+        </Match>
+        <Match when={tool() == 'image'}>
+          <div id="imageUrl" class="horizontal palette">
+            <input id="urlInput" type="text" placeholder='(enter image URL here)'/>
+          </div>
+        </Match>
+        <Match when={true}>
+          <div id="attribs" class="horizontal palette" ref={attribsRef}>
+            {if tool == 'text'
+              <div id="fontSizes" class="subpalette">
+                <ToolCategory category="fontSize" placement="top"/>
+              </div>
+            else
+              <div id="widths" class="subpalette">
+                <ToolCategory category="width" placement="top"/>
+              </div>
             }
+            <div id="opacities" class="subpalette">
+              <ToolCategory category="opacity" placement="top"/>
+              {if opacityOn()
+                <ToolCategory category="opacities" placement="top"/>
+              }
+            </div>
+            <div id="colors" class="subpalette">
+              <ToolCategory category="color" placement="top"/>
+            </div>
           </div>
-          <div id="colors" className="subpalette">
-            <ToolCategory category="color" placement="top"/>
-          </div>
-        </div>
-      }
+        </Match>
+      </Switch>
     </div>
-    <div id="center" className={"nopage" unless pageId?}>
+    <div id="center" class={"nopage" unless pageId()?}>
       {###touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
-       ###}
-      <svg id="mainBoard" className="board" touch-action="none"
-       ref={mainBoardRef} style={display: 'none' if history}>
+      ###}
+      <svg id="mainBoard" class="board" touch-action="none" ref={mainBoardRef}>
         <filter id="selectFilter">
           <feGaussianBlur stdDeviation="5"/>
         </filter>
       </svg>
-      <svg id="historyBoard" className="board historyShow" touch-action="none"
-       ref={historyBoardRef} style={display: 'none' unless history}/>
-      <svg id="remotes" className="board overlay"
-       ref={remotesRef} style={display: 'none' if history}/>
-      <div id="dragzone" className="overlay"/>
+      <svg id="historyBoard" class="board" touch-action="none"
+       ref={historyBoardRef}/>
+      <svg id="remotes" class="board overlay" ref={remotesRef}/>
+      <div id="dragzone" class="overlay"/>
     </div>
-    {if loading
+    {if loading()
       <LoadingIcon/>
     }
   </div>
 
-DrawApp.displayName = 'DrawApp'
-
-export BadRoom = React.memo ->
-  <div className="modal error">
+export BadRoom = ->
+  <div class="modal error">
     <h1>Invalid Room ID</h1>
     <p>Perhaps there's a typo in the URL?  It should look like this:</p>
     <pre>{Meteor.absoluteUrl 'r/gLoBaLlYuNiQuEiD7'}</pre>
     <p>Please double-check your copy/paste.</p>
     <p>Or <a href={Meteor.absoluteUrl()}>create a new room</a>.</p>
   </div>
-BadRoom.displayName = 'BadRoom'

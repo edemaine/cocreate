@@ -1,4 +1,4 @@
-import React from 'react'
+import {onCleanup} from 'solid-js'
 import debounce from 'debounce'
 
 import {defineTool} from './defineTool'
@@ -468,7 +468,7 @@ defineTool
     @resetInput true
     @updateTextCursor()
     input = document.getElementById 'textInput'
-    dom.listen input,
+    onCleanup dom.listen input,
       keydown: (e) =>
         if e.key == 'Tab'  # insert tab symbol instead of going to next element
           e.preventDefault()
@@ -595,7 +595,7 @@ defineTool
   startEffect: ->
     @resetInput true
     input = document.getElementById 'urlInput'
-    dom.listen input,
+    onCleanup dom.listen input,
       keydown: (e) ->
         e.stopPropagation() # avoid hotkeys
         e.target.blur() if e.key == 'Escape'

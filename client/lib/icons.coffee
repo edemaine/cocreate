@@ -1,5 +1,3 @@
-import React from 'react'
-
 ###
 The `icons` content below is edited SVG from Font Awesome Free which is
 licensed under CC BY 4.0.  See https://fontawesome.com/ and
@@ -8,6 +6,8 @@ https://creativecommons.org/licenses/by/4.0/, respectively.
 When icons are modified significantly, their source SVG (before outlining,
 compounding strokes, and/or booleans) is in the subdirectory `iconsrc`.
 ###
+
+import {splitProps} from 'solid-js'
 
 export icons =
   'arrows-alt':
@@ -187,16 +187,17 @@ export setCursor = (dom, icon, xFrac, yFrac, options) ->
 export dataUrl = (icon) ->
   "data:image/svg+xml,#{encodeURIComponent icon}"
 
-export Icon = React.memo ({icon, fill, ...extra}) ->
-  if fill?
-    icon = modIcon icon, {fill}
-  <div {...extra} dangerouslySetInnerHTML={__html: svgIcon icon}/>
-Icon.displayName = 'Icon'
+export Icon = (props) ->
+  [local, rest] = splitProps props, ['icon', 'fill']
+  <div {...rest} innerHTML={svgIcon \
+    if local.fill?
+      modIcon local.icon, fill: local.fill
+    else
+      local.icon
+  }/>
 
-export CloseIcon = React.memo ->
-  <Icon icon="times-circle" fill="currentColor" className="close"/>
-CloseIcon.displayName = 'CloseIcon'
+export CloseIcon = ->
+  <Icon icon="times-circle" fill="currentColor" class="close"/>
 
-export LoadingIcon = React.memo ->
-  <Icon className="loading" icon="spinner" fill="currentColor"/>
-LoadingIcon.displayName = 'LoadingIcon'
+export LoadingIcon = ->
+  <Icon icon="spinner" fill="currentColor" class="loading"/>

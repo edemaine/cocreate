@@ -4,8 +4,8 @@
 import {ReactiveVar} from 'meteor/reactive-var'
 import {defaultGrid, defaultGridType} from '/lib/grid'
 
-routerHistory = null
-export setRouterHistory = (history) -> routerHistory = history
+routerNavigate = null
+export setRouterNavigate = (navigate) -> routerNavigate = navigate
 
 export currentRoom = new ReactiveVar  # Room object for current room
 export currentPage = new ReactiveVar  # Page object for current page
@@ -15,7 +15,7 @@ export currentPageId = new ReactiveVar
 
 export setPageId = (id) ->
   return if id == currentPageId.get()
-  routerHistory.push "#{routerHistory.location.pathname}##{id}"
+  routerNavigate "#{window.location.pathname}##{id}", replace: false
 
 export currentGrid = ->
   currentPage.get()?.data()?.grid ? defaultGrid

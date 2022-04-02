@@ -1,5 +1,4 @@
-import React from 'react'
-import {render} from 'react-dom'
+import {render} from 'solid-js/web'
 
 import '../lib/main'
 import './lib/polyfill'
@@ -10,7 +9,7 @@ import {name} from './Name'
 import {dark} from './tools/settings'
 
 Meteor.startup ->
-  render <App/>, document.getElementById 'react-root'
+  render (-> <App/>), document.getElementById 'root'
 
   ## Coop protocol
   dom.listen window,

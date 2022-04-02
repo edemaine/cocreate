@@ -7,7 +7,7 @@ extends:
   - plugin:coffee/import
   - plugin:import/recommended
   - plugin:meteor/recommended
-  - plugin:coffee/react-recommended
+  - plugin:solid/recommended
   - plugin:coffee/disable-incompatible
 globals:
   Meteor: readonly
@@ -35,7 +35,6 @@ plugins:
   - coffee
   - import
   - meteor
-  - react
 rules:
   linebreak-style:
     - error
@@ -48,10 +47,6 @@ rules:
   coffee/no-useless-escape: off
   import/default: off
   import/no-named-as-default-member: off
-  react/no-unescaped-entities:
-    - warn
-    - forbid: ['>', '"', '}']
-  react/prop-types: off
   meteor/no-session: off
   meteor/no-zero-timeout: off
   meteor/audit-argument-checks:
@@ -59,6 +54,8 @@ rules:
     - checkEquivalents:
       - checkId
       - checkMeeting
+  solid/no-innerhtml: off
+  solid/reactivity: off  # too much noise, especially with CoffeeScript
 settings:
   import/ignore:
     - node_modules
@@ -67,5 +64,3 @@ settings:
       extensions:
         - .coffee
         - .js
-  react:
-    version: detect

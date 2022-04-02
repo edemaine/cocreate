@@ -23,6 +23,7 @@ export class Room
   data: ->
     Rooms.findOne @id
   bad: ->
+    not @loading() and
     not @data()?.pages?.length
   numPages: ->
     @data()?.pages?.length

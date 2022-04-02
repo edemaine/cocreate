@@ -1,29 +1,23 @@
 ## OverlayTrigger wrapper to enforce at most one tooltip visible at once.
 ## Also provides a `closeTooltip` method to close all tooltips.
 
-import React, {useCallback} from 'react'
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
-import {ReactiveVar} from 'meteor/reactive-var'
-import {useTracker} from 'meteor/react-meteor-data'
+import {createSignal, splitProps} from 'solid-js'
+import OverlayTrigger from 'solid-bootstrap/esm/OverlayTrigger'
 
-shown = new ReactiveVar
+[shown, setShown] = createSignal()
 
 export closeTooltip = ->
-  shown.set null
+  setShown null
 
-export SoloTooltip = React.memo ({id, children, ...props}) ->
-  unless id?
+export SoloTooltip = (props) ->
+  [local, rest] = splitProps props, ['id', 'children']
+  unless local.id?
     throw new Error "SoloTooltip missing id prop"
-  show = useTracker ->
-    shown.get() == id
-  , []
-  onToggle = useCallback (newShow) ->
+  onToggle = (newShow) ->
     if newShow
-      shown.set id
-    else if shown.get() == id
-      shown.set null
-  , [id]
-  <OverlayTrigger {...props} show={show} onToggle={onToggle}>
-    {children}
+      setShown local.id
+    else if shown() == local.id
+      setShown null
+  <OverlayTrigger {...rest} show={shown() == local.id} onToggle={onToggle}>
+    {local.children}
   </OverlayTrigger>
-SoloTooltip.displayName = 'SoloTooltip'

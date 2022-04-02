@@ -1,24 +1,15 @@
-import React from 'react'
-import {BrowserRouter as Router, Switch, Route} from 'react-router-dom'
+import {Route, Router, Routes} from 'solid-app-router'
 
 import {FrontPage} from './FrontPage'
 import {DrawApp} from './DrawApp'
 
-export App = React.memo ->
-  <>
-    <AppRouter/>
-  </>
-App.displayName = 'App'
+export App = ->
+  <AppRouter/>
 
-export AppRouter = React.memo ->
+export AppRouter = ->
   <Router>
-    <Switch>
-      <Route path="/r/:roomId">
-        <DrawApp/>
-      </Route>
-      <Route path="/">
-        <FrontPage/>
-      </Route>
-    </Switch>
+    <Routes>
+      <Route path="/r/:roomId" element={<DrawApp/>}/>
+      <Route path="/" element={<FrontPage/>}/>
+    </Routes>
   </Router>
-AppRouter.displayName = 'AppRouter'

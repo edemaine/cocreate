@@ -73,7 +73,7 @@ input, textarea
     /.dark &
       background-color: hsl(134, 62%, 15%)
 
-html, body, #react-root, #container
+html, body, #root, #container
   width: 100%
   height: 100%
   margin: 0
@@ -343,6 +343,11 @@ body.history
   --palette-color: hsl(32,40%,73%)  // sepia-like
   &.dark
     --palette-color: hsl(32,40%,20%)
+  #mainBoard, #remotes
+    display: none
+body:not(.history)
+  #historyBoard
+    display: none
 
 .loading
   position: fixed

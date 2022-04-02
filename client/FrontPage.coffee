@@ -1,31 +1,28 @@
-import React, {useLayoutEffect, useState} from 'react'
-import {useHistory} from 'react-router-dom'
+import {createRenderEffect, createSignal, Show} from 'solid-js'
+import {useNavigate} from 'solid-app-router'
 
 import {defaultGrid, defaultGridType} from './Grid'
 
-export FrontPage = React.memo ->
-  [error, setError] = useState()
-  history = useHistory()
-  useLayoutEffect ->
+export FrontPage = ->
+  [error, setError] = createSignal()
+  navigate = useNavigate()
+  createRenderEffect ->
     Meteor.call 'roomNew',
       grid: defaultGrid
       gridType: defaultGridType
     , (err, data) ->
       if err?
         setError err
-        console.error "Failed to create new room on server: #{error}"
+        console.error "Failed to create new room on server: #{err}"
       else
-        history.replace "/r/#{data.room}"
-  , []
+        navigate "/r/#{data.room}", replace: true
 
-  if error?
-    <div className="modal error">
+  ### don't render anything while redirecting ###
+  <Show when={error()}>
+    <div class="modal error">
       <h1>Failed to Create Room</h1>
       <p>Perhaps you're disconnected from the network?</p>
-      <pre>{error.toString()}</pre>
+      <pre>{error().toString()}</pre>
       <p><a href={Meteor.absoluteUrl()}>Try again to create a new room</a></p>
     </div>
-  else
-    null  # don't render anything why redirecting
-
-FrontPage.displayName = 'FrontPage'
+  </Show>

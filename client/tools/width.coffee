@@ -1,4 +1,3 @@
-import React from 'react'
 import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
@@ -23,16 +22,16 @@ for width in widths
     defineTool
       name: "width:#{width}"
       category: 'width'
-      className: 'width attrib'
+      class: 'width attrib'
       hotkey: "#{width}"
       help: "Set line width to #{width}"
       active: -> currentWidth.get() == width
       click: -> selectWidth width
-      icon: -> # eslint-disable-line react/display-name
+      icon: ->
         <svg viewBox="0 #{-widthSize/3} #{widthSize} #{widthSize}"
          width={widthSize} height={widthSize}>
-          <line x2={widthSize} strokeWidth={width}/>
-          <text className="label" x={widthSize/2} y={widthSize*2/3}>
+          <line x2={widthSize} stroke-width={width}/>
+          <text class="label" x={widthSize/2} y={widthSize*2/3}>
             {width}
           </text>
         </svg>

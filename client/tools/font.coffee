@@ -1,5 +1,3 @@
-import React from 'react'
-
 import {defineTool} from './defineTool'
 import {currentBoard, currentFontSize} from '../AppState'
 
@@ -24,16 +22,16 @@ for fontSize in fontSizes
     defineTool
       name: "fontSize:#{fontSize}"
       category: 'fontSize'
-      className: 'fontSize attrib'
+      class: 'fontSize attrib'
       click: -> selectFontSize fontSize
       active: -> currentFontSize.get() == fontSize
-      icon: -> # eslint-disable-line react/display-name
+      icon: ->
         <svg viewBox="#{-fontSizeSize/2} 0 #{fontSizeSize} #{fontSizeSize}"
          width={fontSizeSize} height={fontSizeSize}>
-          <text y={fontSizeSize*0.5} style={fontSize: "#{fontSize}px"}>
+          <text y={fontSizeSize*0.5} style={'font-size': "#{fontSize}px"}>
             A
           </text>
-          <text className="label" y={fontSizeSize*0.875}>
+          <text class="label" y={fontSizeSize*0.875}>
             {fontSize}
           </text>
         </svg>

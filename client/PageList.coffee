@@ -1,33 +1,24 @@
-import React, {useRef, useState} from 'react'
-import Tooltip from 'react-bootstrap/Tooltip'
-import {useTracker} from 'meteor/react-meteor-data'
+import {batch, createMemo, For, Show} from 'solid-js'
+import {createStore, reconcile} from 'solid-js/store'
+import Tooltip from 'solid-bootstrap/esm/Tooltip'
+import {createTracker} from 'solid-meteor-data'
 
 import {currentRoom, currentPage} from './AppState'
 import {SoloTooltip} from './SoloTooltip'
 import {Icon} from './lib/icons'
 #import remotes from './lib/remotes'
 
-### eslint no-unused-vars: ['error', {varsIgnorePattern: 'counter'}] ###
-
-export PageList = React.memo ->
-  room = useTracker ->
-    currentRoom.get()
-  , []
-  pages = useTracker ->
-    room?.data()?.pages
-  , [room]
-  page = useTracker ->
-    currentPage.get()
-  , []
+export PageList = ->
+  room = createTracker -> currentRoom.get()
+  pages = createTracker -> room()?.data()?.pages
+  page = createTracker -> currentPage.get()
 
   ## Monitor state of remotes
-  remotesByPage = useRef {}
-  [, setCounter] = useState 0
-  useTracker ->
-    return unless room?
-    increment = (c) -> if c >= Number.MAX_SAFE_INTEGER then 0 else c+1
+  [remotesByPage, setRemotesByPage] = createStore {}
+  createTracker ->
+    return unless room()?
     Remotes.find
-      room: room.id
+      room: room().id
     ,
       fields:
         page: true
@@ -35,66 +26,61 @@ export PageList = React.memo ->
     .observe
       added: add = (remote) ->
         #return if remote._id == remotes.id  # ignore self
-        remotesByPage.current[remote.page] ?= {}
-        remotesByPage.current[remote.page][remote._id] = remote
-        setCounter increment
+        batch ->
+          setRemotesByPage remote.page, {}  # make empty object if not already
+          setRemotesByPage remote.page, remote._id, reconcile remote
       removed: remove = (remote) ->
         #return if remote.id == remotes.id  # ignore self
-        delete remotesByPage.current[remote.page]?[remote._id]
-        setCounter increment
+        batch ->
+          setRemotesByPage remote.page, remote._id, undefined
+          setRemotesByPage remote.page, (pageRemotes) ->
+            pageRemotes if Object.keys(pageRemotes).length
       changed: (remote, oldRemote) ->
-        remove oldRemote
-        add remote
-  , [room?.id]
+        batch ->
+          remove oldRemote
+          add remote
 
-  return null unless pages?
-  <div className="pageList">
-    {for pageId, index in pages
-      active = (pageId == page?.id)
-      pageRemotes = remotesByPage.current[pageId]
-      pageRemotesCount =
-        if pageRemotes?
-          (key for key of pageRemotes).length
-        else
-          0
-      do (pageId, index, active, pageRemotes, pageRemotesCount) ->
-        <SoloTooltip key={pageId} id="page:#{pageId}" placement="bottom"
-         overlay={(props) ->
-          <Tooltip {...props}>
-            <div className="pageHeader">
-              Page {index+1} {if active then '(this page)'}
+  <Show when={pages()}>
+    <div class="pageList">
+      <For each={pages()}>{(pageId, index) ->
+        active = -> (pageId == page()?.id)
+        pageRemotes = -> Object.keys remotesByPage[pageId] ? {}
+        pageRemotesCount = createMemo -> pageRemotes().length
+        <SoloTooltip id="page:#{pageId}" placement="bottom" overlay={
+          <Tooltip>
+            <div class="pageHeader">
+              Page {index()+1} {if active() then '(this page)'}
             </div>
-            {if pageRemotesCount
+            {if pageRemotesCount()
               <>
                 <hr/>
-                {for remoteId, remote of pageRemotes
-                  <span className="user" key={remoteId}>
-                    <Icon className="icon" icon="user" fill="currentColor"/>
+                <For each={pageRemotes()}>{(remoteId) ->
+                  <span class="user">
+                    <Icon class="icon" icon="user" fill="currentColor"/>
                     &nbsp;
-                    <span>{remote.name}</span>
+                    <span>{remotesByPage[pageId][remoteId].name}</span>
                   </span>
-                }
+                }</For>
               </>
             }
           </Tooltip>
         }>
-          <a className="page #{if active then 'active' else ''}"
-           href="##{pageId}">
-            {switch pageRemotesCount
+          <a class="page #{if active() then 'active' else ''}"
+          href="##{pageId}">
+            {switch pageRemotesCount()
               when 0
                 null
               when 1
-                <Icon className="icon" icon="user" fill="currentColor"/>
+                <Icon class="icon" icon="user" fill="currentColor"/>
               when 2
-                <Icon className="icon" icon="user-friends" fill="currentColor"/>
+                <Icon class="icon" icon="user-friends" fill="currentColor"/>
               else
-                <Icon className="icon" icon="users" fill="currentColor"/>
+                <Icon class="icon" icon="users" fill="currentColor"/>
             }
             &nbsp;
-            {index+1}
+            {index()+1}
           </a>
         </SoloTooltip>
-    }
-  </div>
-
-PageList.displayName = 'PageList'
+      }</For>
+    </div>
+  </Show>
