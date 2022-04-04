@@ -67,6 +67,6 @@
     }
   },
   "solid": {
-    "verbose": true
+    "verbose": false
   }
 }
