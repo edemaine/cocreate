@@ -186,7 +186,8 @@ defineTool
       query = BBox.fromPoints [h.start, board.eventToPoint(e)]
       selection = board.selection
       render = board.render
-      for id of render.dom
+      # render is undefined when history mode starts but hasn't been advanced
+      for id of render?.dom ? {}
       #for id from render.dbvt.query query
         bbox = render.bbox[id]
         continue unless query.intersects bbox  # quick filter without DBVT
