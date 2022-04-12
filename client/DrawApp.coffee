@@ -404,7 +404,7 @@ export DrawAppRoom = ->
         </Match>
         <Match when={true}>
           <div id="attribs" class="horizontal palette" ref={attribsRef}>
-            {if tool == 'text'
+            {if tool() == 'text'
               <div id="fontSizes" class="subpalette">
                 <ToolCategory category="fontSize" placement="top"/>
               </div>
