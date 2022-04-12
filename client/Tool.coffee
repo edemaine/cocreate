@@ -14,7 +14,7 @@ export ToolCategory = (props) ->
 
 export Tool = (props) ->
   toolSpec = -> tools[props.tool]
-  selected = createTracker -> currentTool.get() == props.tool
+  selected = -> currentTool() == props.tool
   active = createTracker -> toolSpec().active?()
 
   icon = createTracker ->

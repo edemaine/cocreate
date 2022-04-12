@@ -60,7 +60,7 @@ defineTool
   active: ->
     currentGrid() and currentGridType() == 'square'
   click: ->
-    Meteor.call 'gridToggle', currentPage.get().id, 'square'
+    Meteor.call 'gridToggle', currentPage().id, 'square'
 
 defineTool
   name: 'gridTriangle'
@@ -70,7 +70,7 @@ defineTool
   active: ->
     currentGrid() and currentGridType() == 'triangle'
   click: ->
-    Meteor.call 'gridToggle', currentPage.get().id, 'triangle'
+    Meteor.call 'gridToggle', currentPage().id, 'triangle'
 
 defineTool
   name: 'gridSnap'
@@ -78,9 +78,9 @@ defineTool
   icon: 'grid-snap'
   help: 'Toggle snapping to grid (except pen tool)'
   hotkey: '#'
-  active: -> currentRoom.get()?.gridSnap.get()
+  active: -> currentRoom()?.gridSnap.get()
   click: ->
-    return unless (room = currentRoom.get())?
+    return unless (room = currentRoom())?
     room.gridSnap.set not room.gridSnap.get()
 
 defineTool
@@ -89,7 +89,7 @@ defineTool
   icon: 'grid-half-snap'
   help: 'Toggle snapping to half-grid positions in addition to grid positions (when grid snapping is turned on)'
   hotkey: '%'
-  active: -> currentRoom.get()?.gridHalfSnap.get()
+  active: -> currentRoom()?.gridHalfSnap.get()
   click: ->
-    return unless (room = currentRoom.get())?
+    return unless (room = currentRoom())?
     room.gridHalfSnap.set not room.gridHalfSnap.get()

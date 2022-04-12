@@ -1,8 +1,8 @@
-import {createEffect, createRenderEffect, on as on_, onCleanup, onMount, Match, Show, Switch} from 'solid-js'
+import {createEffect, createRenderEffect, on as on_, onCleanup, onMount, untrack, Match, Show, Switch} from 'solid-js'
 import {useLocation, useParams, useNavigate} from 'solid-app-router'
 import {createTracker} from 'solid-meteor-data'
 
-import {setRouterNavigate, mainBoard, historyBoard, historyMode, setMainBoard, setHistoryBoard, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from './AppState'
+import {setRouterNavigate, historyBoard, historyMode, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, mainBoard, setCurrentPage, setCurrentPageId, setCurrentRoom, setHistoryBoard, setMainBoard, setHistoryMode} from './AppState'
 import {Board} from './Board'
 import {maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
@@ -23,20 +23,20 @@ import storage from './lib/storage'
 onResize = ->
   mainBoard.resize()
   historyBoard.resize()
-  currentPage.get()?.resize()
+  currentPage()?.resize()
 
 export DrawApp = ->
   ## Room data structure
   params = useParams()
   createRenderEffect ->
-    currentRoom.set new Room params.roomId
-    currentPageId.set null  # reset currentPage
+    setCurrentRoom new Room params.roomId
+    setCurrentPageId null  # reset currentPage
     onCleanup ->
-      currentRoom.get().stop()
-      currentRoom.set null
+      currentRoom().stop()
+      setCurrentRoom null
 
   ## Test whether room is bad (and not still loading)
-  bad = createTracker -> currentRoom.get()?.bad()
+  bad = createTracker -> currentRoom()?.bad()
 
   <Show when={not bad()} fallback={<BadRoom/>}>
     <DrawAppRoom/>
@@ -61,8 +61,7 @@ export DrawAppRoom = ->
       mainBoard.destroy()
 
   ## Test whether room is loading
-  room = createTracker -> currentRoom.get()
-  loading = createTracker -> room()?.loading()
+  loading = createTracker -> currentRoom()?.loading()
 
   ## Page data structure, and stop/resume current tool
   params = useParams()
@@ -70,35 +69,35 @@ export DrawAppRoom = ->
   navigate = useNavigate()
   setRouterNavigate navigate
   pageId = createTracker ->
-    id = currentPageId.get()
+    id = currentPageId()
     hashId = location.hash
-    pages = room()?.data()?.pages
+    pages = currentRoom()?.data()?.pages
     pageStorage = new storage.StringVariable "#{params.roomId}.page", undefined, false
     ## Check for initial or changed hash indicating page ID
     if hashId
       if id != hashId and pages?
         if hashId in pages
-          currentPageId.set hashId
+          setCurrentPageId hashId
           pageStorage.set hashId
         else if not loading() ## Invalid page hash: redirect to remove from URL
           Meteor.defer -> navigate location.pathname, replace: true
     else if not id and pages?.length
       ## Use last page recorded in localStorage if there is one.
       if (storageId = pageStorage.get()) and storageId in pages
-        currentPageId.set storageId
+        setCurrentPageId storageId
       else
         ## Auto load first page by default
-        currentPageId.set pages[0]
+        setCurrentPageId pages[0]
     id
   remotesRef = null
   createEffect -> # wait for mainBoard to be set
     return unless pageId()?
-    currentPage.set new Page pageId(), room(), mainBoard, remotesRef
-    resumeTool()
+    setCurrentPage new Page pageId(), currentRoom(), mainBoard, remotesRef
+    untrack -> resumeTool()
     onCleanup ->
       stopTool()  # stop current tool
-      currentPage.get()?.stop()
-      currentPage.set null
+      currentPage()?.stop()
+      setCurrentPage null
 
   ## Horizontal scroll wheel behavior
   topRef = attribsRef = null
@@ -122,26 +121,30 @@ export DrawAppRoom = ->
     onToolsResize()
 
   ## Update our remote cursor
+  lastCursor = null
   updateRemote = (e) ->
     remote =
       name: name.get().trim()
-      room: currentRoom.get().id
-      page: currentPage.get().id
-      tool: currentTool.get()
-      color: currentColor.get()
-    remote.cursor = currentBoard().eventToPointW e if e?
-    remote.fill = currentFill.get() if currentFillOn.get()
-    remote.opacity = currentOpacity.get() if currentOpacityOn.get()
+      room: currentRoom().id
+      page: currentPage().id
+      tool: currentTool()
+      color: currentColor()
+    lastCursor = currentBoard().eventToPointW e if e?
+    remote.cursor = lastCursor if lastCursor?
+    remote.fill = currentFill() if currentFillOn()
+    remote.opacity = currentOpacity() if currentOpacityOn()
     remotes.update remote
   onMount ->
     onCleanup dom.listen mainBoardRef, pointermove: (e) ->
-      return unless currentRoom.get()? and currentPage.get()?
+      return unless currentRoom()? and currentPage()?
       return unless currentBoard() == mainBoard
       return if restrictTouchDraw e
       updateRemote e
-  ## Cursorless update when page changes
+  ## Update cursor when page or parameters (e.g. color) change.
+  ## When page changes, reset last cursor location
+  createEffect on_ currentPage, -> lastCursor = null
   createEffect ->
-    return unless room()? and pageId()?
+    return unless currentRoom()? and currentPage()?
     updateRemote()
 
   onMount ->
@@ -155,28 +158,28 @@ export DrawAppRoom = ->
         text.blur() for text in document.querySelectorAll 'input'
         window.focus()  # for getting keyboard focus when <iframe>d
         ## Pan via middle-button drag
-        if e.button == 1 and currentTool.get() != 'pan' and
+        if e.button == 1 and currentTool() != 'pan' and
            not middleDown and not spaceDown
           middleDown = pushTool 'pan'
-        tools[currentTool.get()].down? e
+        tools[currentTool()].down? e
       pointerenter: (e) ->
         e.preventDefault()
         return tools.multitouch.enter? e if restrictTouchDraw e
         ## Stop middle-button pan if we re-enter board with button released
         if middleDown and (e.buttons & 4) == 0
           middleDown = popTool middleDown
-        tools[currentTool.get()].down? e if e.buttons
+        tools[currentTool()].down? e if e.buttons
       pointerup: stop = (e) ->
         e.preventDefault()
         return tools.multitouch.up? e if restrictTouchDraw e
-        tools[currentTool.get()].up? e
+        tools[currentTool()].up? e
         if e.button == 1 and middleDown  ## end middle-button pan
           middleDown = popTool middleDown
       pointerleave: stop
       pointermove: (e) ->
         e.preventDefault()
         return tools.multitouch.move? e if restrictTouchDraw e
-        tools[currentTool.get()].move? e
+        tools[currentTool()].move? e
       touchmove: (e) ->
         ## This workaround fixes pointer events on iOS with Scribble enabled.
         ## See https://mikepk.com/2020/10/iOS-safari-scribble-bug/
@@ -232,15 +235,15 @@ export DrawAppRoom = ->
           when 'Delete', 'Backspace'
             currentBoard()?.selection?.delete()
           when ' '  ## pan via space-drag
-            if currentTool.get() != 'pan' and not middleDown and not spaceDown 
+            if currentTool() != 'pan' and not middleDown and not spaceDown 
               spaceDown = pushTool 'pan'
           when 'd', 'D'  ## duplicate
-            if (e.ctrlKey or e.metaKey) and currentTool.get() == 'select'
+            if (e.ctrlKey or e.metaKey) and currentTool() == 'select'
               e.preventDefault()  # ctrl-D bookmarks on Chrome
               currentBoard().selection.duplicate()
           when 'Escape'
-            if historyMode.get()
-              historyMode.set false  # escape history view by toggling
+            if historyMode()
+              setHistoryMode false  # escape history view by toggling
           else
             ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
             ## triggering width 1 hotkey.
@@ -279,8 +282,8 @@ export DrawAppRoom = ->
               delete obj.id  # object ID when pasting from history
               delete obj.created
               delete obj.updated
-              obj.room = currentRoom.get().id
-              obj.page = currentPage.get().id
+              obj.room = currentRoom().id
+              obj.page = currentPage().id
               obj._id = Meteor.apply 'objectNew', [obj], returnStubValue: true
               obj
           undoStack.push
@@ -306,13 +309,13 @@ export DrawAppRoom = ->
             undoStack.pushAndDo
               type: 'new'
               obj: obj =
-                room: currentRoom.get().id
-                page: currentPage.get().id
+                room: currentRoom().id
+                page: currentPage().id
                 type: 'text'
                 text: text
                 pts: obj.pts
-                color: currentColor.get()
-                fontSize: currentFontSize.get()
+                color: currentColor()
+                fontSize: currentFontSize()
             setSelection [obj._id]
 
   ## Drag and drop
@@ -348,20 +351,16 @@ export DrawAppRoom = ->
     toolSpec.init?() for toolName, toolSpec of tools
 
   ## Tool-specific effect hook
-  tool = createTracker -> currentTool.get()
-  createEffect ->
-    tools[tool()].startEffect?()
-  createEffect on_ tool, onResize  # text and image tools affect layout
+  createEffect on_ currentTool, ->
+    tools[currentTool()].startEffect?()
+  createEffect on_ currentTool, onResize  # text and image tools affect layout
 
-  opacityOn = createTracker -> currentOpacityOn.get()
-
-  history = createTracker -> historyMode.get()
   createEffect ->
     ## Maintain history class on <body>, which adds sepia tone
-    dom.classSet document.body, 'history', history()
+    dom.classSet document.body, 'history', historyMode()
     ## Preserve transform between two boards when switching history mode
     onCleanup ->
-      if history()
+      if historyMode()
         historyBoard.setTransform mainBoard.transform
       else
         mainBoard.setTransform historyBoard.transform
@@ -386,25 +385,25 @@ export DrawAppRoom = ->
       <Name/>
     </div>
     <div id="bottom" class="horizontal super palette">
-      <Show when={tool() == 'text'}>
+      <Show when={currentTool() == 'text'}>
         <div id="text" class="horizontal palette">
           <textarea id="textInput" type="text" placeholder='(type text here)'/>
         </div>
       </Show>
       <Switch>
-        <Match when={history()}>
+        <Match when={historyMode()}>
           <div id="history" class="horizontal palette">
             <tools.history.Slider/>
           </div>
         </Match>
-        <Match when={tool() == 'image'}>
+        <Match when={currentTool() == 'image'}>
           <div id="imageUrl" class="horizontal palette">
             <input id="urlInput" type="text" placeholder='(enter image URL here)'/>
           </div>
         </Match>
         <Match when={true}>
           <div id="attribs" class="horizontal palette" ref={attribsRef}>
-            {if tool() == 'text'
+            {if currentTool() == 'text'
               <div id="fontSizes" class="subpalette">
                 <ToolCategory category="fontSize" placement="top"/>
               </div>
@@ -415,7 +414,7 @@ export DrawAppRoom = ->
             }
             <div id="opacities" class="subpalette">
               <ToolCategory category="opacity" placement="top"/>
-              {if opacityOn()
+              {if currentOpacityOn()
                 <ToolCategory category="opacities" placement="top"/>
               }
             </div>

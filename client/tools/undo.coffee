@@ -9,13 +9,13 @@ defineTool
   category: 'undo'
   icon: 'undo'
   help: ->
-    if historyMode.get()
+    if historyMode()
       'Time travel back one step into the past'
     else
       'Undo the last operation you did'
   hotkey: "#{Ctrl}-Z"
   click: ->
-    if historyMode.get()
+    if historyMode()
       historyAdvance -1
     else
       setSelection undoStack.undo()
@@ -25,13 +25,13 @@ defineTool
   category: 'undo'
   icon: 'redo'
   help: ->
-    if historyMode.get()
+    if historyMode()
       'Time travel forward one step into the future'
     else
       'Redo: Undo the last undo you did (if you did no operations since)'
   hotkey: ["#{Ctrl}-Y", "#{Ctrl}-Shift-Z"]
   click: ->
-    if historyMode.get()
+    if historyMode()
       historyAdvance +1
     else
       setSelection undoStack.redo()

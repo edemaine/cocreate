@@ -51,7 +51,7 @@ export class RenderRemotes
     text = elt.childNodes[1]
     unless remote.name == oldRemote.name
       text.innerHTML = dom.escape remote.name ? ''
-    visible = remote.cursor? # and remote.page == currentPage.get().id
+    visible = remote.cursor? # and remote.page == currentPage().id
     if visible
       elt.style.visibility = null
     else

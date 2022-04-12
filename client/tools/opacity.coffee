@@ -1,6 +1,6 @@
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
-import {currentBoard, currentColor, currentOpacity, currentOpacityOn} from '../AppState'
+import {currentBoard, currentColor, currentOpacity, currentOpacityOn, setCurrentOpacity, setCurrentOpacityOn} from '../AppState'
 
 export opacities = [
   0.25
@@ -17,14 +17,14 @@ defineTool
   icon: 'highlighter'
   help: 'Toggle partial opacity / transparency in objects'
   active: ->
-    currentOpacityOn.get()
+    currentOpacityOn()
   click: ->
-    currentOpacityOn.set not currentOpacityOn.get()
+    setCurrentOpacityOn not currentOpacityOn()
     selection = currentBoard()?.selection
     if selection?.nonempty()
       selection.edit 'opacity',
-        if currentOpacityOn.get()
-          currentOpacity.get()
+        if currentOpacityOn()
+          currentOpacity()
         else
           null
     else
@@ -39,24 +39,24 @@ for opacity in opacities
         <svg viewBox="-#{opacitySize/2} -#{opacitySize/2} #{opacitySize} #{opacitySize}"
          class="opacity" width={opacitySize} height={opacitySize}>
           <circle r={opacityRadius}
-           fill={currentColor.get()} fill-opacity="#{opacity}"/>
+           fill={currentColor()} fill-opacity="#{opacity}"/>
         </svg>
       help: "Set opacity to #{opacity*100}% (transparency #{(1-opacity)*100}%)"
       click: -> selectOpacity opacity
-      active: -> currentOpacity.get() == opacity
+      active: -> currentOpacity() == opacity
 
 export selectOpacity = (opacity, fromSelection) ->
-  currentOpacity.set opacity
-  currentOpacityOn.set true
+  setCurrentOpacity opacity
+  setCurrentOpacityOn true
   return if fromSelection
   selection = currentBoard().selection
   if selection?.nonempty()
-    selection.edit 'opacity', currentOpacity.get()
+    selection.edit 'opacity', currentOpacity()
   else
     selectDrawingTool()
 
 export selectOpacityOff = (fromSelection) ->
-  currentOpacityOn.set false
+  setCurrentOpacityOn false
   return if fromSelection
   selection = currentBoard().selection
   if selection?.nonempty()

@@ -66,8 +66,8 @@ export tryAddImageUrl = (url, options = {}) ->
     console.log "URL #{fetchUrl} has content-type #{contentType} which is not a supported image type"
     return
   obj =
-    room: currentRoom.get().id
-    page: currentPage.get().id
+    room: currentRoom().id
+    page: currentPage().id
     type: 'image'
     url: url
     credentials: Boolean options.credentials

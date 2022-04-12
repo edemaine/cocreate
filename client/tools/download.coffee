@@ -9,7 +9,7 @@ defineTool
   help: 'Download/export selection or entire drawing as an SVG file'
   click: (e, download = true) ->
     board = currentBoard()
-    grid = currentPage.get()?.grid
+    grid = currentPage()?.grid
     ## Temporarily remove transform for export
     root = board.root # <g>
     oldTransform = root.getAttribute 'transform'
@@ -111,6 +111,6 @@ defineTool
     if download
       download = document.getElementById 'download'
       download.href = URL.createObjectURL new Blob [svg], type: 'image/svg+xml'
-      download.download = "cocreate-#{currentRoom.get().id}.svg"
+      download.download = "cocreate-#{currentRoom().id}.svg"
       download.click()
     svg

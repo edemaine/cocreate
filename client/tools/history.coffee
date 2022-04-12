@@ -1,11 +1,10 @@
 import {createEffect, createRenderEffect, createResource, on as on_, onCleanup, onMount} from 'solid-js'
-import {createTracker} from 'solid-meteor-data'
 
 import {defineTool, tools} from './defineTool'
 import {selectTool, historyTools} from './tools'
-import {currentTool, historyBoard, historyMode, currentRoom, currentPage} from '../AppState'
+import {currentPage, currentRoom, currentTool, historyBoard, historyMode, setHistoryMode} from '../AppState'
 import {RenderObjects} from '../RenderObjects'
-import {setCursor} from '../cursor'
+import {setCursor, updateCursor} from '../cursor'
 import {meteorCallPromise} from '/lib/meteorPromise'
 
 defineTool
@@ -14,28 +13,29 @@ defineTool
   icon: 'history'
   hotspot: [0.5, 0.5]
   help: 'Time travel to the past (by dragging the bottom slider)'
+  init: ->
+    createEffect on_ historyMode, updateCursor
   active: ->
-    historyMode.get()
+    historyMode()
   click: ->
-    historyMode.set not historyMode.get()
-    selectTool 'pan' unless historyTools[currentTool.get()]
+    setHistoryMode not historyMode()
+    selectTool 'pan' unless historyTools[currentTool()]
   Slider: ->
-    room = createTracker -> currentRoom.get()
-    page = createTracker -> currentPage.get()
-    [diffs] = createResource (-> [room(), page()]), ([roomVal, pageVal]) ->
-      roomVal.changeWaiting +1
-      try
-        await meteorCallPromise 'history', roomVal.id, pageVal.id
-      finally
-        roomVal.changeWaiting -1
+    [diffs] = createResource (-> [currentRoom(), currentPage()]),
+      ([roomVal, pageVal]) ->
+        roomVal.changeWaiting +1
+        try
+          await meteorCallPromise 'history', roomVal.id, pageVal.id
+        finally
+          roomVal.changeWaiting -1
     ref = null  # range slider element
 
     ## Initialize range to left
-    createEffect on_ [room, page], ->
+    createEffect on_ [currentRoom, currentPage], ->
       ref.value = 0
     ## Clear board when entering or exiting mode and when switching pages
     lastTarget = null
-    createRenderEffect on_ [room, page], ->
+    createRenderEffect on_ [currentRoom, currentPage], ->
       historyBoard.clear()
       historyBoard.objects = {}
       lastTarget = null

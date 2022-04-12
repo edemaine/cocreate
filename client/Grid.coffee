@@ -22,8 +22,8 @@ roundRange = (min, max, gap) ->
     i * gap
 
 export maybeSnapPointToGrid = (pt) ->
-  if currentRoom.get()?.gridSnap.get()
-    snapPointToGrid pt, currentRoom.get().gridHalfSnap.get()
+  if currentRoom()?.gridSnap.get()
+    snapPointToGrid pt, currentRoom().gridHalfSnap.get()
   else
     pt
 

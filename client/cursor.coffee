@@ -13,12 +13,12 @@ export setCursor = (target, icon, xFrac, yFrac) ->
     target.style.cursor = null
 
 export updateCursor = ->
-  tool = currentTool.get()
+  tool = currentTool()
   if tool of drawingTools
     ## Drawing tools' cursors depend on the current color
     setCursor currentBoard().svg,
-      drawingToolIcon(tool, currentColor.get(),
-        if currentFillOn.get() then currentFill.get()),
+      drawingToolIcon(tool, currentColor(),
+        if currentFillOn() then currentFill()),
       ...tools[tool].hotspot
   else
     setCursor currentBoard().svg, tools[tool].icon, ...tools[tool].hotspot

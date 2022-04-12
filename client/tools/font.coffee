@@ -1,5 +1,5 @@
 import {defineTool} from './defineTool'
-import {currentBoard, currentFontSize} from '../AppState'
+import {currentBoard, currentFontSize, setCurrentFontSize} from '../AppState'
 
 ## These numbers are based on powers of 1.2 starting from 16
 ## (the site's default font size)
@@ -13,7 +13,7 @@ export fontSizes = [
   40
 ]
 
-currentFontSize.set 19
+setCurrentFontSize 19
 
 fontSizeSize = 28
 
@@ -24,7 +24,7 @@ for fontSize in fontSizes
       category: 'fontSize'
       class: 'fontSize attrib'
       click: -> selectFontSize fontSize
-      active: -> currentFontSize.get() == fontSize
+      active: -> currentFontSize() == fontSize
       icon: ->
         <svg viewBox="#{-fontSizeSize/2} 0 #{fontSizeSize} #{fontSizeSize}"
          width={fontSizeSize} height={fontSizeSize}>
@@ -37,6 +37,6 @@ for fontSize in fontSizes
         </svg>
 
 export selectFontSize = (fontSize, skipSelection) ->
-  currentFontSize.set parseFloat fontSize
+  setCurrentFontSize parseFloat fontSize
   if not skipSelection and (selection = currentBoard().selection)?.nonempty()
-    selection.edit 'fontSize', currentFontSize.get()
+    selection.edit 'fontSize', currentFontSize()

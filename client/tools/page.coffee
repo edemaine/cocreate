@@ -1,5 +1,5 @@
 import {defineTool} from './defineTool'
-import {currentRoom, currentPage, setPageId} from '../AppState'
+import {currentRoom, currentPage, gotoPageId} from '../AppState'
 import {defaultGrid, defaultGridType} from '../Grid'
 
 defineTool
@@ -9,8 +9,8 @@ defineTool
   help: 'Go to previous page'
   hotkey: 'Page Up'
   click: ->
-    pageId = currentRoom.get()?.pageDelta currentPage.get(), -1
-    setPageId pageId if pageId?
+    pageId = currentRoom()?.pageDelta currentPage(), -1
+    gotoPageId pageId if pageId?
 
 defineTool
   name: 'pageNext'
@@ -19,8 +19,8 @@ defineTool
   help: 'Go to next page'
   hotkey: 'Page Down'
   click: ->
-    pageId = currentRoom.get()?.pageDelta currentPage.get(), +1
-    setPageId pageId if pageId?
+    pageId = currentRoom()?.pageDelta currentPage(), +1
+    gotoPageId pageId if pageId?
 
 defineTool
   name: 'pageNew'
@@ -28,20 +28,20 @@ defineTool
   icon: 'plus-square'
   help: 'Add new blank page after the current page'
   click: ->
-    page = currentPage.get()
+    page = currentPage()
     return unless page?
-    index = currentRoom.get()?.pageIndex page
+    index = currentRoom()?.pageIndex page
     return unless index?
     data = page.data()
     Meteor.call 'pageNew',
-      room: currentRoom.get().id
+      room: currentRoom().id
       grid: data?.grid ? defaultGrid
       gridType: data?.gridType ? defaultGridType
     , index+1
     , (error, pageId) ->
       if error?
         return console.error "Failed to create new page on server: #{error}"
-      setPageId pageId
+      gotoPageId pageId
 
 defineTool
   name: 'pageDup'
@@ -49,7 +49,7 @@ defineTool
   icon: 'clone'
   help: 'Duplicate current page'
   click: ->
-    Meteor.call 'pageDup', currentPage.get().id, (error, pageId) ->
+    Meteor.call 'pageDup', currentPage().id, (error, pageId) ->
       if error?
         return console.error "Failed to duplicate page on server: #{error}"
-      setPageId pageId
+      gotoPageId pageId

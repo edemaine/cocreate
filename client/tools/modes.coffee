@@ -255,13 +255,13 @@ defineTool
   down: (e) ->
     return if pointers[e.pointerId]
     object =
-      room: currentRoom.get().id
-      page: currentPage.get().id
+      room: currentRoom().id
+      page: currentPage().id
       type: 'pen'
       pts: [currentBoard().eventToPointW e]
-      color: currentColor.get()
+      color: currentColor()
       width: currentWidth.get()
-    object.opacity = currentOpacity.get() if currentOpacityOn.get()
+    object.opacity = currentOpacity() if currentOpacityOn()
     pointers[e.pointerId] =
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
       push: throttle.method 'objectPush', ([older], [newer]) ->
@@ -329,14 +329,14 @@ rectLikeTool = (type, fillable, constrain) ->
         {x: origin.x + 2*width, y: origin.y + 2*width}
       ]
     object =
-      room: currentRoom.get().id
-      page: currentPage.get().id
+      room: currentRoom().id
+      page: currentPage().id
       type: type
       pts: pts
-      color: currentColor.get()
+      color: currentColor()
       width: width
-    object.fill = currentFill.get() if fillable and currentFillOn.get()
-    object.opacity = currentOpacity.get() if currentOpacityOn.get()
+    object.fill = currentFill() if fillable and currentFillOn()
+    object.opacity = currentOpacity() if currentOpacityOn()
     pointers[e.pointerId] =
       origin: origin
       start: e
@@ -463,7 +463,7 @@ defineTool
   updateTextCursor: ->
     setTimeout ->
       return unless pointers.text?
-      currentPage.get().render.render Objects.findOne(pointers.text), text: true
+      currentPage().render.render Objects.findOne(pointers.text), text: true
     , 0
   startEffect: ->
     @resetInput true
@@ -542,14 +542,14 @@ defineTool
       text = Objects.findOne(pointers.text)?.text ? ''
     else
       object =
-        room: currentRoom.get().id
-        page: currentPage.get().id
+        room: currentRoom().id
+        page: currentPage().id
         type: 'text'
         pts: [maybeSnapPointToGrid currentBoard().eventToPoint e]
         text: text = ''
-        color: currentColor.get()
-        fontSize: currentFontSize.get()
-      object.opacity = currentOpacity.get() if currentOpacityOn.get()
+        color: currentColor()
+        fontSize: currentFontSize()
+      object.opacity = currentOpacity() if currentOpacityOn()
       pointers.text = Meteor.apply 'objectNew', [object], returnStubValue: true
       mainBoard.selection.addId pointers.text
       undoStack.push pointers.undoable =
@@ -613,7 +613,7 @@ defineTool
         unless old?
           obj.pts = [pointers.point ?
                       maybeSnapPointToGrid currentBoard().relativePoint 0.25, 0.25]
-          obj.opacity = currentOpacity.get() if currentOpacityOn.get()
+          obj.opacity = currentOpacity() if currentOpacityOn()
           undoStack.pushAndDo pointers.undoable =
             type: 'new'
             obj: obj
@@ -711,4 +711,4 @@ export setSelection = (objIds) ->
   return unless objIds?
   mainBoard.selection.clear()
   highlighterClear()
-  tools[currentTool.get()]?.select? objIds
+  tools[currentTool()]?.select? objIds

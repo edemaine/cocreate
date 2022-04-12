@@ -1,9 +1,8 @@
-import {Tracker} from 'meteor/tracker'
-import {ReactiveVar} from 'meteor/reactive-var'
+import {createEffect, createSignal} from 'solid-js'
 
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
-import {currentBoard, currentColor, currentFill, currentFillOn} from '../AppState'
+import {currentBoard, currentColor, currentFill, currentFillOn, setCurrentColor, setCurrentFill, setCurrentFillOn} from '../AppState'
 import {updateCursor} from '../cursor'
 import icons from '../lib/icons'
 
@@ -29,34 +28,33 @@ export colors = [
 ]
 
 export defaultColor = 'black'
-currentColor.set defaultColor
-currentFill.set 'white'
-currentFillOn.set false
+setCurrentColor defaultColor
+setCurrentFill 'white'
+setCurrentFillOn false
 
 export colorMap = {}
 colorMap[color] = true for color in colors
 
-Tracker.autorun ->
-  document.documentElement.style.setProperty '--currentColor',
-    currentColor.get()
+createEffect ->
+  document.documentElement.style.setProperty '--currentColor', currentColor()
 
 defineTool
   name: 'fill'
   category: 'color'
   help: <>Toggle filling of rectangles and ellipses. <kbd>Shift</kbd>-click a color to set fill color.</>
-  active: -> currentFillOn.get()
+  active: -> currentFillOn()
   icon: ->
-    if currentFillOn.get()
-      icons.modIcon 'tint', fill: currentFill.get()
+    if currentFillOn()
+      icons.modIcon 'tint', fill: currentFill()
     else
-      icons.modIcon 'tint-slash', fill: currentFill.get()
+      icons.modIcon 'tint-slash', fill: currentFill()
   click: ->
-    currentFillOn.set not currentFillOn.get()
+    setCurrentFillOn not currentFillOn()
     selection = currentBoard()?.selection
     if selection?.nonempty()
       selection.edit 'fill',
-        if currentFillOn.get()
-          currentFill.get()
+        if currentFillOn()
+          currentFill()
         else
           null
     else
@@ -68,59 +66,58 @@ for color in colors
       name: "color:#{color}"
       category: 'color'
       class: 'attrib'
-      active: -> currentColor.get() == color
+      active: -> currentColor() == color
       icon: ->
         <div class="color" style={'background-color': color}/>
       click: (e) -> selectColorOrFill e, color
 
-customColor = new ReactiveVar '#808080'
-customColorRef = null
+[customColor, setCustomColor] = createSignal '#808080'
 
 defineTool
   name: 'customColor'
   category: 'color'
   class: 'attrib'
   help: <>Custom colors. Select the rainbow icon to change the custom color (via browser-specific color selector). Select the colored outer rim to re-use the previously chosen color. Use the Select tool to grab colors from existing objects.</>
-  active: -> currentColor.get() == customColor.get()
+  active: -> currentColor() == customColor()
   icon: ->
+    customColorRef = null
     onSet = (e) ->
       e.stopPropagation()
       customColorRef.querySelector('input').click()
     onInput = (e) ->
       selectColor e.target.value
-    color = customColor.get()
-    <div class="custom color" style={'background-color': color}
+    <div class="custom color" style={'background-color': customColor()}
      ref={customColorRef}>
       <div class="set" onClick={onSet}/>
-      <input type="color" onInput={onInput} value={color}/>
+      <input type="color" onInput={onInput} value={customColor()}/>
     </div>
   click: (e) ->
-    selectColorOrFill e, customColor.get()
+    selectColorOrFill e, customColor()
 
 selectColorOrFill = (e, color) ->
   (if e.shiftKey then selectFill else selectColor) color
 
 export selectColor = (color, keepTool, skipSelection) ->
-  currentColor.set color
-  customColor.set color unless color of colorMap
+  setCurrentColor color
+  setCustomColor color unless color of colorMap
   if not skipSelection and (selection = currentBoard().selection).nonempty()
-    selection.edit 'color', currentColor.get()
+    selection.edit 'color', currentColor()
     keepTool = true
   selectDrawingTool() unless keepTool
   updateCursor()
 
 export selectFill = (color, fromSelection) ->
-  currentFill.set color
-  currentFillOn.set true
+  setCurrentFill color
+  setCurrentFillOn true
   return if fromSelection
   selection = currentBoard().selection
   if selection?.nonempty()
-    selection.edit 'fill', currentFill.get()
+    selection.edit 'fill', currentFill()
   else
     selectDrawingTool()
 
 export selectFillOff = (fromSelection) ->
-  currentFillOn.set false
+  setCurrentFillOn false
   return if fromSelection
   selection = currentBoard().selection
   if selection?.nonempty()

@@ -21,7 +21,7 @@ export {toolsByCategory, toolsByHotkey} from './defineTool'
 
 import {pointers} from './modes'
 import {touchDraw} from './settings'
-import {mainBoard, historyMode, currentTool} from '../AppState'
+import {currentTool, historyMode, mainBoard, setCurrentTool, setHistoryMode} from '../AppState'
 import {highlighterClear} from '../Selection'
 import {updateCursor} from '../cursor'
 
@@ -39,17 +39,17 @@ export historyTools =
 
 export lastTool = null
 export selectTool = (tool, options) ->
-  previous = currentTool.get()
+  previous = currentTool()
   return if tool == previous
   selected = stopTool options
-  if historyMode.get() and not historyTools[tool]
-    historyMode.set false
+  if historyMode() and not historyTools[tool]
+    setHistoryMode false
   #document.body.classList.remove "tool-#{previous}" if previous
   if tool?  # tool == null means initialize already set currentTool
     lastTool = previous
-    currentTool.set tool
+    setCurrentTool tool
   else
-    tool = currentTool.get()
+    tool = currentTool()
   updateCursor()
   resumeTool options
   ## Pass previous tool's selection into new tool for possible selection.
@@ -59,7 +59,7 @@ export selectTool = (tool, options) ->
   lastDrawingTool = tool if tool of drawingTools
 
 export selectDrawingTool = ->
-  unless currentTool.get() of drawingTools
+  unless currentTool() of drawingTools
     selectTool lastDrawingTool
 
 export clickTool = (toolSpec, e) ->
@@ -72,7 +72,7 @@ export clickTool = (toolSpec, e) ->
 ## Stop current tool, but keep currentTool set, so that it can be resumed
 ## with `resumeTool` (e.g. when switching pages).
 export stopTool = (options) ->
-  tools[currentTool.get()]?.stop?() unless options?.noStop
+  tools[currentTool()]?.stop?() unless options?.noStop
   delete pointers[key] for own key of pointers
   highlighterClear()
   unless options?.noStart or options?.noStop
@@ -82,17 +82,17 @@ export stopTool = (options) ->
     selected
 
 export resumeTool = (options) ->
-  tools[currentTool.get()]?.start?() unless options?.noStart
+  tools[currentTool()]?.start?() unless options?.noStart
 
 export restrictTouchDraw = (e) ->
   not touchDraw.get() and
   e.pointerType == 'touch' and
-  currentTool.get() of drawingTools
+  currentTool() of drawingTools
 
 ## Temporary tool activation, intended for excursions into 'pan' tool
 
 export pushTool = (tool) ->
-  oldTool = currentTool.get()
+  oldTool = currentTool()
   oldPointers = Object.assign {}, pointers
   ## Leave existing pointer data for updating selection
   #delete pointers[key] for key of pointers

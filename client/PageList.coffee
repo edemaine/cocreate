@@ -9,16 +9,14 @@ import {Icon} from './lib/icons'
 #import remotes from './lib/remotes'
 
 export PageList = ->
-  room = createTracker -> currentRoom.get()
-  pages = createTracker -> room()?.data()?.pages
-  page = createTracker -> currentPage.get()
+  pages = createTracker -> currentRoom()?.data()?.pages
 
   ## Monitor state of remotes
   [remotesByPage, setRemotesByPage] = createStore {}
   createTracker ->
-    return unless room()?
+    return unless currentRoom()?
     Remotes.find
-      room: room().id
+      room: currentRoom().id
     ,
       fields:
         page: true
@@ -43,7 +41,7 @@ export PageList = ->
   <Show when={pages()}>
     <div class="pageList">
       <For each={pages()}>{(pageId, index) ->
-        active = -> (pageId == page()?.id)
+        active = -> (pageId == currentPage()?.id)
         pageRemotes = -> Object.keys remotesByPage[pageId] ? {}
         pageRemotesCount = createMemo -> pageRemotes().length
         <SoloTooltip id="page:#{pageId}" placement="bottom" overlay={

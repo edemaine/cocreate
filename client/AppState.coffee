@@ -1,40 +1,51 @@
 ## This module maintains the global variables that represent the main app's
 ## current state.  This helps avoids import cycles.
 
-import {ReactiveVar} from 'meteor/reactive-var'
+import {createSignal} from 'solid-js'
 import {defaultGrid, defaultGridType} from '/lib/grid'
 
 routerNavigate = null
 export setRouterNavigate = (navigate) -> routerNavigate = navigate
 
-export currentRoom = new ReactiveVar  # Room object for current room
-export currentPage = new ReactiveVar  # Page object for current page
+[currentRoom, setCurrentRoom] = createSignal()  # Room object for current room
+export {currentRoom, setCurrentRoom}
+[currentPage, setCurrentPage] = createSignal()  # Page object for current page
+export {currentPage, setCurrentPage}
 ## `currentPageId` is the primary source that causes currentPage to update.
-## Set it to change pages.
-export currentPageId = new ReactiveVar
+[currentPageId, setCurrentPageId] = createSignal()
+export {currentPageId, setCurrentPageId}
 
-export setPageId = (id) ->
-  return if id == currentPageId.get()
+## Use this function to change pages. It indirectly calls `setCurrentPageId`.
+export gotoPageId = (id) ->
+  return if id == currentPageId()
   routerNavigate "#{window.location.pathname}##{id}", replace: false
 
 export currentGrid = ->
-  currentPage.get()?.data()?.grid ? defaultGrid
+  currentPage()?.data()?.grid ? defaultGrid
 export currentGridType = ->
-  currentPage.get()?.data()?.gridType ? defaultGridType
+  currentPage()?.data()?.gridType ? defaultGridType
 
-export currentTool = new ReactiveVar 'pan'
-export historyMode = new ReactiveVar false
+[currentTool, setCurrentTool] = createSignal 'pan'
+export {currentTool, setCurrentTool}
+[historyMode, setHistoryMode] = createSignal false
+export {historyMode, setHistoryMode}
 
 ## These colors are initialized in ./tools/color.coffee:
-export currentColor = new ReactiveVar
-export currentFill = new ReactiveVar
-export currentFillOn = new ReactiveVar
+[currentColor, setCurrentColor] = createSignal()
+export {currentColor, setCurrentColor}
+[currentFill, setCurrentFill] = createSignal()
+export {currentFill, setCurrentFill}
+[currentFillOn, setCurrentFillOn] = createSignal()
+export {currentFillOn, setCurrentFillOn}
 
-export currentOpacity = new ReactiveVar 0.5
-export currentOpacityOn = new ReactiveVar
+[currentOpacity, setCurrentOpacity] = createSignal 0.5
+export {currentOpacity, setCurrentOpacity}
+[currentOpacityOn, setCurrentOpacityOn] = createSignal()
+export {currentOpacityOn, setCurrentOpacityOn}
 
 ## Initialized in ./tools/font.coffee:
-export currentFontSize = new ReactiveVar
+[currentFontSize, setCurrentFontSize] = createSignal()
+export {currentFontSize, setCurrentFontSize}
 
 export mainBoard = null
 export historyBoard = null
@@ -43,7 +54,7 @@ export setMainBoard = (board) -> mainBoard = board
 export setHistoryBoard = (board) -> historyBoard = board
 
 export currentBoard = ->
-  if historyMode.get()
+  if historyMode()
     historyBoard
   else
     mainBoard
