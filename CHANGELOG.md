@@ -10,10 +10,12 @@ instead of version numbers.
 ## 2022-04-12
 
 * When LaTeX text has errors, Cocreate will now render the LaTeX source
-  (with a red background) instead of the error message, making it easier to
-  read text while it's being written.  You can hover over the text to
-  see the error message.
+  (with a transparent red background) instead of the error message,
+  making it easier to read text while it's being written.
+  You can hover over the text to see the error message.
   [[#202](https://github.com/edemaine/cocreate/issues/202)]
+* Cocreate removes some unneeded attributes in SVG produced from LaTeX,
+  so exported SVG with LaTeX should be smaller.
 
 ## 2022-03-23
 

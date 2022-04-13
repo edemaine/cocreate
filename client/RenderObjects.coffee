@@ -352,7 +352,18 @@ export class RenderObjects
       .replace /\bvertical-align:\s*([\-\.\d]+)ex/, (match, depth) ->
         job.depth = -parseFloat depth
         ''
-      .replace /<rect\s+data-background="true"/g, "$& fill=\"#f88\""
+      ## Background rectangles for error messages: fill transparent red
+      .replace /<rect\s+data-background="true"/g, "$& fill=\"#f888\""
+      ## Remove unneeded data attributes (MathML)
+      .replace /\bdata-[\w\-]*=(?:"[^"]*"|'[^']*')\s*|\bstyle=""\s*/g,
+        (match, offset, string) ->
+          if inTag string, offset
+            ''
+          else
+            match
+      .replace /\s+>/g, '>'
+      .replace /<defs><\/defs>/g, ''
+      console.log svg
       job.svg = svg
       for id of job.texts
         @texRender job, id
@@ -565,3 +576,13 @@ edge = (obj, p1, p2) ->
     #'stroke-linecap': 'round'
     ## Dots mode:
     #'stroke-width': 1
+
+inTag = (string, offset) ->
+  ## Copied from Coauthor.
+  ## Known issue: `<a title=">"` looks like a terminated tag to this code.
+  open = string.lastIndexOf '<', offset
+  if open >= 0
+    close = string.lastIndexOf '>', offset
+    if close < open  ## potential unclosed HTML tag
+      return true
+  false
