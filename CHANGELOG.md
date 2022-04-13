@@ -16,6 +16,8 @@ instead of version numbers.
   [[#202](https://github.com/edemaine/cocreate/issues/202)]
 * Cocreate removes some unneeded attributes in SVG produced from LaTeX,
   so exported SVG with LaTeX should be smaller.
+* Cocreate is now built on [SolidJS](https://www.solidjs.com/) instead of
+  React, improving UI reactivity.
 
 ## 2022-03-23
 
