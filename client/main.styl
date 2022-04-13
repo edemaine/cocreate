@@ -218,7 +218,9 @@ button(activeBorder)
   line
     stroke: var(--currentColor)
   text
-    fill: black
+    fill: var(--currentColor)
+    &.label
+      fill: black
     text-anchor: middle
     font-size: 10px
   /.dark & svg
