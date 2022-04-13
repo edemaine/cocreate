@@ -7,6 +7,14 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-04-12
+
+* When LaTeX text has errors, Cocreate will now render the LaTeX source
+  (with a red background) instead of the error message, making it easier to
+  read text while it's being written.  You can hover over the text to
+  see the error message.
+  [[#202](https://github.com/edemaine/cocreate/issues/202)]
+
 ## 2022-03-23
 
 * Triangular half-grid snapping now includes triangle centers.
