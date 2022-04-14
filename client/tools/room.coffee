@@ -1,38 +1,39 @@
-import {createMemo, createResource, Show} from 'solid-js'
+import {createEffect, createMemo, createResource, createSignal, Show} from 'solid-js'
 import Modal from 'solid-bootstrap/esm/Modal'
-import {createTracker} from 'solid-meteor-data'
 import {useLocation} from 'solid-app-router'
-import {ReactiveVar} from 'meteor/reactive-var'
 
 import {defineTool} from './defineTool'
 import {CloseIcon} from '../lib/icons'
 
-showing = new ReactiveVar false
+[show, setShow] = createSignal false
 
 defineTool
   name: 'linkRoom'
   category: 'room'
   icon: 'clipboard-link'
   help: 'Share a link to this room/board: show the URL, copy it to the clipboard, and show a QR code.'
-  active: -> showing.get()
+  active: -> show()
   click: ->
-    showing.set not showing.get()
+    setShow not show()
   portal: ->
-    show = createTracker -> showing.get()
     location = useLocation()
     here = createMemo -> Meteor.absoluteUrl location.pathname + location.hash
-    [qr] = createResource (-> [show(), here()]), ([showVal, hereVal]) ->
-      return unless showVal
+    ## Save URL to clipboard when shown
+    createEffect ->
+      return unless show()
       try
-        navigator.clipboard.writeText hereVal
-      QRCode = await import('qrcode-svg')
-      new QRCode.default
-        content: hereVal
+        navigator.clipboard.writeText here()
+    ## Generate QR code
+    [QRCode] = createResource show, -> (await import('qrcode-svg')).default
+    qr = createMemo ->
+      return unless show() and QRCode()
+      new (QRCode())
+        content: here()
         ecl: 'M'
         join: true
         container: 'svg-viewbox'
       .svg()
-    onClose = -> showing.set false
+    onClose = -> setShow false
 
     <Modal show={show()} class="info" onHide={onClose}>
       <Modal.Header>
@@ -45,7 +46,7 @@ defineTool
         </p>
         <p>If possible, this URL has already been <b>copied to your clipboard</b>, so you can paste it into a chat or email to send it to people.</p>
         <p>On some browsers, you can <b>right click</b> on the URL to send it to other devices, or <b>long tap</b> to share it.</p>
-        <Show when={not qr.loading} fallback={<i>Generating QR code&hellip;</i>}>
+        <Show when={qr()} fallback={<i>Generating QR code&hellip;</i>}>
           <p>To send the board to your mobile device (phone or tablet), scan this <b>QR code</b>:</p>
           <div class="qrCode" innerHTML={qr()}/>
         </Show>
