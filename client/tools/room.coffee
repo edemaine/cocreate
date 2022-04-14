@@ -17,7 +17,8 @@ defineTool
     setShow not show()
   portal: ->
     location = useLocation()
-    here = createMemo -> Meteor.absoluteUrl location.pathname + location.hash
+    here = createMemo -> Meteor.absoluteUrl location.pathname +
+      (if location.hash then '#' else '') + location.hash
     ## Save URL to clipboard when shown
     createEffect ->
       return unless show()
