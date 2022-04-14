@@ -363,7 +363,6 @@ export class RenderObjects
             match
       .replace /\s+>/g, '>'
       .replace /<defs><\/defs>/g, ''
-      console.log svg
       job.svg = svg
       for id of job.texts
         @texRender job, id
