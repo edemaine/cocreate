@@ -7,6 +7,12 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-04-16
+
+* Some LaTeX features were previously hidden behind a `\require` command.
+  Now there's an explicit
+  [list of supported commands and extensions](https://github.com/edemaine/tex2svg-webworker#supported-latex-commands).
+
 ## 2022-04-12
 
 * When LaTeX text has errors, Cocreate will now render the LaTeX source
@@ -14,7 +20,7 @@ instead of version numbers.
   making it easier to read text while it's being written.
   You can hover over the text to see the error message.
   [[#202](https://github.com/edemaine/cocreate/issues/202)]
-* Cocreate removes some unneeded attributes in SVG produced from LaTeX,
+* Cocreate removes some unneeded attributes in SVG produced by MathJax,
   so exported SVG with LaTeX should be smaller.
 * Cocreate is now built on [SolidJS](https://www.solidjs.com/) instead of
   React, improving UI reactivity.

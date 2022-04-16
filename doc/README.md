@@ -348,6 +348,8 @@ You can use basic Markdown syntax to style your text:
 
 You can use LaTeX syntax `$...$` or `$$...$$` to write formulas.
 For example: `$e^{i \pi} + 1 = 0$` or `$$\int_0^1 {dx \over x}$$`.
+See the
+[list of supported MathJax commands and extensions](https://github.com/edemaine/tex2svg-webworker#supported-latex-commands).
 
 To write multiple lines of text, add manual line breaks via the
 <kbd>Enter</kbd> key.  As an exception, line breaks are ignored
