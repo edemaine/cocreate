@@ -23,7 +23,8 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   * Basic drawing tools, in particular for cleaner mouse input:
     line segments, rectangles/squares, ellipses/circles
   * **Text** tool with **LaTeX math**<sup>★</sup> support
-    (via [MathJax](https://www.mathjax.org/))
+    (via [MathJax](https://www.mathjax.org/); see
+     [supported commands](https://github.com/edemaine/tex2svg-webworker#supported-latex-commands))
     and basic **Markdown formatting**<sup>★</sup>
   * **Image** (PNG/JPG/GIF/SVG) embedding from other websites
     (e.g., Imgur or Coauthor) for drawing on top of images
