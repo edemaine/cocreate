@@ -38,7 +38,7 @@ module.exports = {
       worker4: {env: {COCREATE_WORKER: '4', COCREATE_SKIP_UPGRADE_DB: '1'}},
     },
     docker: {
-      image: 'abernix/meteord:node-12-base',
+      image: 'zodern/meteor:latest',
       stopAppDuringPrepareBundle: true,
     },
     buildOptions: {

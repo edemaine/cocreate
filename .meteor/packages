@@ -28,4 +28,5 @@ reload@1.3.1
 check@1.3.1
 edemaine:static-pug
 montiapm:agent
-zodern:standard-minifier-js
+standard-minifier-js
+#zodern:standard-minifier-js
