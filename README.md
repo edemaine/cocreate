@@ -21,7 +21,8 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
     for supporting devices (e.g., Wacom, Surface, iPad Pencil)
   * Separation of pen, touch, and mouse inputs<sup>★</sup>: disable drawing via touch
   * Basic drawing tools, in particular for cleaner mouse input:
-    line segments, rectangles/squares, ellipses/circles
+    line segments, rectangles/squares, ellipses/circles,
+    including easy dots<sup>★</sup>
   * **Text** tool with **LaTeX math**<sup>★</sup> support
     (via [MathJax](https://www.mathjax.org/); see
      [supported commands](https://github.com/edemaine/tex2svg-webworker#supported-latex-commands))
@@ -35,14 +36,15 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   * **Select, edit, move, duplicate<sup>★</sup>, delete** existing objects,
     including **rectangular select**<sup>★</sup>
   * **Copy/paste**, including between pages or boards, and copying from the
-    past and pasting into the present
+    past and pasting into the present<sup>★</sup>
   * Export as **SVG**<sup>★</sup>
 * **Multiple pages**<sup>★</sup>
   * **Page duplication**<sup>★</sup> (for separating ideas/alternatives,
     animation, and efficiency)
   * Can link to specific pages<sup>★</sup>
   * **Grid** backgrounds: **Square** and **triangular**<sup>★</sup>
-    with optional **grid snapping**<sup>★</sup>
+    with optional **grid snapping**<sup>★</sup> and
+    **half-grid snapping**<sup>★</sup>
 * **Undo/redo** (of your own operations)
 * **Time travel**<sup>★</sup> to see entire past history of the board
   (and copy/paste to present)
