@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-04-21
+
+* Local cursor now accurately reflects your current fill color/mode
+  (in relevant drawing modes)
+
 ## 2022-04-16
 
 * Some LaTeX features were previously hidden behind a `\require` command.

@@ -180,9 +180,9 @@ export cursorIcon = (icon, xFrac, yFrac, options) ->
     <circle fill="red" cx="#{round(xFrac) * viewScale}" cy="#{round(yFrac) * viewScale}" r="#{viewScale * 2}"/>
     $&"""
 
-export setCursor = (dom, icon, xFrac, yFrac, options) ->
+export cursorCSS = (icon, xFrac, yFrac, options) ->
   cursor = cursorIcon icon, xFrac, yFrac, options
-  dom.style.cursor = "url('#{dataUrl cursor}') #{round xFrac} #{round yFrac}, crosshair"
+  "url('#{dataUrl cursor}') #{round xFrac} #{round yFrac}, crosshair"
 
 export dataUrl = (icon) ->
   "data:image/svg+xml,#{encodeURIComponent icon}"

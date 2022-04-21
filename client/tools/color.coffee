@@ -3,7 +3,6 @@ import {createEffect, createSignal} from 'solid-js'
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
 import {currentBoard, currentColor, currentFill, currentFillOn, setCurrentColor, setCurrentFill, setCurrentFillOn} from '../AppState'
-import {updateCursor} from '../cursor'
 import icons from '../lib/icons'
 
 export colors = [
@@ -104,7 +103,6 @@ export selectColor = (color, keepTool, skipSelection) ->
     selection.edit 'color', currentColor()
     keepTool = true
   selectDrawingTool() unless keepTool
-  updateCursor()
 
 export selectFill = (color, fromSelection) ->
   setCurrentFill color

@@ -11,6 +11,7 @@ import {PageList} from './PageList'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
+import {updateCursor} from './cursor'
 import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouchDraw} from './tools/tools'
 import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
@@ -119,6 +120,9 @@ export DrawAppRoom = ->
         toolsRef.style.width = null
     onCleanup -> window.removeEventListener 'resize', onToolsResize
     onToolsResize()
+
+  ## Update local cursor when tool/color/fill/dark-mode/fancy-cursor change.
+  onMount -> createTracker updateCursor
 
   ## Update our remote cursor
   lastCursor = null

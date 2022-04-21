@@ -2,7 +2,6 @@ import {Tracker} from 'meteor/tracker'
 
 import {defineTool} from './defineTool'
 import {currentRoom, currentPage, currentGrid, currentGridType} from '../AppState'
-import {updateCursor} from '../cursor'
 import dom from '../lib/dom'
 import storage from '../lib/storage'
 
@@ -32,10 +31,6 @@ defineTool
   icon: 'plus'
   help: 'Use crosshair mouse cursor instead of tool-specific mouse cursor. Easier to aim precisely, and works around a Chrome bug.'
   active: -> not fancyCursor.get()
-  init: ->
-    Tracker.autorun ->
-      fancyCursor.get()
-      updateCursor()
   click: ->
     fancyCursor.set not fancyCursor.get()
 
@@ -45,10 +40,6 @@ defineTool
   icon: 'moon'
   help: 'Toggle dark mode (just for you), which flips dark and light colors.'
   active: -> dark.get()
-  init: ->
-    Tracker.autorun ->
-      dom.classSet document.body, 'dark', dark.get()
-      updateCursor()
   click: ->
     dark.set not dark.get()
 

@@ -1,10 +1,11 @@
-import {createEffect, createRenderEffect, createResource, on as on_, onCleanup, onMount} from 'solid-js'
+import {createEffect, createRenderEffect, createResource, on as on_, onCleanup} from 'solid-js'
+import {createTracker} from 'solid-meteor-data'
 
 import {defineTool, tools} from './defineTool'
 import {selectTool, historyTools} from './tools'
 import {currentPage, currentRoom, currentTool, historyBoard, historyMode, setHistoryMode} from '../AppState'
 import {RenderObjects} from '../RenderObjects'
-import {setCursor, updateCursor} from '../cursor'
+import {makeCursor} from '../cursor'
 import {meteorCallPromise} from '/lib/meteorPromise'
 
 defineTool
@@ -13,8 +14,6 @@ defineTool
   icon: 'history'
   hotspot: [0.5, 0.5]
   help: 'Time travel to the past (by dragging the bottom slider)'
-  init: ->
-    createEffect on_ historyMode, updateCursor
   active: ->
     historyMode()
   click: ->
@@ -42,10 +41,6 @@ defineTool
       onCleanup ->
         historyBoard.clear()
         historyBoard.objects = {}
-
-    ## Set cursor on range
-    onMount ->
-      setCursor ref, tools.history.icon, ...tools.history.hotspot
 
     ## Rendering
     historyRender = null
@@ -96,7 +91,13 @@ defineTool
       for id from toRender
         historyRender.render historyBoard.objects[id]
 
+    cursor = createTracker ->
+      makeCursor tools.history.icon, ...tools.history.hotspot
+
     <input id="historyRange" class="history" type="range"
      min="0" max={diffs()?.length ? 0}
      title="Drag to time travel through history"
+     style={
+       cursor: cursor()
+     }
      ref={ref} onChange={onChange}/>

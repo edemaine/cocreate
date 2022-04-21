@@ -23,7 +23,6 @@ import {pointers} from './modes'
 import {touchDraw} from './settings'
 import {currentTool, historyMode, mainBoard, setCurrentTool, setHistoryMode} from '../AppState'
 import {highlighterClear} from '../Selection'
-import {updateCursor} from '../cursor'
 
 lastDrawingTool = 'pen'
 
@@ -50,7 +49,6 @@ export selectTool = (tool, options) ->
     setCurrentTool tool
   else
     tool = currentTool()
-  updateCursor()
   resumeTool options
   ## Pass previous tool's selection into new tool for possible selection.
   ## Equivalent to `setSelection` at this point because we've already cleared.

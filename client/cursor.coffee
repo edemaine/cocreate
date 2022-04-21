@@ -3,25 +3,25 @@ import {drawingTools, tools} from './tools/tools'
 import {dark, fancyCursor} from './tools/settings'
 import icons from './lib/icons'
 
-export setCursor = (target, icon, xFrac, yFrac) ->
+export makeCursor = (icon, xFrac, yFrac) ->
   if fancyCursor.get()
     options = {}
     if dark.get()
       options.style = 'filter:invert(1) hue-rotate(180deg)'
-    icons.setCursor target, icon, xFrac, yFrac, options
+    icons.cursorCSS icon, xFrac, yFrac, options
   else
-    target.style.cursor = null
+    null
 
 export updateCursor = ->
   tool = currentTool()
-  if tool of drawingTools
-    ## Drawing tools' cursors depend on the current color
-    setCursor currentBoard().svg,
-      drawingToolIcon(tool, currentColor(),
-        if currentFillOn() then currentFill()),
-      ...tools[tool].hotspot
-  else
-    setCursor currentBoard().svg, tools[tool].icon, ...tools[tool].hotspot
+  currentBoard().svg.style.cursor = makeCursor(
+    if tool of drawingTools
+      ## Drawing tools' cursors depend on the current color
+      drawingToolIcon tool, currentColor(),
+        if currentFillOn() then currentFill()
+    else
+      tools[tool].icon
+  , ...tools[tool].hotspot)
 
 export drawingToolIcon = (tool, color, fill) ->
   icon = tools[tool]?.icon
