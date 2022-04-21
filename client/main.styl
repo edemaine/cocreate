@@ -366,13 +366,13 @@ body:not(.history)
     animation: fa-spin 2s ease infinite
 
 .offline
-  position: fixed
+  position: absolute
   bottom: 0
   right: 0
   text-align: right
   padding: 0.25em
   &.show
-    padding: 0em 1em
+    padding: 1em
   z-index: 2
   background: #dd8080bb
   /.dark &
@@ -381,6 +381,8 @@ body:not(.history)
       color: #88f
   .status
     font-style: italic
+  > h1
+    margin-top: 0
 
   // allow click-through to buttons behind
   pointer-events: none

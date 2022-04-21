@@ -441,11 +441,11 @@ export DrawAppRoom = ->
        ref={historyBoardRef}/>
       <svg id="remotes" class="board overlay" ref={remotesRef}/>
       <div id="dragzone" class="overlay"/>
+      <ConnectionStatus/>
     </div>
     {if loading()
       <LoadingIcon/>
     }
-    <ConnectionStatus/>
   </div>
 
 export BadRoom = ->
@@ -484,7 +484,7 @@ export ConnectionStatus = ->
       }>
         <h1>Disconnected From Server</h1>
         <p class="small">
-          You may be offline, or the server may be restarting.  You can still draw locally, and changes will hopefully synchronize once reconnected.
+          You may be offline, or the server may be restarting.  You can still draw locally, and your changes will hopefully synchronize once reconnected.
         </p>
         <p class="status">
           {switch status.status
