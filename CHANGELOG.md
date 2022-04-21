@@ -9,6 +9,11 @@ instead of version numbers.
 
 ## 2022-04-21
 
+* Cocreate will now tell you when it's disconnected from the server
+  (because of either network or server failure), and will ask you before
+  upgrading to a new version of Cocreate.
+  This should help avoid losing work because of server restarts.
+  [[#200](https://github.com/edemaine/cocreate/issues/200)]
 * Local cursor now accurately reflects your current fill color/mode
   (in relevant drawing modes)
 
