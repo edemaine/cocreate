@@ -365,6 +365,28 @@ body:not(.history)
     height: 10%
     animation: fa-spin 2s ease infinite
 
+.offline
+  position: fixed
+  bottom: 0
+  right: 0
+  text-align: right
+  padding: 0.25em
+  &.show
+    padding: 0em 1em
+  z-index: 2
+  background: #dd8080bb
+  /.dark &
+    background: #290000bb
+    a
+      color: #88f
+  .status
+    font-style: italic
+
+  // allow click-through to buttons behind
+  pointer-events: none
+  a
+    pointer-events: auto
+
 // Modal dialogs
 .modal
   padding: 20px 40px
@@ -409,6 +431,8 @@ body:not(.history)
 
 .center
   text-align: center
+.small
+  font-size: 80%
 
 // Drawing
 

@@ -1,6 +1,6 @@
-import {createEffect, createRenderEffect, on as on_, onCleanup, onMount, untrack, Match, Show, Switch} from 'solid-js'
+import {createEffect, createRenderEffect, createSignal, on as on_, onCleanup, onMount, untrack, Match, Show, Switch} from 'solid-js'
 import {useLocation, useParams, useNavigate} from 'solid-app-router'
-import {createTracker} from 'solid-meteor-data'
+import {createFindOne, createTracker} from 'solid-meteor-data'
 
 import {setRouterNavigate, historyBoard, historyMode, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, mainBoard, setCurrentPage, setCurrentPageId, setCurrentRoom, setHistoryBoard, setMainBoard, setHistoryMode} from './AppState'
 import {Board} from './Board'
@@ -445,6 +445,7 @@ export DrawAppRoom = ->
     {if loading()
       <LoadingIcon/>
     }
+    <ConnectionStatus/>
   </div>
 
 export BadRoom = ->
@@ -455,3 +456,61 @@ export BadRoom = ->
     <p>Please double-check your copy/paste.</p>
     <p>Or <a href={Meteor.absoluteUrl()}>create a new room</a>.</p>
   </div>
+
+export ConnectionStatus = ->
+  [show, setShow] = createSignal true
+  [, status] = createFindOne -> Meteor.status()
+
+  ## Ignore initial connecting status
+  [initialized, setInitialized] = createSignal false
+  createEffect ->
+    setInitialized true if status.status != 'connecting'
+
+  onReconnect = (e) ->
+    e.preventDefault()
+    Meteor.reconnect()
+  toggleShow = (e) ->
+    e.preventDefault()
+    setShow not show()
+
+  <Show when={initialized() and not status.connected}>{->
+    setShow true
+    <div classList={
+      offline: true
+      show: show()
+    }>
+      <Show when={show()} fallback={
+        <>[<a href="#" onClick={toggleShow}>show</a>]</>
+      }>
+        <h1>Disconnected From Server</h1>
+        <p class="small">
+          You may be offline, or the server may be restarting.  You can still draw locally, and changes will hopefully synchronize once reconnected.
+        </p>
+        <p class="status">
+          {switch status.status
+            when 'connecting'
+              <>Attempting to reconnect…</>
+            when 'waiting'
+              <>Next reconnection attempt in <Countdown time={status.retryTime}/>…
+              </>
+            when 'failed'
+              <>Permanent failure: {status.reason}</>
+            when 'offline'
+              <>Offline</>
+          }
+        </p>
+        <div>
+          [<a href="#" onClick={onReconnect}>Reconnect Now</a>] •
+          [<a href="#" onClick={toggleShow}>hide</a>]
+        </div>
+      </Show>
+    </div>
+  }</Show>
+
+export Countdown = (props) ->
+  computeRemaining = ->
+    Math.round (props.time - new Date().getTime()) / 1000
+  [remaining, setRemaining] = createSignal computeRemaining()
+  interval = setInterval (-> setRemaining computeRemaining), 1000
+  onCleanup = -> clearInterval interval
+  <>{remaining()} seconds</>
