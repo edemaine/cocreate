@@ -1,4 +1,4 @@
-import {createEffect, createSignal, onCleanup, Show} from 'solid-js'
+import {createEffect, createResource, createSignal, onCleanup, Show} from 'solid-js'
 import {createFindOne} from 'solid-meteor-data'
 import {useLocation} from 'solid-app-router'
 import {Reload} from 'meteor/reload'
@@ -13,6 +13,11 @@ Reload._onMigrate 'cocreate', (retry) ->
   ## Return format: [ready, optionalState]
   [readyToMigrate]
 
+onMigrate = (e) ->
+  e.preventDefault()
+  readyToMigrate = true
+  migrate()()
+
 export ConnectionStatus = ->
   [show, setShow] = createSignal true
   [, status] = createFindOne -> Meteor.status()
@@ -24,14 +29,6 @@ export ConnectionStatus = ->
   disconnected = ->
     initialized() and not status.connected
 
-  location = useLocation()
-  here = -> Meteor.absoluteUrl location.pathname +
-    (if location.hash then '#' else '') + location.hash
-
-  onMigrate = (e) ->
-    e.preventDefault()
-    readyToMigrate = true
-    migrate()()
   onReconnect = (e) ->
     e.preventDefault()
     Meteor.reconnect()
@@ -49,10 +46,7 @@ export ConnectionStatus = ->
         <>[<a href="#" onClick={toggleShow}>show</a>]</>
       }>
         <Show when={migrate()}>
-          <h1>Cocreate Updated</h1>
-          <p>
-            The Cocreate server wants to migrate you to a new version.  You should stop drawing, check that your latest changes are <a href={here()} target="_blank">visible in another tab</a>, optionally select and copy any recently changed objects to your clipboard, and then <a href="#" onClick={onMigrate}>migrate to the new version</a>.
-          </p>
+          <MigrateMessage/>
         </Show>
         <Show when={disconnected()}>
           <h1>Disconnected From Server</h1>
@@ -87,6 +81,20 @@ export ConnectionStatus = ->
       </Show>
     </div>
   }</Show>
+
+export MigrateMessage = ->
+  location = useLocation()
+  here = -> Meteor.absoluteUrl location.pathname +
+    (if location.hash then '#' else '') + location.hash
+  [changelog] = createResource ->
+    (await import('/package.json')).changelog
+
+  <>
+    <h1>Cocreate Updated</h1>
+    <p>
+      The server wants to migrate to a new version of Cocreate; see <a href={changelog()} target="_blank">the changelog</a> for what's new.  You should stop drawing; check that your latest changes are <a href={here()} target="_blank">visible in another tab</a>; optionally select and copy any recently changed objects to your clipboard; and then <a href="#" onClick={onMigrate}>migrate to the new version</a>.
+    </p>
+  </>
 
 export Countdown = (props) ->
   computeRemaining = ->

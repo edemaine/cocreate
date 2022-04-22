@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/edemaine/cocreate",
   "documentation": "https://github.com/edemaine/cocreate/blob/main/doc/README.md",
+  "changelog": "https://github.com/edemaine/cocreate/blob/main/CHANGELOG.md",
   "scripts": {
     "doc:icons": "coffee --transpile doc/icons/make.coffee",
     "doc:lint": "markdownlint **/*.md --ignore node_modules --rules markdownlint-rule-github-internal-links",
