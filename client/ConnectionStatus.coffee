@@ -1,5 +1,6 @@
 import {createEffect, createSignal, onCleanup, Show} from 'solid-js'
 import {createFindOne} from 'solid-meteor-data'
+import {useLocation} from 'solid-app-router'
 import {Reload} from 'meteor/reload'
 
 [migrate, setMigrate] = createSignal false
@@ -22,6 +23,10 @@ export ConnectionStatus = ->
     setInitialized true if status.status != 'connecting'
   disconnected = ->
     initialized() and not status.connected
+
+  location = useLocation()
+  here = -> Meteor.absoluteUrl location.pathname +
+    (if location.hash then '#' else '') + location.hash
 
   onMigrate = (e) ->
     e.preventDefault()
@@ -46,7 +51,7 @@ export ConnectionStatus = ->
         <Show when={migrate()}>
           <h1>Cocreate Updated</h1>
           <p>
-            The Cocreate server wants to migrate you to a new version.  You should stop drawing, copy any recently changed objects to your clipboard for safety, and then <a href="#" onClick={onMigrate}>migrate to the new version</a>.
+            The Cocreate server wants to migrate you to a new version.  You should stop drawing, check that your latest changes are <a href={here()} target="_blank">visible in another tab</a>, optionally select and copy any recently changed objects to your clipboard, and then <a href="#" onClick={onMigrate}>migrate to the new version</a>.
           </p>
         </Show>
         <Show when={disconnected()}>
