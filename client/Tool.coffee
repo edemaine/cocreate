@@ -56,5 +56,3 @@ export Tool = (props) ->
       {div}
     </SoloTooltip>
   </Show>
-
-Tool.displayName = 'Tool'
