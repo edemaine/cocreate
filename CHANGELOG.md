@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-04-25
+
+* Add tooltip explaining the "Your Name" text entry box.
+
 ## 2022-04-21
 
 * Cocreate will now tell you when it's disconnected from the server
