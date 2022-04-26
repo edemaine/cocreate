@@ -725,6 +725,15 @@ This button creates a new blank page immediately after the current page,
 and goes to that page.  If you were on page 6, this button will create and
 go to a new blank page 7, shifting all later pages up in page number.
 
+### <img src="icons/users.svg" width="18" alt="Users List Icon"> Users List
+
+This button toggles a dropdown list of every user's name
+and what page they're on.
+Clicking on a user teleports your view to be centered on their current cursor
+(including jumping to the page that they're on).
+This is a one-time operation, not a tracking/follow mode;
+afterwards, your views can diverge.
+
 ### <img src="icons/clone.svg" width="18" alt="Duplicate Page Icon"> Duplicate Page
 
 This button duplicates the current page into a new page immediately after,
