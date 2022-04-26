@@ -148,7 +148,7 @@ export DrawAppRoom = ->
   ## Update cursor when page or parameters (e.g. color) change.
   ## When page changes, reset last cursor location
   createEffect on_ currentPage, -> lastCursor = null
-  createEffect ->
+  createTracker -> # tracker needed for name.get()
     return unless currentRoom()? and currentPage()?
     updateRemote()
 

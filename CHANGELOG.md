@@ -10,6 +10,7 @@ instead of version numbers.
 ## 2022-04-25
 
 * Add tooltip explaining the "Your Name" text entry box.
+* Fix updating of names for remote cursors.
 
 ## 2022-04-21
 
