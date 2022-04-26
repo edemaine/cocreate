@@ -31,7 +31,7 @@ export Tool = (props) ->
     clickTool toolSpec(), e
 
   div =
-    <div class={toolSpec().class ? 'tool'}
+    <div ref={props.ref} class={toolSpec().class ? 'tool'}
      classList={selected: selected(), active: active()}
      data-tool={props.tool} onClick={onClick}>
       {icon()}

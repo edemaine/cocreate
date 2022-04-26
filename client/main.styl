@@ -2,11 +2,12 @@
   --palette-size: 32px
   // The following grow to accomodate scrollbars if needed:
   --palette-color: #ccc
-  --palette-border: 2px #ccc
+  --palette-border: 2px #aaa
   --tooltip-color: hsl(60, 50%, 76%)
   --tooltip-width: 200px
   --tooltip-arrow: 5px
   --dragzone-color: hsla(60, 50%, 76%, 50%)
+  --name-width: 8em
 
 .dark
   --palette-color: #333
@@ -151,7 +152,7 @@ html, body, #root, #container
   min-height: 48px
   resize: vertical
 #name
-  width: 8em
+  width: var(--name-width)
 
 button(activeBorder)
   border: var(--palette-border) outset
@@ -207,6 +208,8 @@ button(activeBorder)
   overflow: hidden
   position: relative
   button(3px)
+  > span
+    vertical-align: middle  // center wide icons like users
 
 .tool
   padding: 2px
@@ -299,6 +302,23 @@ button(activeBorder)
     .hotkey
       margin-top: 1px
       margin-left: 3px
+
+  &.menu
+    cursor: pointer
+    --tooltip-color: var(--palette-color)
+    --tooltip-width: calc(var(--palette-size) + var(--name-width))
+
+    .tooltip-inner
+      padding: 0
+
+    .item
+      padding: 4px 8px
+      &:not(:last-child)
+        border-bottom: solid var(--palette-border)
+      &:hover
+        background: rgba(0,0,0,0.2)
+        /.dark &
+          background: rgba(255,255,255,0.2)
 
 .clear
   clear: both

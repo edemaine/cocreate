@@ -14,6 +14,7 @@ import './width'
 import './opacity'
 import './font'
 import './color'
+import './names'
 
 import {tools} from './defineTool'
 export {tools}

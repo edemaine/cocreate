@@ -16,6 +16,7 @@ import {updateCursor} from './cursor'
 import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouchDraw} from './tools/tools'
 import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
+import {Names} from './tools/names'
 import {createHorizontalScroll} from './lib/hscroll'
 import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
@@ -387,6 +388,7 @@ export DrawAppRoom = ->
       <PageList/>
       <ToolCategory category="page" placement="bottom"/>
       <div class="spacer"/>
+      <Names/>
       <Name/>
     </div>
     <div id="bottom" class="horizontal super palette">

@@ -78,7 +78,11 @@ export class Board
       @root
     {x, y}
 
-  ## Zoom
+  ## Transforms
+  translateToCenterOn: (x, y) ->
+    @setTransform
+      x: -(x - 0.5*@clientBBox.width/@transform.scale)
+      y: -(y - 0.5*@clientBBox.height/@transform.scale)
   setScaleFixingPoint: (newScale, fixed) ->
     ###
     Transform point (x,y) while preserving (fixed.x, fixed.y):

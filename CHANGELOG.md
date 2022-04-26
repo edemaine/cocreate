@@ -9,6 +9,9 @@ instead of version numbers.
 
 ## 2022-04-25
 
+* You can now jump to the cursor of another user by clicking the users icon
+  next to your name, then clicking on a name.
+  [[#136](https://github.com/edemaine/cocreate/issues/136)]
 * Add tooltip explaining the "Your Name" text entry box.
 * Fix updating of names for remote cursors.
 
