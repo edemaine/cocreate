@@ -16,6 +16,7 @@ Features marked with <sup>★</sup> are rare among shared whiteboard tools.
   (use any modern web browser, such as Chrome)
 * **See everyone's cursors**, with their names and what page they're on,
   updated live
+  * **Jump to someone's cursor**<sup>★</sup> from list of users
 * See everyone's drawing **while they draw**<sup>★</sup>
   * **Freehand pen** drawing, with **pressure sensitivity**<sup>★</sup>
     for supporting devices (e.g., Wacom, Surface, iPad Pencil)
