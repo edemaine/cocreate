@@ -273,7 +273,7 @@ button(activeBorder)
     padding: 5px 8px
 
   // Arrow
-  .arrow
+  .tooltip-arrow
     position: absolute
     width: var(--tooltip-arrow)
     height: var(--tooltip-arrow)
@@ -283,17 +283,17 @@ button(activeBorder)
       content: ''
   &[x-placement^="right"]
     padding-left: var(--tooltip-arrow)
-    .arrow  // Left arrow
+    .tooltip-arrow  // Left arrow
       left: calc(-1 * var(--tooltip-arrow))
       border-right-color: var(--tooltip-color)
   &[x-placement^="bottom"]
     padding-top: var(--tooltip-arrow)
-    .arrow  // Left arrow
+    .tooltip-arrow  // Left arrow
       top: calc(-1 * var(--tooltip-arrow))
       border-bottom-color: var(--tooltip-color)
   &[x-placement^="top"]
     padding-bottom: var(--tooltip-arrow)
-    .arrow  // Left arrow
+    .tooltip-arrow  // Left arrow
       bottom: calc(-1 * var(--tooltip-arrow))
       border-top-color: var(--tooltip-color)
 
@@ -311,14 +311,17 @@ button(activeBorder)
     .tooltip-inner
       padding: 0
 
-    .item
+    .item, .none
       padding: 4px 8px
+    .item
       &:not(:last-child)
         border-bottom: solid var(--palette-border)
       &:hover
         background: rgba(0,0,0,0.2)
         /.dark &
           background: rgba(255,255,255,0.2)
+    .none
+      font-style: italic
 
 .clear
   clear: both

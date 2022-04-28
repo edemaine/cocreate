@@ -27,7 +27,7 @@ export Names = ->
     <Tool ref={toolRef} tool="names" placement="bottom"/>
     <Overlay target={-> toolRef} show={show()} placement="bottom-start"
      containerPadding="0">
-      <Tooltip className="menu">
+      <Tooltip class="menu">
         <NameList/>
       </Tooltip>
     </Overlay>
