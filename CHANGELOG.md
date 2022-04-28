@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-04-28
+
+* User list now appears with explanatory message if no other users.
+* Fix missing arrows on tooltips/popups.
+
 ## 2022-04-25
 
 * You can now jump to the cursor of another user by clicking the users icon
