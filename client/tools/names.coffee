@@ -1,4 +1,4 @@
-import {createEffect, createSignal, createRoot} from 'solid-js'
+import {For, createEffect, createSignal, createRoot} from 'solid-js'
 import {createFind, createTracker} from 'solid-meteor-data'
 import Overlay from 'solid-bootstrap/esm/Overlay'
 import Tooltip from 'solid-bootstrap/esm/Tooltip'
@@ -38,11 +38,12 @@ export NameList = ->
   remotes = createFind ->
     Remotes.find
       room: currentRoom().id
+      _id: $ne: remoteId
     ,
       sort: name: 1
 
-  <For each={remotes()}>{(remote) ->
-    return if remote._id == remoteId
+  <For each={remotes()} fallback={<div class="none">No other users.</div>}>{(remote) ->
+    #return if remote._id == remoteId
     page = -> (1 + pages().indexOf remote.page) or '?'
     onClick = ->
       setShow false
