@@ -28,7 +28,7 @@ measure = ->
         done Math.round ((ts - t0) + (ts - t3)) / 2
 export update = ->
   measures =
-    for i in [0...medianOf]
+    for [0...medianOf]
       await measure()
   measures.sort (x, y) -> x - y
   offset = measures[Math.floor (medianOf - 1) / 2]
