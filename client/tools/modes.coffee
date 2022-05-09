@@ -3,7 +3,7 @@ import debounce from 'debounce'
 
 import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
-import {tools} from './tools'
+import {tools, selectTool} from './tools'
 import {currentWidth} from './width'
 import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from '../AppState'
 import {maybeSnapPointToGrid} from '../Grid'
@@ -22,6 +22,8 @@ export pointers = {}   # maps pointerId to tool-specific data
 eraseDist = 4   # ...before erasing swipe
 dragDist = 4    # ...before select drags
 dotDist = 4     # ...before rect/ellipse leave dot mode
+doubleClickDist = 4    # ...max dist between clicks in double click
+doubleClickTime = 1000 # ...msec between between clicks in double click
 
 eventDistanceThreshold = (p, q, t) ->
   return false if not p or not q
@@ -126,6 +128,7 @@ defineTool
   hotkey: 's'
   start: ->
     pointers.objects = {}
+    pointers.firstClick = {}
   stop: ->
     delete pointers.objects
   down: (e) ->
@@ -181,7 +184,7 @@ defineTool
       h.selectorStart h.start
   up: (e) ->
     h = pointers[e.pointerId]
-    if h?.selector?
+    if h?.selector?  # finished rectangular drag
       board = currentBoard()
       query = BBox.fromPoints [h.start, board.eventToPoint(e)]
       selection = board.selection
@@ -201,7 +204,7 @@ defineTool
             selection.add h
       selection.setAttributes()
       h.selectorClear()
-    else if h?.moved
+    else if h?.moved  # finished dragging objects
       h.edit.flush()
       undoStack.push
         type: 'multi'
@@ -213,6 +216,25 @@ defineTool
               tx: obj.tx ? 0
               ty: obj.ty ? 0
             after: h.moved[id]
+    else if h.down != true  # finished regular click without drag
+      objects = (id for id of pointers.objects)
+      if objects.length == 1  # clicked on an object
+        if (firstClick = pointers.firstClick[e.pointerId])? and
+           firstClick.id == objects[0] and
+           not eventDistanceThreshold(firstClick.e, e, doubleClickDist)
+          # double click on object
+          delete pointers.firstClick[e.pointerId]
+          if Objects.findOne(objects[0])?.type == 'text'  # text object
+            selectTool 'text', select: focus: true
+        else
+          pointers.firstClick[e.pointerId] = firstClick =
+            id: objects[0]
+            e: e
+          ## Expire firstClick and cleanup space after doubleClickTime
+          setTimeout ->
+            if firstClick == pointers.firstClick?[e.pointerId] # unchanged
+              delete pointers.firstClick[e.pointerId]
+          , doubleClickTime
     h?.clear()
     delete pointers[e.pointerId]
   move: (e) ->
@@ -564,7 +586,7 @@ defineTool
       h.highlight target
     else
       h.clear()
-  select: (ids) ->
+  select: (ids, options) ->
     return unless ids.length == 1
     return if pointers.text == ids[0]
     obj = Objects.findOne ids[0]
@@ -575,7 +597,7 @@ defineTool
     mainBoard.selection.addId pointers.text
     ## Giving the input focus makes it hard to do repeated global undo/redo;
     ## instead the text-entry box does its own undo/redo.
-    @resetInput false, obj.text
+    @resetInput options?.focus, obj.text
   resetInput: (focus, text) ->
     input = document.getElementById 'textInput'
     return unless input?

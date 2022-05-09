@@ -53,7 +53,7 @@ export selectTool = (tool, options) ->
   resumeTool options
   ## Pass previous tool's selection into new tool for possible selection.
   ## Equivalent to `setSelection` at this point because we've already cleared.
-  tools[tool]?.select? selected if selected?
+  tools[tool]?.select? selected, options?.select if selected?
   #document.body.classList.add "tool-#{tool}"
   lastDrawingTool = tool if tool of drawingTools
 
@@ -81,7 +81,7 @@ export stopTool = (options) ->
     selected
 
 export resumeTool = (options) ->
-  tools[currentTool()]?.start?() unless options?.noStart
+  tools[currentTool()]?.start? options?.start unless options?.noStart
 
 export restrictTouchDraw = (e) ->
   not touchDraw.get() and

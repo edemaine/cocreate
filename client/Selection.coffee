@@ -26,7 +26,9 @@ export class Highlighter
     ## use `document.elementFromPoint` instead.
     #target = e.target
     #if target.tagName.toLowerCase() == 'svg'
-    @findGroup document.elementFromPoint e.clientX, e.clientY
+    ## This doesn't properly ignore outline objects:
+    #@findGroup document.elementFromPoint e.clientX, e.clientY
+    @eventAll(e).elts[0]
   eventCoalescedTop: (e) ->
     ## Find first event in the coalesced sequence that hits an object
     for c in e.getCoalescedEvents?() ? [e]

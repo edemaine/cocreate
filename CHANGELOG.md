@@ -7,6 +7,12 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-05-08
+
+* In select mode, double-clicking on a text object switches to text mode,
+  so you can easily modify the content (similar to Inkscape).
+* Fix clicking on the selected text object in text mode causing deselection.
+
 ## 2022-05-03
 
 * Clock synchronization between client and server (used for cursor fading)
