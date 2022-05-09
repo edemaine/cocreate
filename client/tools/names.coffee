@@ -25,8 +25,9 @@ export Names = ->
   toolRef = null
   <>
     <Tool ref={toolRef} tool="names" placement="bottom"/>
-    <Overlay target={-> toolRef} show={show()} placement="bottom-start"
-     containerPadding="0">
+    <Overlay target={-> toolRef} show={show()}
+     rootClose={true} onHide={-> setShow false}
+     placement="bottom-start" containerPadding="0">
       <Tooltip class="menu">
         <NameList/>
       </Tooltip>

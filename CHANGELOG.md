@@ -12,6 +12,7 @@ instead of version numbers.
 * Dragging objects with grid snapping is now more accurate.
   The previous behavior could leave your cursor feeling off by nearly one cell.
   [[#206](https://github.com/edemaine/cocreate/issues/206)]
+* User list automatically closes after clicking outside the list.
 
 ## 2022-05-08
 
