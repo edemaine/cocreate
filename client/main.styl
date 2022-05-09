@@ -376,8 +376,9 @@ body:not(.history)
 
 // Add drop shadow to remote cursors, to avoid e.g. text blending into drawing
 #remotes
-  text
-    filter: drop-shadow(1px 1px 1px white)
+  > g  // root
+    > g  // cursor
+      filter: drop-shadow(1px 1px 1px white)
 
 .loading
   position: fixed
