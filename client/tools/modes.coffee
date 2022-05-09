@@ -219,7 +219,7 @@ defineTool
               tx: obj.tx ? 0
               ty: obj.ty ? 0
             after: h.moved[id]
-    else if h.down != true  # finished regular click without drag
+    else if h?.down != true  # finished regular click without drag
       objects = (id for id of pointers.objects)
       if objects.length == 1  # clicked on an object
         if (firstClick = pointers.firstClick[e.pointerId])? and
