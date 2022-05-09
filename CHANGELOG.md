@@ -15,6 +15,9 @@ instead of version numbers.
 * Other users' cursors now have a drop shadow to distinguish from
   the drawing underneath them.
 * User list automatically closes after clicking outside the list.
+* Fix Firefox support for <kbd>Ctrl+C</kbd> copying objects as SVG into the
+  clipboard for e.g. pasting into Inkscape.  Images won't be inlined though.
+  Also Chrome [doesn't support this yet](https://bugs.chromium.org/p/chromium/issues/detail?id=1110511).
 
 ## 2022-05-08
 

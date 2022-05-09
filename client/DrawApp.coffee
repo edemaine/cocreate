@@ -14,6 +14,7 @@ import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
 import {updateCursor} from './cursor'
 import {selectTool, clickTool, stopTool, resumeTool, pushTool, popTool, tools, toolsByHotkey, restrictTouchDraw} from './tools/tools'
+import {makeSVGSync} from './tools/download'
 import {tryAddImage} from './tools/image'
 import {setSelection} from './tools/modes'
 import {Names} from './tools/names'
@@ -270,8 +271,13 @@ export DrawAppRoom = ->
         e.preventDefault()
         e.clipboardData.setData 'application/cocreate-objects',
           currentBoard().selection.json()
-        e.clipboardData.setData 'image/svg+xml',
-          tools.downloadSVG.click null, false
+        e.clipboardData.setData 'image/svg+xml', makeSVGSync()
+        ## In the future, use Async Clipboard API:
+        #makeSVG().then (svg) ->
+        #  navigator.clipboard?.write [new ClipboardItem
+        #    'application/cocreate-objects': json
+        #    'image/svg+xml': svg
+        #  ]
         true
       cut: (e) ->
         if onCopy e
