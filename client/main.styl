@@ -374,6 +374,11 @@ body:not(.history)
   #historyBoard
     display: none
 
+// Add drop shadow to remote cursors, to avoid e.g. text blending into drawing
+#remotes
+  text
+    filter: drop-shadow(1px 1px 1px white)
+
 .loading
   position: fixed
   display: flex
