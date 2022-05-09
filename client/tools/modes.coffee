@@ -166,7 +166,10 @@ defineTool
     ## except that selection outline doesn't count when we
     ## shift/ctrl/meta-click (toggle)
     if h.id? or (outline? and not toggle)
-      h.start = maybeSnapPointToGrid h.start  # don't snap selection rectangle
+      ## Potential start of dragging to move objects.  h.start already set.
+      ## Previously we snapped the start point to the grid, but it's more
+      ## accurate to snap the vector between the start and end points.
+      #h.start = maybeSnapPointToGrid h.start  # don't snap selection rectangle
       if h.id?  # have something highlighted, possibly just now
         unless selection.has h.id
           pointers.objects[h.id] = Objects.findOne h.id
@@ -179,8 +182,8 @@ defineTool
           h.start = null
         h.clear()  # avoid leftover shadow when dragging
     ## If we click on blank space, or shift/ctrl/meta-click within the
-    ## selection rectangle, then we draw
-    else  # click on blank space -> show selection rectangle
+    ## selection rectangle, then we draw a selection rectangle.
+    else
       h.selectorStart h.start
   up: (e) ->
     h = pointers[e.pointerId]
@@ -246,14 +249,18 @@ defineTool
         dom.attr h.selector, dom.pointsToRect h.start, here, minSvgSize
       else if eventDistanceThreshold h.down, e, dragDist
         h.down = true
-        here = maybeSnapPointToGrid currentBoard().eventToPoint e
+        here = currentBoard().eventToPoint e
         here = orthogonalPoint here, e, h.start
+        motion =
+          x: here.x - h.start.x
+          y: here.y - h.start.y
+        motion = maybeSnapPointToGrid motion
         ## Don't set h.moved out here in case no objects selected
         diffs = {}
         for id, obj of pointers.objects when obj?
           h.moved ?= {}
-          tx = (obj.tx ? 0) + (here.x - h.start.x)
-          ty = (obj.ty ? 0) + (here.y - h.start.y)
+          tx = (obj.tx ? 0) + motion.x
+          ty = (obj.ty ? 0) + motion.y
           continue if h.moved[id]?.tx == tx and h.moved[id]?.ty == ty
           diffs[id] = {id, tx, ty}
           h.moved[id] = {tx, ty}

@@ -7,6 +7,12 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-05-09
+
+* Dragging objects with grid snapping is now more accurate.
+  The previous behavior could leave your cursor feeling off by nearly one cell.
+  [[#206](https://github.com/edemaine/cocreate/issues/206)]
+
 ## 2022-05-08
 
 * In select mode, double-clicking on a text object switches to text mode,
