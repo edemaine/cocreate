@@ -2,6 +2,27 @@ import {defineTool} from './defineTool'
 import {currentBoard, currentPage, currentRoom} from '../AppState'
 import dom from '../lib/dom'
 
+browserImport = new Function 'url', 'return import(url)'
+
+fontsData =
+  '':
+    name: 'Roboto Slab'
+    style: 'normal'
+    weight: 'normal'
+    url: 'https://cdn.jsdelivr.net/gh/googlefonts/robotoslab/fonts/ttf/RobotoSlab-Regular.ttf'
+    # url: 'https://cdn.jsdelivr.net/npm/roboto-slab-fontface-kit@1.0.2/fonts/Regular/RobotoSlab-Regular.ttf'
+  'strong':
+    name: 'Roboto Slab'
+    style: 'normal'
+    weight: 'strong'
+    url: 'https://cdn.jsdelivr.net/gh/googlefonts/robotoslab/fonts/ttf/RobotoSlab-Bold.ttf'
+    # url: 'https://cdn.jsdelivr.net/npm/roboto-slab-fontface-kit@1.0.2/fonts/Bold/RobotoSlab-Bold.ttf'
+  'code':
+    name: 'Roboto Mono'
+    style: 'normal'
+    weight: 'normal'
+    url: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono/fonts/ttf/RobotoMono-Regular.ttf'
+
 export downloadFile = (data, contentType, filename) ->
   download = document.getElementById 'download'
   download.href = URL.createObjectURL new Blob [data], type: contentType
@@ -73,7 +94,7 @@ export makeSVGSync = ->
   """
 
 ## Also inlines images, but asynchronous.
-export makeSVG = ->
+export makeSVG = (options) ->
   svg = makeSVGSync()
   ## Inline images.  (Asynchronous String.replace based on
   ## https://github.com/dsblv/string-replace-async)
@@ -107,9 +128,22 @@ export makeSVG = ->
               reader.readAsDataURL blob
         catch e
           console.log "Failed to inline image #{args[0]}: #{e}"
+  if options?.imageSize
+    sizes =
+      for image in images
+        img = new Image()
+        img.src = image
+        await img.decode()
+        width: img.width
+        height: img.height
   count = 0
-  svg = svg.replace ///<image\b([^<>]*)>///g, (match, attrs) ->
-    image = images[count++]
+  svg = svg.replace ///<image\b[^<>]*>///g, (match) ->
+    image = images[count]
+    size = sizes[count]
+    count++
+    match = match.replace /<image/, """
+      <image width="#{size.width}" height="#{size.height}"
+    """ if size
     match
     .replace ///crossorigin="([^"]*)"///, ''
     .replace ///href="([^"]*)"///, (href, url) ->
@@ -124,3 +158,49 @@ defineTool
   click: ->
     svg = await makeSVG()
     downloadFile svg, 'image/svg+xml', "cocreate-#{currentRoom().id}.svg"
+
+defineTool
+  name: 'downloadPDF'
+  category: 'download'
+  icon: 'download-pdf'
+  help: 'Download/export selection or entire drawing as a PDF file'
+  click: ->
+    svg = await makeSVG imageSize: true
+    match = /<svg[^<>]*width="([\d\-\.]+)px" height="([\d\-\.]+)px"/.exec svg
+    unless match?
+      return console.error 'Internal SVG parsing error'
+    width = parseFloat match[1]
+    height = parseFloat match[2]
+    [{jsPDF}, {svg2pdf}] = await Promise.all [
+      if Meteor.settings.public?.jspdf
+        browserImport Meteor.settings.public.jspdf
+      else
+        import('jspdf')
+    ,
+      if Meteor.settings.public?['svg2pdf.js']
+        browserImport Meteor.settings.public['svg2pdf.js']
+      else
+        import('svg2pdf.js')
+    ]
+    pdf = new jsPDF
+      format: [width, height]
+      orientation: 'landscape'
+    if /<text/.test svg
+      for className, fontData of fontsData
+        continue if className and
+          not svg.includes """<tspan class="#{className}">"""
+        font = await fetch fontData.url
+        font = await font.blob()
+        reader = new FileReader
+        reader.readAsDataURL font
+        await new Promise (done) -> reader.onload = done
+        font = reader.result
+        .replace /^data:[^;]*;base64,/, ''
+        filename = fontData.url.replace /^.*\//, ''
+        pdf.addFileToVFS filename, font
+        pdf.addFont filename, fontData.name, fontData.style, fontData.weight
+    container = document.createElement 'div'
+    container.innerHTML = svg
+    document.body.appendChild container
+    await svg2pdf container.firstElementChild, pdf, {width, height}
+    pdf.save "cocreate-#{currentRoom().id}.pdf"

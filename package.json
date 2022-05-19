@@ -30,6 +30,7 @@
   "dependencies": {
     "@babel/runtime": "^7.11.2",
     "debounce": "^1.2.1",
+    "jspdf": "^2.5.1",
     "meteor-node-stubs": "^1.0.1",
     "pepjs": "^0.5.3",
     "pug": "^3.0.2",
@@ -38,6 +39,7 @@
     "solid-bootstrap": "^1.0.8",
     "solid-js": "^1.3.17",
     "solid-meteor-data": "^0.6.1",
+    "svg2pdf.js": "^2.2.0",
     "tex2svg-webworker": "^0.5.1"
   },
   "devDependencies": {

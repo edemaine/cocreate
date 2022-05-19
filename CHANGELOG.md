@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-05-19
+
+* New "Download PDF file" feature downloads page or selection in PDF format.
+  [[#98](https://github.com/edemaine/cocreate/issues/98)]
+
 ## 2022-05-09
 
 * Dragging objects with grid snapping is now more accurate.

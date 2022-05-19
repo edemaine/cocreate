@@ -452,6 +452,8 @@ While in Time Travel mode, you can do the following:
   <kbd>Ctrl</kbd>, or using a touchpad zoom gesture.
 * [<img src="icons/search-one.svg" width="18" alt="Zoom Reset Icon"> Zoom Reset](#-zoom-reset) or [<img src="icons/zoom-fit.svg" width="18" alt="Zoom To Fit Icon"> Zoom To Fit](#-zoom-to-fit).
 * [<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg)
+  or
+  [<img src="icons/download-pdf.svg" width="18" alt="Download PDF Icon"> Download PDF](-download-pdf)
   for the currently viewed page or selection.
 
 The tool palettes switch to a sepia tone to indicate you're time traveling.
@@ -626,6 +628,22 @@ by a Google Fonts URL, so it requires an Internet connection to access.
 In some environments, you can select some objects and
 copy the SVG directly to your clipboard using
 <kbd>Ctrl-C</kbd> or <kbd>Command-C</kbd> on a Mac.
+
+### <img src="icons/download-pdf.svg" width="18" alt="Download PDF Icon"> Download PDF
+
+Sometimes it's more convenient to have a PDF representation of your drawing.
+PDF isn't as editable as SVG, so is less good for archival,
+but it's often easier for people to view,
+so can be useful for quickly sending a file for someone to look at.
+Use this button to save your drawing as PDF, instead of SVG with
+[<img src="icons/download-svg.svg" width="18" alt="Download SVG Icon"> Download SVG](-download-svg).
+
+The PDF is generated via [svg2pdf.js](https://github.com/yWorks/svg2pdf.js/).
+It inlines all necessary images and fonts, so should be fully standalone.
+But the output may not always be perfect.
+For example, this feature currently doesn't support italics
+or bold-monospace text.
+It also doesn't yet support downloading multiple pages in one PDF.
 
 ### <img src="icons/github.svg" width="18" alt="Github Icon"> Github Link
 

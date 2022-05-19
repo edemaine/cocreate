@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.2.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" focusable="false" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+	 x="0px" y="0px" viewBox="0 0 384 512" style="enable-background:new 0 0 384 512;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;}
+	.st1{fill:#FFFFFF;}
+	.st2{font-family:'Impact';}
+	.st3{font-size:218.9876px;}
+</style>
+<line class="st0" x1="-34" y1="183" x2="643" y2="183"/>
+<path d="M360,0h-97.9H256h-32H24C10.7,0,0,10.7,0,24v159v305c0,13.3,10.7,24,24,24h336c13.3,0,24-10.7,24-24V183v-23v-32v-6.1V24
+	C384,10.7,373.3,0,360,0z M300.5,377.4L204,473.1c-6.7,6.6-17.4,6.6-24,0l-96.4-95.7c-10.2-10.1-3-27.4,11.3-27.4H160v-80
+	c0-8.8,7.2-16,16-16h32c8.8,0,16,7.2,16,16v80h65.2C303.5,350,310.6,367.3,300.5,377.4z"/>
+<text transform="matrix(0.9154 0 0 1 46.4292 221.7227)" class="st1 st2 st3">PDF</text>
+</svg>
