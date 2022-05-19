@@ -184,7 +184,11 @@ defineTool
     ]
     pdf = new jsPDF
       format: [width, height]
-      orientation: 'landscape'
+      orientation:
+        if width > height
+          'landscape'
+        else
+          'portrait'
     if /<text/.test svg
       for className, fontData of fontsData
         continue if className and
