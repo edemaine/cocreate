@@ -249,7 +249,9 @@ export DrawAppRoom = ->
               e.preventDefault()  # ctrl-D bookmarks on Chrome
               currentBoard().selection.duplicate()
           when 'Escape'
-            if historyMode()
+            if currentBoard()?.selection?.nonempty()
+              currentBoard().selection.clear()
+            else if historyMode()
               setHistoryMode false  # escape history view by toggling
           else
             ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also

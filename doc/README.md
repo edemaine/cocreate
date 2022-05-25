@@ -188,6 +188,10 @@ You can select more objects with multiple rectangles by holding
 <kbd>Shift</kbd>; each time an object is intersected by a selection rectangle,
 it toggles in/out of the selection.
 
+**Deselection.**
+If you click outside the current selection rectangle, or
+press the <kbd>Escape</kbd> key, you will deselect everything.
+
 **Attributes.**
 When you select one or more objects, your current
 [attributes](#attribute-tools-bottom-palette) will update to match those
