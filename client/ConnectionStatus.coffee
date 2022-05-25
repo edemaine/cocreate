@@ -92,7 +92,7 @@ export MigrateMessage = ->
   <>
     <h1>Cocreate Updated</h1>
     <p>
-      The server wants to migrate to a new version of Cocreate; see <a href={changelog()} target="_blank">the changelog</a> for what's new.  You should stop drawing; check that your latest changes are <a href={here()} target="_blank">visible in another tab</a>; optionally select and copy any recently changed objects to your clipboard; and then <a href="#" onClick={onMigrate}>migrate to the new version</a>.
+      The server wants to migrate to a new version of Cocreate; see <a href={changelog()} target="_blank">the changelog</a> for what's new.  You can click “<a href="#" onClick={onMigrate}>Migrate Now</a>” or reload to upgrade.  If you've been drawing recently, you should first check that your latest changes are <a href={here()} target="_blank">visible in another browser tab</a>; if anything is missing, copy and paste from here to the new tab. Then close or migrate/reload this tab.
     </p>
   </>
 

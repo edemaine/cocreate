@@ -10,12 +10,14 @@ instead of version numbers.
 ## 2022-05-25
 
 * Arrow keys nudge selected objects by grid units
-  (or half-grid units while holding <kbd>Shift</kbd>)
+  (or half-grid units while holding <kbd>Shift</kbd>).
   [[#149](https://github.com/edemaine/cocreate/issues/149)]
 * <kbd>Escape</kbd> key now deselects any selected objects.
   [[#179](https://github.com/edemaine/cocreate/issues/179)]
 * Fixed dragging of current selection accidentally selecting an object
-  (when the object was under the initial drag point)
+  (when the object was under the initial drag point).
+* Improve "Cocreate updated" message.
+  [[#200](https://github.com/edemaine/cocreate/issues/200)]
 
 ## 2022-05-19
 
