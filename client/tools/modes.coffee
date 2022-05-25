@@ -170,7 +170,9 @@ defineTool
       ## Previously we snapped the start point to the grid, but it's more
       ## accurate to snap the vector between the start and end points.
       #h.start = maybeSnapPointToGrid h.start  # don't snap selection rectangle
-      if h.id?  # have something highlighted, possibly just now
+      unless outline? and not toggle
+        ## In this case, we must have something highlighted, in h.id,
+        ## and we're either toggling or not dragging the selection outline.
         unless selection.has h.id
           pointers.objects[h.id] = Objects.findOne h.id
           selection.add h

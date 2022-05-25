@@ -14,6 +14,8 @@ instead of version numbers.
   [[#149](https://github.com/edemaine/cocreate/issues/149)]
 * <kbd>Escape</kbd> key now deselects any selected objects.
   [[#179](https://github.com/edemaine/cocreate/issues/179)]
+* Fixed dragging of current selection accidentally selecting an object
+  (when the object was under the initial drag point)
 
 ## 2022-05-19
 
