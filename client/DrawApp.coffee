@@ -5,7 +5,7 @@ import {createTracker} from 'solid-meteor-data'
 import {setRouterNavigate, historyBoard, historyMode, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, mainBoard, setCurrentPage, setCurrentPageId, setCurrentRoom, setHistoryBoard, setMainBoard, setHistoryMode} from './AppState'
 import {Board} from './Board'
 import {ConnectionStatus} from './ConnectionStatus'
-import {maybeSnapPointToGrid} from './Grid'
+import {gridOffset, maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
 import {Page} from './Page'
 import {PageList} from './PageList'
@@ -253,6 +253,18 @@ export DrawAppRoom = ->
               currentBoard().selection.clear()
             else if historyMode()
               setHistoryMode false  # escape history view by toggling
+          when 'ArrowLeft'
+            delta = if e.shiftKey then 0.5 else 1
+            currentBoard()?.selection?.translate gridOffset -delta, 0
+          when 'ArrowRight'
+            delta = if e.shiftKey then 0.5 else 1
+            currentBoard()?.selection?.translate gridOffset +delta, 0
+          when 'ArrowUp'
+            delta = if e.shiftKey then 0.5 else 1
+            currentBoard()?.selection?.translate gridOffset 0, -delta
+          when 'ArrowDown'
+            delta = if e.shiftKey then 0.5 else 1
+            currentBoard()?.selection?.translate gridOffset 0, +delta
           else
             ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
             ## triggering width 1 hotkey.

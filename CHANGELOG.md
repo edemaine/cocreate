@@ -9,6 +9,9 @@ instead of version numbers.
 
 ## 2022-05-25
 
+* Arrow keys nudge selected objects by grid units
+  (or half-grid units while holding <kbd>Shift</kbd>)
+  [[#149](https://github.com/edemaine/cocreate/issues/149)]
 * <kbd>Escape</kbd> key now deselects any selected objects.
   [[#179](https://github.com/edemaine/cocreate/issues/179)]
 

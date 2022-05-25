@@ -56,14 +56,14 @@ export snapPointToGrid = (pt, isHalf, gridType = currentGridType()) ->
           transposeXY triSnap transposeXY(pt), 1/Math.sqrt 3
       rounded
 
-export gridUnitOffset = (gridType = currentGridType()) ->
+export gridOffset = (dx, dy, gridType = currentGridType()) ->
   switch gridType
     when 'square'
-      x: gridSize
-      y: gridSize
+      x: dx * gridSize
+      y: dy * gridSize
     when 'triangle'
-      x: gridSize / 2
-      y: triangleVerticalGridSize
+      x: (dx - (dy % 2) / 2) * gridSize
+      y: dy * triangleVerticalGridSize
 
 export class Grid
   constructor: (@page) ->

@@ -226,6 +226,11 @@ object highlights before dragging.)
 If you hold <kbd>Shift</kbd> while dragging, the move is constrained to be
 purely horizontal or vertical.
 
+You can also nudge objects horizontally or vertically using the arrow keys.
+Normally, objects move by one grid unit.
+If you hold <kbd>Shift</kbd> while pressing the keys,
+the move is by half-grid units.
+
 **Cut/copy/paste/duplicate/delete.**
 You can copy or cut your selection and paste it anywhere else in Cocreate,
 such as another page or another board altogether.

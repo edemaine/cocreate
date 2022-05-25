@@ -3,7 +3,7 @@
 ## (which often come from Highlighter).
 
 import {undoStack} from './UndoStack'
-import {gridUnitOffset} from './Grid'
+import {gridOffset} from './Grid'
 import {selectColor, selectFill, selectFillOff} from './tools/color'
 import {selectOpacity, selectOpacityOff} from './tools/opacity'
 import {selectWidth} from './tools/width'
@@ -164,6 +164,11 @@ export class Selection
     @remove id for id of @selected
   ids: ->
     id for id of @selected
+  objs: ->
+    for id in @ids()
+      obj = Objects.findOne id
+      continue unless obj?
+      obj
   has: (id) ->
     id of @selected
   count: ->
@@ -198,9 +203,7 @@ export class Selection
   edit: (attrib, value) ->
     return if @board.readonly
     objs =
-      for id in @ids()
-        obj = Objects.findOne id
-        continue unless obj?
+      for obj in @objs()
         switch attrib
           when 'width'
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse']
@@ -221,11 +224,32 @@ export class Selection
           id: obj._id
           before: "#{attrib}": obj[attrib] ? null
           after: "#{attrib}": value
+  translate: ({x, y}) ->
+    return if @board.readonly
+    return unless x or y
+    objs = @objs()
+    return unless objs.length
+    undoStack.pushAndDo
+      type: 'multi'
+      ops:
+        for obj in objs
+          before = {}
+          after = {}
+          if x
+            before.tx = obj.tx
+            after.tx = (obj.tx ? 0) + x
+          if y
+            before.ty = obj.ty
+            after.ty = (obj.ty ? 0) + y
+          type: 'edit'
+          id: obj._id
+          before: before
+          after: after
   duplicate: ->
     return if @board.readonly
     return unless @nonempty()
     oldIds = @ids()
-    offset = gridUnitOffset()
+    offset = gridOffset 1, 1
     newObjs =
       for id in oldIds
         obj = Objects.findOne id
