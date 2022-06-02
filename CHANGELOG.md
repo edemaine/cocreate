@@ -7,6 +7,12 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-06-02
+
+* Cocreate's math renderer no longer includes the `physics` package.
+  This fixes e.g. LaTeX's standard `\div`, but removes some features.
+  [[#208](https://github.com/edemaine/cocreate/issues/208)]
+
 ## 2022-05-25
 
 * Arrow keys nudge selected objects by grid units
