@@ -205,6 +205,7 @@ defineTool
         pdf.addFont filename, fontData.name, fontData.style, fontData.weight
     container = document.createElement 'div'
     container.innerHTML = svg
-    document.body.appendChild container
+    ## For debugging:
+    #document.body.appendChild container
     await svg2pdf container.firstElementChild, pdf, {width, height}
     pdf.save "cocreate-#{currentRoom().id}.pdf"

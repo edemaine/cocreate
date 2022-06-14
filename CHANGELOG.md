@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-06-14
+
+* Fix bug in Download PDF messing up Cocreate's layout
+
 ## 2022-06-02
 
 * Cocreate's math renderer no longer includes the `physics` package.
