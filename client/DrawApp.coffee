@@ -74,7 +74,7 @@ export DrawAppRoom = ->
   setRouterNavigate navigate
   pageId = createTracker ->
     id = currentPageId()
-    hashId = location.hash
+    hashId = location.hash.replace /^#/, ''
     pages = currentRoom()?.data()?.pages
     pageStorage = new storage.StringVariable "#{params.roomId}.page", undefined, false
     ## Check for initial or changed hash indicating page ID
@@ -84,6 +84,7 @@ export DrawAppRoom = ->
           setCurrentPageId hashId
           pageStorage.set hashId
         else if not loading() ## Invalid page hash: redirect to remove from URL
+          console.warn "Removing invalid page hash: #{hashId}"
           Meteor.defer -> navigate location.pathname, replace: true
     else if not id and pages?.length
       ## Use last page recorded in localStorage if there is one.

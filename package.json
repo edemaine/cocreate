@@ -35,7 +35,7 @@
     "pepjs": "0.5.3",
     "pug": "3.0.2",
     "qrcode-svg": "1.1.0",
-    "solid-app-router": "0.3.2",
+    "solid-app-router": "0.4.1",
     "solid-bootstrap": "1.0.8",
     "solid-js": "1.4.7",
     "solid-meteor-data": "0.6.1",
