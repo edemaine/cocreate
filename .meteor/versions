@@ -23,7 +23,7 @@ ecmascript@0.16.2
 ecmascript-runtime@0.8.0
 ecmascript-runtime-client@0.12.1
 ecmascript-runtime-server@0.11.0
-edemaine:solid@0.2.2
+edemaine:solid@0.2.3
 edemaine:static-pug@0.0.1
 ejson@1.1.2
 es5-shim@4.8.0

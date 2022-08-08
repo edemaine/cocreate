@@ -14,7 +14,7 @@ standard-minifier-css@1.8.1   # CSS minifier run for production mode
 es5-shim@4.8.0                # ECMAScript 5 compatibility for older browsers
 shell-server@0.5.0            # Server-side component of the `meteor shell` command
 
-edemaine:solid@0.2.2
+edemaine:solid@0.2.3
 coffeescript-compiler@2.4.1
 #ecmascript@0.16.2              # Enable ECMAScript2015+ syntax in app code
 #coffeescript
