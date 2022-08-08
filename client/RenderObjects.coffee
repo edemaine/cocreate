@@ -385,8 +385,8 @@ export class RenderObjects
     [rect, text] = g.childNodes
     dx = job.width * fontSize
     ## Roboto Slab in https://opentype.js.org/font-inspector.html:
-    #unitsPerEm = 1000 # Font Header table
-    descender = 271   # Horizontal Header table
+    unitsPerEm = 1000 # Font Header table
+    #descender = 271   # Horizontal Header table
     ascender = 1048   # Horizontal Header table
     job.texts[id] =
       for tspan in text.querySelectorAll """tspan[data-tex="#{CSS.escape job.formula}"][data-display="#{job.display}"]"""
@@ -397,7 +397,8 @@ export class RenderObjects
         .replace /currentColor/g, color
         x = tspanBBox.x - dx + tspanBBox.width/2  # divvy up &VeryThinSpace;
         y = tspanBBox.y \
-          + tspanBBox.height * (1 - descender/(descender+ascender)) \
+          #+ tspanBBox.height * (1 - descender/(descender+ascender)) \
+          + fontSize * (ascender / unitsPerEm) \
           - job.height * fontSize + job.depth * fontSize / 2
           # not sure where the /2 comes from... exFactor?
         dom.attr svgG,
