@@ -7,14 +7,20 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-11-12
+
+* New "anchor select" tool with basic support for dragging anchors
+  to reshape segments, rectangles, and ellipses.
+  [[#214](https://github.com/edemaine/cocreate/issues/214)]
+
 ## 2022-08-08
 
-* Fix bug in vertical alignment of text with LaTeX formulas in Firefox
+* Fix bug in vertical alignment of text with LaTeX formulas in Firefox.
   [[#199](https://github.com/edemaine/cocreate/issues/199)]
 
 ## 2022-06-14
 
-* Fix bug in Download PDF messing up Cocreate's layout
+* Fix bug in Download PDF messing up Cocreate's layout.
 
 ## 2022-06-02
 

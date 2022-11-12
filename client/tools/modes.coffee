@@ -5,6 +5,7 @@ import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
 import {tools, selectTool} from './tools'
 import {currentWidth} from './width'
+import {anchorFromEvent, anchorMove, anchorsOf} from '../Anchor'
 import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from '../AppState'
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
@@ -131,6 +132,7 @@ defineTool
     pointers.firstClick = {}
   stop: ->
     delete pointers.objects
+    delete pointers.firstClick
   down: (e) ->
     selection = currentBoard().selection
     pointers[e.pointerId] ?= new Highlighter currentBoard()
@@ -192,13 +194,12 @@ defineTool
     if h?.selector?  # finished rectangular drag
       board = currentBoard()
       query = BBox.fromPoints [h.start, board.eventToPoint(e)]
-      selection = board.selection
-      render = board.render
+      {render, selection} = board
       # render is undefined when history mode starts but hasn't been advanced
       for id of render?.dom ? {}
       #for id from render.dbvt.query query
         bbox = render.bbox[id]
-        continue unless query.intersects bbox  # quick filter without DBVT
+        continue unless query.intersects bbox  # quick filter
         obj = board.findObject id
         continue unless obj?
         if intersects query, obj, bbox
@@ -275,6 +276,103 @@ defineTool
         h.clear()
   select: (ids) ->
     currentBoard().selection.addId id for id in ids
+
+defineTool
+  name: 'anchor'
+  category: 'mode'
+  icon: 'anchor-select'
+  hotspot: [0.31, 0.16992]
+  help: "Drag anchor handles to reshape lines, rectangles, and ellipses."
+  hotkey: 'a'
+  start: ->
+    currentBoard().render.showAnchors true
+  stop: ->
+    currentBoard().render.showAnchors false
+  down: (e) ->
+    return if pointers[e.pointerId]?.down  # in case of repeat events
+    if (anchor = anchorFromEvent e)?
+      id = anchor.dataset.obj
+      pointers.objects = {}
+      pointers.objects[id] = Objects.findOne id
+      pointers.objects[id].anchors = anchorsOf pointers.objects[id]
+      return unless pointers.objects[id]?
+      pointers.objects[id].anchorIndices = [parseInt anchor.dataset.index, 10]
+      pointers[e.pointerId] =
+        down: e
+        start: currentBoard().eventToPoint e
+        moved: null
+        edit: throttle.func (diffs) ->
+          Meteor.call 'objectsEdit', (diff for id, diff of diffs)
+        , ([older], [newer]) ->
+          [Object.assign older, newer]
+    ## If we click on blank space, or shift/ctrl/meta-click within the
+    ## selection rectangle, then we draw a selection rectangle.
+    #else
+    #  h.selectorStart h.start
+  move: (e) ->
+    #pointers[e.pointerId] ?= new AnchorHighlighter currentBoard()
+    h = pointers[e.pointerId]
+    if h?.down
+      if eventDistanceThreshold h.down, e, dragDist
+        h.down = true
+        here = currentBoard().eventToPoint e
+        here = orthogonalPoint here, e, h.start
+        motion =
+          x: here.x - h.start.x
+          y: here.y - h.start.y
+        motion = maybeSnapPointToGrid motion
+        ## Don't set h.moved out here in case no objects selected
+        diffs = {}
+        for id, obj of pointers.objects when obj?
+          continue unless obj.anchorIndices.length
+          h.moved ?= {}
+          h.moved[id] ?= obj.pts[..]
+          moved = false
+          for index in obj.anchorIndices
+            x = obj.anchors[index].x + motion.x
+            y = obj.anchors[index].y + motion.y
+            moved or= anchorMove obj, h.moved[id], index, {x, y}
+          continue unless moved
+          diffs[id] = {id, pts: h.moved[id]}
+        h.edit diffs if (id for id of diffs).length
+  up: (e) ->
+    h = pointers[e.pointerId]
+    #if h?.selector?  # finished rectangular drag
+    if h?.moved  # finished dragging objects
+      h.edit.flush()
+      undoStack.push
+        type: 'multi'
+        ops:
+          for id, obj of pointers.objects when obj?
+            type: 'edit'
+            id: id
+            before:
+              pts: obj.pts
+            after:
+              pts: h.moved[id]
+    ###
+    else if h?.down != true  # finished regular click without drag
+      objects = (id for id of pointers.objects)
+      if objects.length == 1  # clicked on an object
+        if (firstClick = pointers.firstClick[e.pointerId])? and
+           firstClick.id == objects[0] and
+           not eventDistanceThreshold(firstClick.e, e, doubleClickDist)
+          # double click on object
+          delete pointers.firstClick[e.pointerId]
+          if Objects.findOne(objects[0])?.type == 'text'  # text object
+            selectTool 'text', select: focus: true
+        else
+          pointers.firstClick[e.pointerId] = firstClick =
+            id: objects[0]
+            e: e
+          ## Expire firstClick and cleanup space after doubleClickTime
+          setTimeout ->
+            if firstClick == pointers.firstClick?[e.pointerId] # unchanged
+              delete pointers.firstClick[e.pointerId]
+          , doubleClickTime
+    ###
+    #h?.clear()
+    delete pointers[e.pointerId]
 
 defineTool
   name: 'pen'

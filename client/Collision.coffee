@@ -1,6 +1,6 @@
 import {BBox} from './BBox'
 
-intersectsSpecific = 
+intersectsSpecific =
   pen: (query, obj) ->
     ## Untranslate query box if object is translated.
     if obj.tx or obj.ty

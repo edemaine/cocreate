@@ -64,7 +64,7 @@ export class Highlighter
       return unless Objects.findOne(target.dataset.id)?.type == @type
     target
   highlight: (target) ->
-    ## `target` should be the result of `findGroup` (or `eventTop`/`eventall`),
+    ## `target` should be the result of `findGroup` (or `eventTop`/`eventAll`),
     ## so satisfies all above conditions.
     @clear()
     @target = target

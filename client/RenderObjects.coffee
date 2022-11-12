@@ -6,6 +6,7 @@ import dom from './lib/dom'
 import icons from './lib/icons'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
+import {anchorObjectTypes, anchorsOf, anchorRadius, anchorStroke} from './Anchor'
 import {BBox, minSvgSize} from './BBox'
 #import {DBVT} from './DBVT'
 
@@ -483,6 +484,7 @@ export class RenderObjects
         elt.removeAttribute 'transform'
     id = @id obj
     @updated id, transformOnly
+    @renderAnchors id, obj if @anchors?
     ## DBVT update
     #unless @bbox[id]?  # new object
     #  @dbvt.insert id, @bbox[id] =
@@ -501,7 +503,7 @@ export class RenderObjects
     #  @bbox[id] = bbox
     #  @dbvt.move id, bbox
     ## BBox update (alternative to DBVT)
-    if obj.type == 'pen' and options? and
+    if obj.type == 'pen' and options?.start? and
        not (options.width or options.tx or options.ty)  # only points are added
       @bbox[id] = @bbox[id].union(
         BBox.fromPoints obj.pts[options.start...obj.pts.length]
@@ -522,6 +524,7 @@ export class RenderObjects
     tools.text.stop() if id == pointers.text
     @texDelete id if @texById[id]?
     @updated id
+    @renderAnchors id if @anchors?[id]?
   texDelete: (id) ->
     for job in check = @texById[id]
       delete job.texts[id]
@@ -553,6 +556,39 @@ export class RenderObjects
       else
         @board.selection.remove id
     @board.highlighters[id]?.clear()
+
+  ## Anchors
+  renderAnchors: (id, obj) ->
+    unless obj?  # deletion
+      for anchor in @anchors[id] ? []
+        anchor.remove()
+      delete @anchors[id]
+    else
+      return unless anchorObjectTypes.has obj.type
+      @anchors[id] ?= []
+      for anchor, index in anchorsOf obj
+        unless (rect = @anchors[id][index])?
+          @root.appendChild rect = @anchors[id][index] = dom.create 'rect',
+            class: 'anchor'
+            width: 2 * anchorRadius
+            height: 2 * anchorRadius
+            'stroke-width': anchorStroke
+            'data-obj': id
+            'data-index': index
+        dom.attr rect,
+          x: anchor.x - anchorRadius + (obj.tx ? 0)
+          y: anchor.y - anchorRadius + (obj.ty ? 0)
+  showAnchors: (show) ->
+    if show
+      @anchors ?= {}
+      for id of @dom ? {}
+        obj = @board.findObject id
+        continue unless obj?
+        @renderAnchors id, obj
+    else
+      for id of @anchors ? {}
+        @renderAnchors id
+      @anchors = null
 
 ###
 dot = (obj, p) ->

@@ -249,6 +249,21 @@ In addition, Cocreate offers two nonclipboard operations:
   (If you prefer a pen interface for deleting objects, check out the
   [<img src="icons/eraser.svg" width="18" alt="Erase Icon"> Erase Tool](#-erase-tool).)
 
+### <img src="icons/anchor-select.svg" width="18" alt="Anchor Select Icon"> Anchor Select Tool
+
+The Select Tool is another selection second that lets you manipulate the
+geometry of existing drawn objects.  Specifically, you can drag the points
+that define a
+[<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segment](#-segment-tool),
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangle](#-rectangle-tool),
+or
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipse](#-ellipse-tool).
+
+Switching to this mode displays small squares at all the draggable points.
+Drag any of these points to the desired location.
+Holding <kbd>Shift</kbd> while dragging constraints the move to be
+purely horizontal or vertical.
+
 ### <img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen Tool
 
 The Pen Tool is a drawing mode that lets you draw freehand.
