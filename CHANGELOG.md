@@ -7,6 +7,16 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-11-13
+
+* New anchor select tool now supports selecting multiple anchors,
+  similar to the regular select tool:
+  Click/tap on individual anchors while holding <kbd>Shift</kbd>
+  to toggle their selection, or drag a selection rectangle.
+  Then move the selected anchors by dragging or using arrow keys.
+  The <kbd>Escape</kbd> key clears the selection.
+  [[#214](https://github.com/edemaine/cocreate/issues/214)]
+
 ## 2022-11-12
 
 * New "anchor select" tool with basic support for dragging anchors
