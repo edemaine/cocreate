@@ -6,12 +6,15 @@ import dom from './lib/dom'
 import {Selection} from './Selection'
 import {currentBoard} from './AppState'
 
-nonrenderedClasses =
-  highlight: true
-  selected: true
-  selector: true
-  outline: true
-  grid: true
+nonrenderedClasses = new Set [
+  'highlight'
+  'selected'
+  'selector'
+  'outline'
+  'grid'
+  'anchor'
+  'select'
+]
 
 ## Maps a PointerEvent with `pressure` attribute to a `w` multiplier to
 ## multiply with the "natural" width of the pen.
@@ -146,7 +149,7 @@ export class Board
     for child in @root.childNodes
       skip = false
       for className in child.classList
-        if className of nonrenderedClasses
+        if nonrenderedClasses.has className
           skip = true
           break
       continue if skip
