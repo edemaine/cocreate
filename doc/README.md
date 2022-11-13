@@ -259,10 +259,26 @@ that define a
 or
 [<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipse](#-ellipse-tool).
 
-Switching to this mode displays small squares at all the draggable points.
-Drag any of these points to the desired location.
-Holding <kbd>Shift</kbd> while dragging constraints the move to be
+Switching to this mode displays small squares at all the draggable points,
+called "anchors".
+Drag any of these anchors to the desired location.
+Hold <kbd>Shift</kbd> while dragging to constrain the move to be
 purely horizontal or vertical.
+
+You can select multiple anchors in two ways:
+
+1. Clicking/tapping on individual anchors while holding <kbd>Shift</kbd>,
+   to toggle selection.
+   This method is good for selecting a few specific anchors at different
+   locations, but it gets tedious if you want to manipulate several anchors
+   at once or several angles at the same location.
+2. Dragging a rectangle around anchors to select the anchors
+   whose centers are within the rectangle.
+   Without <kbd>Shift</kbd>, this resets the selection.
+   With <kbd>Shift</kbd>, this toggles the selection.
+
+You can then move the selected anchors by dragging one of the selected anchors,
+or dragging an additional anchor to select while holding <kbd>Shift</kbd>.
 
 ### <img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen Tool
 

@@ -2,6 +2,7 @@
 ## Selection class is for maintaining and highlighted set of selected objects
 ## (which often come from Highlighter).
 
+import {minSvgSize} from './BBox'
 import {undoStack} from './UndoStack'
 import {gridOffset} from './Grid'
 import {selectColor, selectFill, selectFillOff} from './tools/color'
@@ -103,14 +104,16 @@ export class Highlighter
       delete @board.highlighters[@id]
       @target = @highlighted = @id = null
     @selectorClear()
-  selectorStart: (start) ->
+  selectorStart: (@start) ->
     scale = Math.min 1, @board.transform.scale
     @board.root.appendChild @selector = dom.create 'rect',
       class: 'selector'
-      x1: start.x
-      y1: start.y
+      x1: @start.x
+      y1: @start.y
       'stroke-width': selectorWidth / scale
       'stroke-dasharray': selectorDash / scale
+  selectorUpdate: (point) ->
+    dom.attr @selector, dom.pointsToRect @start, point, minSvgSize
   selectorClear: ->
     return unless @selector?
     @selector.remove()

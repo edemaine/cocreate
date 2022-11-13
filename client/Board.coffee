@@ -3,6 +3,7 @@
 ## (Arguably, it should be merged with RenderObjects.)
 
 import dom from './lib/dom'
+import {AnchorSelection} from './Anchor'
 import {Selection} from './Selection'
 import {currentBoard} from './AppState'
 
@@ -34,6 +35,7 @@ export class Board
     @svg.appendChild @root = dom.create 'g'
     @transform = defaultTransform()
     @selection = new Selection @
+    @anchorSelection = new AnchorSelection @
     ## Map from Object `_id` to a `Highlighter` instance
     ## that is currently highlighting that object.
     @highlighters = {}
@@ -158,3 +160,7 @@ export class Board
     child for child in @renderedChildren() when @selection.has child.dataset.id
   renderedBBox: (children) ->
     dom.unionSvgBBox @svg, children, @root
+
+  showAnchors: (show) ->
+    @render.showAnchors show
+    @anchorSelection.clear()  # to ensure 'select' classes are up-to-date

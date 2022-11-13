@@ -125,7 +125,7 @@ defineTool
   category: 'mode'
   icon: 'mouse-pointer'
   hotspot: [0.21875, 0.03515625]
-  help: <>Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical), copy via <kbd>{Ctrl}-C</kbd>, cut via <kbd>{Ctrl}-X</kbd>, paste via <kbd>{Ctrl}-V</kbd>, duplicate via <kbd>{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them.</>
+  help: <>Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical) or using arrow keys, copy via <kbd>{Ctrl}-C</kbd>, cut via <kbd>{Ctrl}-X</kbd>, paste via <kbd>{Ctrl}-V</kbd>, duplicate via <kbd>{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them.</>
   hotkey: 's'
   start: ->
     pointers.objects = {}
@@ -193,8 +193,8 @@ defineTool
     h = pointers[e.pointerId]
     if h?.selector?  # finished rectangular drag
       board = currentBoard()
-      query = BBox.fromPoints [h.start, board.eventToPoint(e)]
       {render, selection} = board
+      query = BBox.fromPoints [h.start, board.eventToPoint e]
       # render is undefined when history mode starts but hasn't been advanced
       for id of render?.dom ? {}
       #for id from render.dbvt.query query
@@ -248,8 +248,7 @@ defineTool
     h = pointers[e.pointerId]
     if h.down
       if h.selector?
-        here = currentBoard().eventToPoint e
-        dom.attr h.selector, dom.pointsToRect h.start, here, minSvgSize
+        h.selectorUpdate currentBoard().eventToPoint e
       else if eventDistanceThreshold h.down, e, dragDist
         h.down = true
         here = currentBoard().eventToPoint e
@@ -282,38 +281,58 @@ defineTool
   category: 'mode'
   icon: 'anchor-select'
   hotspot: [0.31, 0.16992]
-  help: "Drag anchor handles to reshape lines, rectangles, and ellipses."
+  help: <>Select anchor handles to reshape lines, rectangles, and ellipses. Drag anchor to move it; or drag rectangle or click on individual anchors (toggling multiple if holding <kbd>Shift</kbd>) and then drag to move (<kbd>Shift</kbd> for horizontal/vertical).</>
   hotkey: 'a'
   start: ->
-    currentBoard().render.showAnchors true
+    mainBoard.showAnchors true
+    pointers.objects = {}
   stop: ->
-    currentBoard().render.showAnchors false
+    ## currentBoard().showAnchors fails when switching to history mode
+    mainBoard.showAnchors false
+    delete pointers.objects
   down: (e) ->
-    return if pointers[e.pointerId]?.down  # in case of repeat events
-    if (anchor = anchorFromEvent e)?
-      id = anchor.dataset.obj
-      pointers.objects = {}
-      pointers.objects[id] = Objects.findOne id
-      pointers.objects[id].anchors = anchorsOf pointers.objects[id]
-      return unless pointers.objects[id]?
-      pointers.objects[id].anchorIndices = [parseInt anchor.dataset.index, 10]
-      pointers[e.pointerId] =
-        down: e
-        start: currentBoard().eventToPoint e
-        moved: null
-        edit: throttle.func (diffs) ->
-          Meteor.call 'objectsEdit', (diff for id, diff of diffs)
-        , ([older], [newer]) ->
-          [Object.assign older, newer]
-    ## If we click on blank space, or shift/ctrl/meta-click within the
-    ## selection rectangle, then we draw a selection rectangle.
-    #else
-    #  h.selectorStart h.start
-  move: (e) ->
-    #pointers[e.pointerId] ?= new AnchorHighlighter currentBoard()
+    anchorSelection = currentBoard().anchorSelection
+    pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
-    if h?.down
-      if eventDistanceThreshold h.down, e, dragDist
+    return if h.down  # in case of repeat events
+    h.down = e
+    h.start = currentBoard().eventToPoint e
+    h.moved = null
+    h.edit = throttle.func (diffs) ->
+      Meteor.call 'objectsEdit', (diff for id, diff of diffs)
+    , ([older], [newer]) ->
+      [Object.assign older, newer]
+    ## Check for clicking on a selected anchor, to ensure dragging selection
+    ## works even when another anchor is more topmost.
+    anchor = anchorFromEvent e, anchorSelection
+    ## Deselect existing selection unless requesting multiselect
+    toggle = e.shiftKey or e.ctrlKey or e.metaKey
+    unless toggle or anchor?.selected
+      anchorSelection.clear()
+    ## If we clicked on an anchor, then we update the selection
+    ## and prepare for dragging it
+    if anchor?
+      unless anchorSelection.has anchor
+        anchorSelection.add anchor
+      else if toggle
+        anchorSelection.remove anchor
+        ## Prevent dragging after deselecting an object
+        h.start = null
+    ## If we click on blank space, then we draw a selection rectangle.
+    else
+      h.selectorStart h.start
+    ## Refresh selected objects, in particular so pts and anchors up-to-date
+    pointers.objects = {}
+    for id in anchorSelection.ids()
+      pointers.objects[id] = obj = Objects.findOne id
+      obj.anchors = anchorsOf obj
+  move: (e) ->
+    pointers[e.pointerId] ?= new Highlighter currentBoard()
+    h = pointers[e.pointerId]
+    if h.down
+      if h.selector?
+        h.selectorUpdate currentBoard().eventToPoint e
+      else if eventDistanceThreshold h.down, e, dragDist
         h.down = true
         here = currentBoard().eventToPoint e
         here = orthogonalPoint here, e, h.start
@@ -322,13 +341,14 @@ defineTool
           y: here.y - h.start.y
         motion = maybeSnapPointToGrid motion
         ## Don't set h.moved out here in case no objects selected
+        anchorSelection = currentBoard().anchorSelection
         diffs = {}
         for id, obj of pointers.objects when obj?
-          continue unless obj.anchorIndices.length
+          continue unless anchorSelection.hasId id
           h.moved ?= {}
           h.moved[id] ?= obj.pts[..]
           moved = false
-          for index in obj.anchorIndices
+          for index in anchorSelection.indicesForId id
             x = obj.anchors[index].x + motion.x
             y = obj.anchors[index].y + motion.y
             moved or= anchorMove obj, h.moved[id], index, {x, y}
@@ -337,8 +357,17 @@ defineTool
         h.edit diffs if (id for id of diffs).length
   up: (e) ->
     h = pointers[e.pointerId]
-    #if h?.selector?  # finished rectangular drag
-    if h?.moved  # finished dragging objects
+    if h?.selector?  # finished rectangular drag
+      board = currentBoard()
+      {render, anchorSelection} = board
+      query = BBox.fromPoints [h.start, board.eventToPoint e]
+      h.selectorClear()
+      for id of render.anchors ? {}
+        continue unless render.bbox[id]?.intersects query
+        for anchor, index in anchorsOf Objects.findOne id
+          if query.containsPoint anchor
+            anchorSelection.toggle id, index
+    else if h?.moved  # finished dragging objects
       h.edit.flush()
       undoStack.push
         type: 'multi'
