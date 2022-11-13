@@ -1,3 +1,5 @@
+import {undoStack} from './UndoStack'
+
 export anchorRadius = 4
 export anchorStroke = 2
 #export anchorVisualRadius = anchorRadius + anchorStroke / 2
@@ -68,6 +70,10 @@ export decodeAnchor = (elt) ->
 export class AnchorSelection
   constructor: (@board) ->
     @selected = {}
+  nonempty: ->
+    for id of @selected  # eslint-disable-line coffee/no-unused-vars
+      return true
+    false
   has: (id, index) ->
     {id, index} = id if id.id?
     @selected[id]?[index]?
@@ -98,8 +104,34 @@ export class AnchorSelection
       @add id, index
   ids: ->
     id for id of @selected
+  objs: ->
+    for id in @ids()
+      obj = Objects.findOne id
+      continue unless obj?
+      obj
   clear: ->
     for id, indices of @selected
       for index of indices
         @board.render?.anchors?[id]?[index]?.classList.remove 'select'
     @selected = {}
+
+  translate: ({x, y}) ->
+    return if @board.readonly
+    return unless x or y
+    objs = @objs()
+    return unless objs.length
+    undoStack.pushAndDo
+      type: 'multi'
+      ops:
+        for obj in objs
+          before = pts: obj.pts
+          after = pts: obj.pts[..]
+          anchors = anchorsOf obj
+          for index in @indicesForId obj._id
+            anchorMove obj, after.pts, index,
+              x: anchors[index].x + x
+              y: anchors[index].y + y
+          type: 'edit'
+          id: obj._id
+          before: before
+          after: after

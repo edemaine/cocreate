@@ -125,7 +125,7 @@ defineTool
   category: 'mode'
   icon: 'mouse-pointer'
   hotspot: [0.21875, 0.03515625]
-  help: <>Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical) or using arrow keys, copy via <kbd>{Ctrl}-C</kbd>, cut via <kbd>{Ctrl}-X</kbd>, paste via <kbd>{Ctrl}-V</kbd>, duplicate via <kbd>{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them.</>
+  help: <>Select objects by dragging rectangle or clicking on individual objects (toggling multiple if holding <kbd>Shift</kbd>). Then change their color/width, move by dragging (<kbd>Shift</kbd> for horizontal/vertical) or using arrow keys (<kbd>Shift</kbd> for half-grid), copy via <kbd>{Ctrl}-C</kbd>, cut via <kbd>{Ctrl}-X</kbd>, paste via <kbd>{Ctrl}-V</kbd>, duplicate via <kbd>{Ctrl}-D</kbd>, or <kbd>Delete</kbd> them.</>
   hotkey: 's'
   start: ->
     pointers.objects = {}
@@ -281,7 +281,7 @@ defineTool
   category: 'mode'
   icon: 'anchor-select'
   hotspot: [0.31, 0.16992]
-  help: <>Select anchor handles to reshape lines, rectangles, and ellipses. Drag anchor to move it; or drag rectangle or click on individual anchors (toggling multiple if holding <kbd>Shift</kbd>) and then drag to move (<kbd>Shift</kbd> for horizontal/vertical).</>
+  help: <>Select anchor handles to reshape lines, rectangles, and ellipses. Drag anchor to move it; or drag rectangle or click on individual anchors (toggling multiple if holding <kbd>Shift</kbd>) and then move by dragging (<kbd>Shift</kbd> for horizontal/vertical) or using arrow keys (<kbd>Shift</kbd> for half-grid).</>
   hotkey: 'a'
   start: ->
     mainBoard.showAnchors true

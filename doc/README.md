@@ -228,7 +228,7 @@ purely horizontal or vertical.
 
 You can also nudge objects horizontally or vertically using the arrow keys.
 Normally, objects move by one grid unit.
-If you hold <kbd>Shift</kbd> while pressing the keys,
+If you hold <kbd>Shift</kbd> while pressing arrow keys,
 the move is by half-grid units.
 
 **Cut/copy/paste/duplicate/delete.**
@@ -279,6 +279,10 @@ You can select multiple anchors in two ways:
 
 You can then move the selected anchors by dragging one of the selected anchors,
 or dragging an additional anchor to select while holding <kbd>Shift</kbd>.
+Alternatively, you can nudge objects horizontally or vertically
+using the arrow keys.  Normally, objects move by one grid unit.
+If you hold <kbd>Shift</kbd> while pressing arrow keys,
+the move is by half-grid units.
 
 ### <img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen Tool
 

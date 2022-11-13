@@ -36,6 +36,7 @@ export class Board
     @transform = defaultTransform()
     @selection = new Selection @
     @anchorSelection = new AnchorSelection @
+    @selections = [@selection, @anchorSelection]
     ## Map from Object `_id` to a `Highlighter` instance
     ## that is currently highlighting that object.
     @highlighters = {}

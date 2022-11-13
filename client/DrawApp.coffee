@@ -252,20 +252,26 @@ export DrawAppRoom = ->
           when 'Escape'
             if currentBoard()?.selection?.nonempty()
               currentBoard().selection.clear()
+            else if currentBoard()?.anchorSelection?.nonempty()
+              currentBoard().anchorSelection.clear()
             else if historyMode()
               setHistoryMode false  # escape history view by toggling
           when 'ArrowLeft'
             delta = if e.shiftKey then 0.5 else 1
-            currentBoard()?.selection?.translate gridOffset -delta, 0
+            for selection in currentBoard()?.selections ? []
+              selection.translate gridOffset -delta, 0
           when 'ArrowRight'
             delta = if e.shiftKey then 0.5 else 1
-            currentBoard()?.selection?.translate gridOffset +delta, 0
+            for selection in currentBoard()?.selections ? []
+              selection.translate gridOffset +delta, 0
           when 'ArrowUp'
             delta = if e.shiftKey then 0.5 else 1
-            currentBoard()?.selection?.translate gridOffset 0, -delta
+            for selection in currentBoard()?.selections ? []
+              selection.translate gridOffset 0, -delta
           when 'ArrowDown'
             delta = if e.shiftKey then 0.5 else 1
-            currentBoard()?.selection?.translate gridOffset 0, +delta
+            for selection in currentBoard()?.selections ? []
+              selection.translate gridOffset 0, +delta
           else
             ## Prevent e.g. ctrl-1 browser shortcut (go to tab 1) from also
             ## triggering width 1 hotkey.
