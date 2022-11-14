@@ -43,6 +43,12 @@ export {currentOpacity, setCurrentOpacity}
 [currentOpacityOn, setCurrentOpacityOn] = createSignal()
 export {currentOpacityOn, setCurrentOpacityOn}
 
+## Initialized in ./tools/arrow.coffee:
+[currentArrowStart, setCurrentArrowStart] = createSignal()
+export {currentArrowStart, setCurrentArrowStart}
+[currentArrowEnd, setCurrentArrowEnd] = createSignal()
+export {currentArrowEnd, setCurrentArrowEnd}
+
 ## Initialized in ./tools/width.coffee:
 [currentWidth, setCurrentWidth] = createSignal()
 export {currentWidth, setCurrentWidth}

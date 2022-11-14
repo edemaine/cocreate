@@ -2,6 +2,7 @@
 ## Selection class is for maintaining and highlighted set of selected objects
 ## (which often come from Highlighter).
 
+import {setCurrentArrowStart, setCurrentArrowEnd} from './AppState'
 import {minSvgSize} from './BBox'
 import {undoStack} from './UndoStack'
 import {gridOffset} from './Grid'
@@ -78,6 +79,7 @@ export class Highlighter
     html = target.outerHTML
     #.replace /\bdata-id=["'][^'"]*["']/g, ''
     .replace /(\bstroke-width=["'])([\d.]+)(["'])/g, doubler
+    .replace /(\bmarker-(start|end)=["'])([^"']*)(["'])/g, ''
     .replace /(\br=["'])([\d.]+)(["'])/g, doubler
     .replace /<image\b/g, '<image filter="url(#selectFilter)"'
     if /<text\b/.test html
@@ -214,6 +216,8 @@ export class Selection
             continue unless obj.type in ['rect', 'ellipse']
           when 'color'
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse', 'text']
+          when 'arrowStart', 'arrowEnd'
+            continue unless obj.type in ['poly']
         obj
     return unless objs.length
     undoStack.pushAndDo
@@ -327,5 +331,9 @@ export class Selection
       selectOpacityOff true
     if (width = uniformAttribute 'width')?  # uniform line width
       selectWidth width, true, true
+    if (arrowStart = uniformAttribute 'arrowStart', false) != null
+      setCurrentArrowStart arrowStart ? null  # map undefined (all null) to null
+    if (arrowEnd = uniformAttribute 'arrowEnd', false) != null
+      setCurrentArrowEnd arrowEnd ? null  # map undefined (all null) to null
     if (fontSize = uniformAttribute 'fontSize')?  # uniform font size
       selectFontSize fontSize, true, true

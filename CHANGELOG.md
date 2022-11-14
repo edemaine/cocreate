@@ -9,6 +9,8 @@ instead of version numbers.
 
 ## 2022-11-14
 
+* New start/end arrowhead support for line segments
+  [[#35](https://github.com/edemaine/cocreate/issues/35)]
 * Bug fix in rectangular selection of anchors with translated objects.
 
 ## 2022-11-13

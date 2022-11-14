@@ -845,6 +845,12 @@ the line-width choices are replaced by font-size choices.
 These control the size of the entire text object.
 Currently, you have seven integral choices.
 
+### <img src="icons/arrow-start.svg" width="18" alt="Start-Arrow Icon"> <img src="icons/arrow-end.svg" width="18" alt="End-Arrow Icon"> Arrow Toggles
+
+These buttons toggle whether
+[<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool)
+include arrowheads at the start and/or end.
+
 ### <img src="icons/highlighter.svg" width="18" alt="Transparent Icon"> Transparent Toggle
 
 This button toggles whether objects are partially transparent/opaque.

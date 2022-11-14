@@ -92,6 +92,16 @@ export class RenderObjects
     unless (poly = @dom[id])?
       @root.appendChild @dom[id] = poly =
         dom.create 'polyline', null, dataset: id: id
+    if obj.arrowStart or obj.arrowEnd
+      ## Dreaming of `context-stroke` when one marker will suffice.
+      ## [https://svgwg.org/svg2-draft/painting.html#TermContextElement]
+      arrowId = "arrow-#{obj.color}"
+      unless (document.getElementById arrowId)?
+        arrow = document.getElementById 'arrow'
+        coloredArrow = arrow.cloneNode true
+        coloredArrow.id = arrowId
+        coloredArrow.firstChild.setAttribute 'fill', obj.color
+        arrow.parentNode.insertBefore coloredArrow, arrow
     dom.attr poly,
       points: ("#{x},#{y}" for {x, y} in obj.pts).join ' '
       stroke: obj.color
@@ -100,6 +110,8 @@ export class RenderObjects
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
       fill: 'none'
+      'marker-start': if obj.arrowStart then "url(##{arrowId})"
+      'marker-end': if obj.arrowEnd then "url(##{arrowId})"
     poly
   renderRect: (obj) ->
     id = @id obj

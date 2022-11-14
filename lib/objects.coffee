@@ -50,6 +50,8 @@ Meteor.methods
           pts: [xyType]
           color: String
           width: Number
+          arrowStart: Match.Optional Match.OneOf String, null
+          arrowEnd: Match.Optional Match.OneOf String, null
       when 'rect', 'ellipse'
         Object.assign pattern,
           pts: Match.Where (pts) ->
@@ -131,6 +133,10 @@ Meteor.methods
     if obj.type in ['pen', 'poly', 'rect', 'ellipse']
       Object.assign pattern,
         width: Match.Optional Number
+    if obj.type == 'poly'
+      Object.assign pattern,
+        arrowStart: Match.Optional Match.OneOf String, null
+        arrowEnd: Match.Optional Match.OneOf String, null
     if obj.type in ['rect', 'ellipse']
       Object.assign pattern,
         fill: Match.Optional Match.OneOf String, null  # null to turn off

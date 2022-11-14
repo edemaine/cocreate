@@ -20,5 +20,3 @@ for name, svg of icons
     </svg>
 
   """
-
-# rainbow.svg made manually based on #customColor CSS

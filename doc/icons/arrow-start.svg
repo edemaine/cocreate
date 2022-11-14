@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-26 -13 26 26" width="26" height="26" transform="rotate(180)">
+<rect x="-26" y="-13" width="26" height="26" fill="#ccc"/>
+<marker id="arrow" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse" overflow="visible">
+  <path d="M 0 -1 L 10 3.85405 L 10 6.14595 L 0 11 z"/>
+</marker>
+<line x1="-22" x2="-4" stroke="black" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+</svg>
