@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-11-14
+
+* Bug fix in rectangular selection of anchors with translated objects.
+
 ## 2022-11-13
 
 * New anchor select tool now supports selecting multiple anchors,

@@ -576,8 +576,8 @@ export class RenderObjects
             'data-obj': id
             'data-index': index
         dom.attr rect,
-          x: anchor.x - anchorRadius + (obj.tx ? 0)
-          y: anchor.y - anchorRadius + (obj.ty ? 0)
+          x: anchor.x - anchorRadius
+          y: anchor.y - anchorRadius
   showAnchors: (show) ->
     if show
       @anchors ?= {}

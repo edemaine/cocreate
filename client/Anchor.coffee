@@ -5,7 +5,8 @@ export anchorStroke = 2
 #export anchorVisualRadius = anchorRadius + anchorStroke / 2
 export anchorObjectTypes = new Set ['poly', 'rect', 'ellipse']
 
-export anchorsOf = (obj) ->
+export rawAnchorsOf = (obj) ->
+  ## Excluding translation
   switch obj.type
     when 'poly'
       obj.pts
@@ -19,6 +20,15 @@ export anchorsOf = (obj) ->
       ]
     else
       []
+
+export anchorsOf = (obj) ->
+  ## Including translation
+  {tx, ty} = obj
+  tx ?= 0
+  ty ?= 0
+  for {x, y} in rawAnchorsOf obj
+    x: x + tx
+    y: y + ty
 
 pointMove = (moved, index, coords) ->
   if moved[index].x == coords.x and moved[index].y == coords.y
@@ -126,7 +136,7 @@ export class AnchorSelection
         for obj in objs
           before = pts: obj.pts
           after = pts: obj.pts[..]
-          anchors = anchorsOf obj
+          anchors = rawAnchorsOf obj
           for index in @indicesForId obj._id
             anchorMove obj, after.pts, index,
               x: anchors[index].x + x

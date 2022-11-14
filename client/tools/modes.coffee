@@ -5,7 +5,7 @@ import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
 import {tools, selectTool} from './tools'
 import {currentWidth} from './width'
-import {anchorFromEvent, anchorMove, anchorsOf} from '../Anchor'
+import {anchorFromEvent, anchorMove, anchorsOf, rawAnchorsOf} from '../Anchor'
 import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from '../AppState'
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
@@ -325,7 +325,7 @@ defineTool
     pointers.objects = {}
     for id in anchorSelection.ids()
       pointers.objects[id] = obj = Objects.findOne id
-      obj.anchors = anchorsOf obj
+      obj.anchors = rawAnchorsOf obj
   move: (e) ->
     pointers[e.pointerId] ?= new Highlighter currentBoard()
     h = pointers[e.pointerId]
