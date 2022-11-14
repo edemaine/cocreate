@@ -37,10 +37,10 @@ intersectsSpecific =
       # It's convex, so do intersection of half-planes.
       inHalfPlanes = true
       for [p0, p1, fx, fy] in [
-        [pt0, pt1, 1, -1],
-        [pt1, pt2, -1, -1],
-        [pt2, pt3, -1, 1],
-        [pt3, pt0, 1, 1],
+        [pt0, pt1, 1, -1]
+        [pt1, pt2, -1, -1]
+        [pt2, pt3, -1, 1]
+        [pt3, pt0, 1, 1]
       ]
         # Test diagonal half-plane extended from rectangle edge.
         p2 =
