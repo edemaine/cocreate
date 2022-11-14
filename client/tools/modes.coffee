@@ -4,9 +4,8 @@ import debounce from 'debounce'
 import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
 import {tools, selectTool} from './tools'
-import {currentWidth} from './width'
 import {anchorFromEvent, anchorMove, anchorsOf, rawAnchorsOf} from '../Anchor'
-import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn} from '../AppState'
+import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, currentWidth} from '../AppState'
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
@@ -418,7 +417,7 @@ defineTool
       type: 'pen'
       pts: [currentBoard().eventToPointW e]
       color: currentColor()
-      width: currentWidth.get()
+      width: currentWidth()
     object.opacity = currentOpacity() if currentOpacityOn()
     pointers[e.pointerId] =
       id: Meteor.apply 'objectNew', [object], returnStubValue: true
@@ -478,7 +477,7 @@ rectLikeTool = (type, fillable, constrain) ->
   down: (e) ->
     return if pointers[e.pointerId]
     origin = maybeSnapPointToGrid currentBoard().eventToPoint e
-    width = currentWidth.get()
+    width = currentWidth()
     if type == 'poly'
       pts = [origin, origin]
     else  # start rect and ellipse as dot

@@ -1,8 +1,6 @@
-import {ReactiveVar} from 'meteor/reactive-var'
-
 import {defineTool} from './defineTool'
 import {selectDrawingTool} from './tools'
-import {currentBoard} from '../AppState'
+import {currentBoard, currentWidth, setCurrentWidth} from '../AppState'
 
 export widths = [
   1
@@ -13,7 +11,7 @@ export widths = [
   6
   7
 ]
-export currentWidth = new ReactiveVar 3
+setCurrentWidth 3
 
 widthSize = 22
 
@@ -25,7 +23,7 @@ for width in widths
       class: 'width attrib'
       hotkey: "#{width}"
       help: "Set line width to #{width}"
-      active: -> currentWidth.get() == width
+      active: -> currentWidth() == width
       click: -> selectWidth width
       icon: ->
         <svg viewBox="0 #{-widthSize/3} #{widthSize} #{widthSize}"
@@ -37,8 +35,8 @@ for width in widths
         </svg>
 
 export selectWidth = (width, keepTool, skipSelection) ->
-  currentWidth.set parseFloat width
+  setCurrentWidth parseFloat width
   if not skipSelection and (selection = currentBoard().selection)?.nonempty()
-    selection.edit 'width', currentWidth.get()
+    selection.edit 'width', currentWidth()
     keepTool = true
   selectDrawingTool() unless keepTool

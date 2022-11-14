@@ -43,6 +43,10 @@ export {currentOpacity, setCurrentOpacity}
 [currentOpacityOn, setCurrentOpacityOn] = createSignal()
 export {currentOpacityOn, setCurrentOpacityOn}
 
+## Initialized in ./tools/width.coffee:
+[currentWidth, setCurrentWidth] = createSignal()
+export {currentWidth, setCurrentWidth}
+
 ## Initialized in ./tools/font.coffee:
 [currentFontSize, setCurrentFontSize] = createSignal()
 export {currentFontSize, setCurrentFontSize}
