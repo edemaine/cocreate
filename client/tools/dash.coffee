@@ -18,6 +18,7 @@ export dashes = [
 setCurrentDash null
 
 export scaleDash = (dash, width) ->
+  return dash unless dash
   number = /[\d.]+/g
   (
     while (match = number.exec dash)?

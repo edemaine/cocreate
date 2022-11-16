@@ -9,7 +9,7 @@ instead of version numbers.
 
 ## 2022-11-16
 
-* Dashed and dotted line styles for segments, rectangles, and ellipses
+* Dashed and dotted line styles for pen, segments, rectangles, and ellipses
   [[#61](https://github.com/edemaine/cocreate/issues/61)]
 
 ## 2022-11-14

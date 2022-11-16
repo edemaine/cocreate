@@ -19,6 +19,7 @@ export class RenderObjects
     @texQueue = []
     @texById = {}
     @bbox = {}
+    @dashOffset = {}
     #@dbvt = new DBVT()
   stop: ->
     @stopped = true
@@ -30,13 +31,17 @@ export class RenderObjects
     ###
     obj.id ? obj._id ? obj
   renderPen: (obj, options) ->
+    id = @id obj
     transparent = obj.opacity? and obj.opacity != 1
     ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
     ## Redraw from scratch if no `start` specified, or if color/width/opacity
     ## changed, or object has any transparency.
-    start = 0
-    if options?.start? and not (options.color or options.width or options.opacity or transparent)
+    if options?.start? and not (options.color or options.width or options.dash or options.opacity or transparent)
       start = options.start
+      dashOffset = @dashOffset[id] ? 0
+    else
+      start = 0
+      dashOffset = 0
     ## Choose between two rendering modes for this batch of points:
     ## * "Simple" mode: when all points have w == 1, use a single <polyline>
     ## * "Complex" mode: otherwise, use many <line>s
@@ -49,12 +54,12 @@ export class RenderObjects
           simple = false
           break
     ## In complex mode, create a document fragment for adding several
-    ## <line> elements to the DOM tree at once.
-    id = @id obj
+    ## <line> elements to the DOM tree at once, unless in dash mode
+    ## where we need immediate computed lengths.
     if (exists = @dom[id])?
       ## Destroy existing drawing if starting over
       exists.innerHTML = '' if start == 0
-      if simple
+      if simple or obj.dash
         frag = exists
       else
         frag = document.createDocumentFragment()
@@ -63,8 +68,10 @@ export class RenderObjects
         class: 'pen'
       ,
         dataset: id: id
+      ## In dash mode, we immediately add to the DOM tree for computed lengths.
+      @root.appendChild @dom[id] = frag if obj.dash
     if simple
-      frag.appendChild dom.create 'polyline',
+      frag.appendChild polyline = dom.create 'polyline',
         points: (
           for i in [start - (start > 0)...obj.pts.length]
             pt = obj.pts[i]
@@ -73,6 +80,9 @@ export class RenderObjects
         stroke: obj.color
         'stroke-opacity': obj.opacity
         'stroke-width': obj.width
+        'stroke-dasharray': scaleDash obj.dash, obj.width
+        'stroke-dashoffset': if obj.dash then dashOffset
+      dashOffset += polyline.getTotalLength() if obj.dash
     else
       ## Draw an `edge` between consecutive dots.
       ## (`dot` at each point replaced by stroke-linecap of `edge`.)
@@ -80,13 +90,31 @@ export class RenderObjects
         #frag.appendChild dot obj, obj.pts[0]
         start = 1
       for i in [start...obj.pts.length]
-        pt = obj.pts[i]
-        frag.appendChild edge obj, obj.pts[i-1], pt
+        prev = obj.pts[i-1]
+        next = obj.pts[i]
+        frag.appendChild line = dom.create 'line',
+          x1: prev.x
+          y1: prev.y
+          x2: next.x
+          y2: next.y
+          stroke: obj.color
+          'stroke-opacity': obj.opacity
+          #'stroke-width': obj.width * (prev.w + next.w) / 2
+          'stroke-width': obj.width * next.w
+          ## Replace `dot` with round linecap, now set in CSS.
+          #'stroke-linecap': 'round'
+          'stroke-dasharray': scaleDash obj.dash, obj.width
+          'stroke-dashoffset': if obj.dash then dashOffset
+        dashOffset += line.getTotalLength() if obj.dash
+        #frag.appendChild edge obj, prev, next
         #frag.appendChild dot obj, pt  # alternative to linecap: round
-    if exists
-      exists.appendChild frag unless simple
-    else
-      @root.appendChild @dom[id] = frag
+    @dashOffset[id] = dashOffset if obj.dash
+    ## Outside dash mode, we add to the DOM tree at the end for fewer renders.
+    unless obj.dash
+      if exists
+        exists.appendChild frag unless simple
+      else
+        @root.appendChild @dom[id] = frag
     @dom[id]
   renderPoly: (obj) ->
     id = @id obj
@@ -108,7 +136,7 @@ export class RenderObjects
       stroke: obj.color
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
-      'stroke-dasharray': if obj.dash then scaleDash obj.dash, obj.width
+      'stroke-dasharray': scaleDash obj.dash, obj.width
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
       fill: 'none'
@@ -125,7 +153,7 @@ export class RenderObjects
       stroke: obj.color
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
-      'stroke-dasharray': if obj.dash then scaleDash obj.dash, obj.width
+      'stroke-dasharray': scaleDash obj.dash, obj.width
       'stroke-linejoin': 'round'
       fill: obj.fill or 'none'
       'fill-opacity': obj.opacity
@@ -147,7 +175,7 @@ export class RenderObjects
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
       'stroke-linecap': if obj.dash then 'round'
-      'stroke-dasharray': if obj.dash then scaleDash obj.dash, obj.width
+      'stroke-dasharray': scaleDash obj.dash, obj.width
       fill: obj.fill or 'none'
       'fill-opacity': obj.opacity
     ellipse
@@ -614,7 +642,6 @@ dot = (obj, p) ->
     cy: p.y
     r: obj.width * p.w / 2
     fill: obj.color
-###
 edge = (obj, p1, p2) ->
   dom.create 'line',
     x1: p1.x
@@ -629,6 +656,7 @@ edge = (obj, p1, p2) ->
     #'stroke-linecap': 'round'
     ## Dots mode:
     #'stroke-width': 1
+###
 
 inTag = (string, offset) ->
   ## Copied from Coauthor.

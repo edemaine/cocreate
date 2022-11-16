@@ -418,6 +418,7 @@ defineTool
       pts: [currentBoard().eventToPointW e]
       color: currentColor()
       width: currentWidth()
+      dash: currentDash()
     object.opacity = currentOpacity() if currentOpacityOn()
     pointers[e.pointerId] =
       id: Meteor.apply 'objectNew', [object], returnStubValue: true

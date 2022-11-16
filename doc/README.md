@@ -834,8 +834,12 @@ reset your tool.
 
 ### Line Width
 
-These buttons control the outline/stroke width of objects with an outline
-(anything except text).  Currently, you have seven integral choices.
+These buttons control the outline/stroke width of objects with an outline:
+[<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool),
+[<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool),
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+Currently, you have seven integral choices.
 
 ### Font Size
 
@@ -847,8 +851,12 @@ Currently, you have seven integral choices.
 
 ### <img src="icons/dash-solid.svg" width="18" alt="Solid Line Icon"> <img src="icons/dash-dotted.svg" width="18" alt="Dotted Line Icon"> <img src="icons/dash-dashed.svg" width="18" alt="Dashed Line Icon"> <img src="icons/dash-dot-dashed.svg" width="18" alt="Dot-Dashed Line Icon"> Line Styles
 
-These buttons control the outline/stroke style of objects with an outline
-(segments, rectangles, and ellipses).  Currently, you have four choices.
+These buttons control the outline/stroke style of objects with an outline:
+[<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool),
+[<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool),
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+Currently, you have four choices: solid, dotted, dashed, and dot-dashed.
 
 ### <img src="icons/arrow-start.svg" width="18" alt="Start-Arrow Icon"> <img src="icons/arrow-end.svg" width="18" alt="End-Arrow Icon"> Arrow Toggles
 
