@@ -345,7 +345,7 @@ defineTool
         for id, obj of pointers.objects when obj?
           continue unless anchorSelection.hasId id
           h.moved ?= {}
-          h.moved[id] ?= obj.pts[..]
+          h.moved[id] ?= {}
           moved = false
           for index in anchorSelection.indicesForId id
             x = obj.anchors[index].x + motion.x

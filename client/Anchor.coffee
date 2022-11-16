@@ -30,8 +30,10 @@ export anchorsOf = (obj) ->
     x: x + tx
     y: y + ty
 
-pointMove = (moved, index, coords) ->
-  if moved[index].x == coords.x and moved[index].y == coords.y
+pointMove = (obj, moved, index, coords) ->
+  if (old = moved[index])? and old.x == coords.x and old.y == coords.y
+    false
+  else if (old = obj.pts[index])? and old.x == coords.x and old.y == coords.y
     false
   else
     moved[index] =
@@ -40,17 +42,17 @@ pointMove = (moved, index, coords) ->
     true
 
 export anchorMove = (obj, moved, index, coords) ->
-  if index > 1 and obj.type in ['rect', 'ellipse', 'image']
+  if index > 1 and obj.type in ['rect', 'ellipse']
     if index == 2
-      pointMove(moved, 0, {x: coords.x, y: moved[0].y}) or
-      pointMove(moved, 1, {y: coords.y, x: moved[1].x})
+      pointMove(obj, moved, 0, {x: coords.x, y: moved[0].y}) or
+      pointMove(obj, moved, 1, {y: coords.y, x: moved[1].x})
     else if index == 3
-      pointMove(moved, 1, {x: coords.x, y: moved[1].y}) or
-      pointMove(moved, 0, {y: coords.y, x: moved[0].x})
+      pointMove(obj, moved, 1, {x: coords.x, y: moved[1].y}) or
+      pointMove(obj, moved, 0, {y: coords.y, x: moved[0].x})
     else
       console.error "Invalid anchor index #{index}"
   else if 0 <= index < obj.pts.length
-    pointMove moved, index, coords
+    pointMove obj, moved, index, coords
   else
     console.error "Out-of-bounds anchor index #{index}"
 
