@@ -27,6 +27,27 @@ export checkObject = (id) ->
   else
     throw new Meteor.Error "Invalid object ID #{id}"
 
+addAttributePattern = (pattern, type, edit) ->
+  optionalIfEdit = if edit then Match.Optional else (x) => x
+  pattern.tx = pattern.ty = Match.Optional Number
+  pattern.opacity = Match.Optional Match.OneOf Number, null  # null to turn off
+  unless type == 'image'
+    pattern.color = optionalIfEdit String
+  if type in ['pen', 'poly', 'rect', 'ellipse']
+    pattern.width = optionalIfEdit Number
+  if type == 'poly'
+    pattern.arrowStart = pattern.arrowEnd =
+      Match.Optional Match.OneOf 'arrow', null  # null for no arrowhead
+  if type in ['rect', 'ellipse']
+    pattern.fill = Match.Optional Match.OneOf String, null  # null to turn off
+  if type == 'text'
+    pattern.text = optionalIfEdit String
+    pattern.fontSize = optionalIfEdit Number
+  if type == 'image'
+    pattern.url = optionalIfEdit Match.Where validUrl
+    pattern.credentials = Match.Optional Boolean
+    pattern.proxy = Match.Optional Boolean
+
 Meteor.methods
   objectNew: (obj) ->
     pattern =
@@ -36,46 +57,24 @@ Meteor.methods
       page: String
       created: Match.Optional Date
       updated: Match.Optional Date
-      tx: Match.Optional Number
-      ty: Match.Optional Number
-      opacity: Match.Optional Match.OneOf Number, null
+    addAttributePattern pattern, obj.type
     switch obj?.type
       when 'pen'
-        Object.assign pattern,
-          pts: [xywType]
-          color: String
-          width: Number
+        pattern.pts = [xywType]
       when 'poly'
-        Object.assign pattern,
-          pts: [xyType]
-          color: String
-          width: Number
-          arrowStart: Match.Optional Match.OneOf String, null
-          arrowEnd: Match.Optional Match.OneOf String, null
+        pattern.pts = [xyType]
       when 'rect', 'ellipse'
-        Object.assign pattern,
-          pts: Match.Where (pts) ->
-            check pts, [xyType]
-            pts.length == 2
-          color: String
-          fill: Match.Optional Match.OneOf String, null
-          width: Number
+        pattern.pts = Match.Where (pts) ->
+          check pts, [xyType]
+          pts.length == 2
       when 'text'
-        Object.assign pattern,
-          pts: Match.Where (pts) ->
-            check pts, [xyType]
-            pts.length == 1
-          color: String
-          text: String
-          fontSize: Number
+        pattern.pts = Match.Where (pts) ->
+          check pts, [xyType]
+          pts.length == 1
       when 'image'
-        Object.assign pattern,
-          pts: Match.Where (pts) ->
-            check pts, [xyType]
-            pts.length == 1
-          url: Match.Where validUrl
-          credentials: Match.Optional Boolean
-          proxy: Match.Optional Boolean
+        pattern.pts = Match.Where (pts) ->
+          check pts, [xyType]
+          pts.length == 1
       else
         throw new Meteor.Error "Invalid type #{obj?.type} for object"
     check obj, pattern
@@ -100,6 +99,7 @@ Meteor.methods
     id = diff.id
     unless @isSimulation
       obj = checkObject id
+      check obj.type, 'pen'
       diff.room = obj.room
       diff.page = obj.page
       diff.type = 'push'
@@ -118,37 +118,23 @@ Meteor.methods
     obj = checkObject id
     pattern =
       id: String
-      tx: Match.Optional Number
-      ty: Match.Optional Number
       pts: Match.Optional Match.Where (pts) ->
-        return false unless typeof pts == 'object'
+        return false unless typeof pts == 'object' # includes Array
+        ptType = if obj.type == 'pen' then xywType else xyType
         for key, value of pts
           return false unless /^\d+$/.test key
-          check value, xyType
+          key = parseInt key, 10
+          return false if key < 0
+          check value, ptType
+          switch obj.type
+            when 'rect', 'ellipse'
+              return false unless key < 2
+            when 'text'
+              return false unless key < 1
+            when 'image'
+              return false unless key < 1
         true
-      opacity: Match.Optional Match.OneOf Number, null  # null to turn off
-    unless obj.type == 'image'
-      Object.assign pattern,
-        color: Match.Optional String
-    if obj.type in ['pen', 'poly', 'rect', 'ellipse']
-      Object.assign pattern,
-        width: Match.Optional Number
-    if obj.type == 'poly'
-      Object.assign pattern,
-        arrowStart: Match.Optional Match.OneOf String, null
-        arrowEnd: Match.Optional Match.OneOf String, null
-    if obj.type in ['rect', 'ellipse']
-      Object.assign pattern,
-        fill: Match.Optional Match.OneOf String, null  # null to turn off
-    if obj.type == 'text'
-      Object.assign pattern,
-        text: Match.Optional String
-        fontSize: Match.Optional Number
-    if obj.type == 'image'
-      Object.assign pattern,
-        url: Match.Optional String
-        credentials: Match.Optional Boolean
-        proxy: Match.Optional Boolean
+    addAttributePattern pattern, obj.type, true
     check diff, pattern
     set = {}
     for key, value of diff when key != 'id'
