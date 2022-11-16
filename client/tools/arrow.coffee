@@ -35,5 +35,6 @@ for {direction, attribute, hotkey, currentArrow, setCurrentArrow} in [
         <svg viewBox="#{-arrowSize} #{-arrowSize/2} #{arrowSize} #{arrowSize}"
          width={arrowSize} height={arrowSize}
          transform={'rotate(180)' if direction == 'start'}>
-          <line x1={-22} x2={-4} stroke-width={3} stroke-linecap="round" marker-end="url(#arrow)"/>
+          <line x1={-22} x2={-4} stroke="black" stroke-width={3}
+           stroke-linecap="round" marker-end="url(#arrow)"/>
         </svg>

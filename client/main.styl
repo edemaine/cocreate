@@ -218,8 +218,6 @@ button(activeBorder)
   display: flex
   justify-content: center
   align-items: center
-  line
-    stroke: var(--currentColor)
   text
     fill: var(--currentColor)
     &.label
@@ -228,6 +226,9 @@ button(activeBorder)
     font-size: 10px
   /.dark & svg
     filter: invert(1) hue-rotate(180deg)
+.width
+  line
+    stroke: var(--currentColor)
 
 .color, .opacity, [data-tool="fill"] svg
   width: 100%
