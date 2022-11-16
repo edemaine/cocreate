@@ -20,6 +20,11 @@ xywType =
   x: Number
   y: Number
   w: Number
+dashType = Match.Where (x) ->
+  x == null or (
+    typeof x == 'string' and
+    /^[\d.\s]+$/.test x
+  )
 
 export checkObject = (id) ->
   if validId(id) and obj = Objects.findOne id
@@ -35,6 +40,7 @@ addAttributePattern = (pattern, type, edit) ->
     pattern.color = optionalIfEdit String
   if type in ['pen', 'poly', 'rect', 'ellipse']
     pattern.width = optionalIfEdit Number
+    pattern.dash = Match.Optional dashType
   if type == 'poly'
     pattern.arrowStart = pattern.arrowEnd =
       Match.Optional Match.OneOf 'arrow', null  # null for no arrowhead

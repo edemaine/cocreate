@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-11-16
+
+* Dashed and dotted line styles for segments, rectangles, and ellipses
+  [[#61](https://github.com/edemaine/cocreate/issues/61)]
+
 ## 2022-11-14
 
 * New start/end arrowhead support for line segments

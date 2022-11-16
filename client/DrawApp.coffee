@@ -447,6 +447,9 @@ export DrawAppRoom = ->
               </div>
             }
             {###if currentTool() in ['segment', 'select']###}
+            <div id="dash" class="subpalette">
+              <ToolCategory category="dash" placement="top"/>
+            </div>
             <div id="arrows" class="subpalette">
               <ToolCategory category="arrow" placement="top"/>
             </div>

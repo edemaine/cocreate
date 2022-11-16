@@ -845,6 +845,11 @@ the line-width choices are replaced by font-size choices.
 These control the size of the entire text object.
 Currently, you have seven integral choices.
 
+### <img src="icons/dash-solid.svg" width="18" alt="Solid Line Icon"> <img src="icons/dash-dotted.svg" width="18" alt="Dotted Line Icon"> <img src="icons/dash-dashed.svg" width="18" alt="Dashed Line Icon"> <img src="icons/dash-dot-dashed.svg" width="18" alt="Dot-Dashed Line Icon"> Line Styles
+
+These buttons control the outline/stroke style of objects with an outline
+(segments, rectangles, and ellipses).  Currently, you have four choices.
+
 ### <img src="icons/arrow-start.svg" width="18" alt="Start-Arrow Icon"> <img src="icons/arrow-end.svg" width="18" alt="End-Arrow Icon"> Arrow Toggles
 
 These buttons toggle whether

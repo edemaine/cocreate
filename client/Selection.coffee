@@ -2,7 +2,7 @@
 ## Selection class is for maintaining and highlighted set of selected objects
 ## (which often come from Highlighter).
 
-import {setCurrentArrowStart, setCurrentArrowEnd} from './AppState'
+import {setCurrentArrowStart, setCurrentArrowEnd, setCurrentDash} from './AppState'
 import {minSvgSize} from './BBox'
 import {undoStack} from './UndoStack'
 import {gridOffset} from './Grid'
@@ -331,6 +331,8 @@ export class Selection
       selectOpacityOff true
     if (width = uniformAttribute 'width')?  # uniform line width
       selectWidth width, true, true
+    if (dash = uniformAttribute 'dash') != null
+      setCurrentDash dash ? null  # map undefined (all null) to null
     if (arrowStart = uniformAttribute 'arrowStart', false) != null
       setCurrentArrowStart arrowStart ? null  # map undefined (all null) to null
     if (arrowEnd = uniformAttribute 'arrowEnd', false) != null

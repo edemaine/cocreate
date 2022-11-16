@@ -4,6 +4,7 @@
 import {proxyUrl} from '../lib/url'
 import dom from './lib/dom'
 import icons from './lib/icons'
+import {scaleDash} from './tools/dash'
 import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
 import {anchorObjectTypes, anchorsOf, anchorRadius, anchorStroke} from './Anchor'
@@ -107,6 +108,7 @@ export class RenderObjects
       stroke: obj.color
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
+      'stroke-dasharray': if obj.dash then scaleDash obj.dash, obj.width
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
       fill: 'none'
@@ -123,6 +125,7 @@ export class RenderObjects
       stroke: obj.color
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
+      'stroke-dasharray': if obj.dash then scaleDash obj.dash, obj.width
       'stroke-linejoin': 'round'
       fill: obj.fill or 'none'
       'fill-opacity': obj.opacity
@@ -143,6 +146,8 @@ export class RenderObjects
       stroke: obj.color
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
+      'stroke-linecap': if obj.dash then 'round'
+      'stroke-dasharray': if obj.dash then scaleDash obj.dash, obj.width
       fill: obj.fill or 'none'
       'fill-opacity': obj.opacity
     ellipse

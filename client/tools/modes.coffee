@@ -5,7 +5,7 @@ import {defineTool} from './defineTool'
 import {tryAddImageUrl} from './image'
 import {tools, selectTool} from './tools'
 import {anchorFromEvent, anchorMove, anchorsOf, rawAnchorsOf} from '../Anchor'
-import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentArrowStart, currentArrowEnd, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, currentWidth} from '../AppState'
+import {currentBoard, mainBoard, currentRoom, currentPage, currentTool, currentArrowStart, currentArrowEnd, currentColor, currentDash, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, currentWidth} from '../AppState'
 import {maybeSnapPointToGrid} from '../Grid'
 import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
@@ -492,6 +492,7 @@ rectLikeTool = (type, fillable, constrain) ->
       pts: pts
       color: currentColor()
       width: width
+    object.dash = currentDash() if currentDash()
     object.fill = currentFill() if fillable and currentFillOn()
     object.opacity = currentOpacity() if currentOpacityOn()
     if type == 'poly'

@@ -49,6 +49,10 @@ export {currentArrowStart, setCurrentArrowStart}
 [currentArrowEnd, setCurrentArrowEnd] = createSignal()
 export {currentArrowEnd, setCurrentArrowEnd}
 
+## Initialized in ./tools/dash.coffee:
+[currentDash, setCurrentDash] = createSignal()
+export {currentDash, setCurrentDash}
+
 ## Initialized in ./tools/width.coffee:
 [currentWidth, setCurrentWidth] = createSignal()
 export {currentWidth, setCurrentWidth}

@@ -14,3 +14,4 @@ A few icons are drawn manually:
 
 * `rainbow.svg` based on `#customColor` CSS
 * `arrow-start.svg` and `arrow-end.svg` based on `client/tools/arrow.coffee`
+* `dash-*.svg` based on `client/tools/dash.coffee`
