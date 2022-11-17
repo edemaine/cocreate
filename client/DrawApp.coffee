@@ -437,7 +437,11 @@ export DrawAppRoom = ->
         </Match>
         <Match when={true}>
           <div id="attribs" class="horizontal palette" ref={attribsRef}>
-            {if currentTool() == 'text'
+            {
+            tool = currentTool()
+            if tool == 'text' or (
+               tool == 'select' and currentBoard().selection?.justText()
+            )
               <div id="fontSizes" class="subpalette">
                 <ToolCategory category="fontSize" placement="top"/>
               </div>

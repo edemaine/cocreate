@@ -845,6 +845,9 @@ Currently, you have seven integral choices.
 
 When you're using the
 [<img src="icons/text.svg" width="18" alt="Text Icon"> Text Tool](#-text-tool),
+or the
+[<img src="icons/mouse-pointer.svg" width="18" alt="Select Icon"> Select Tool](#-select-tool)
+to select only text objects,
 the line-width choices are replaced by font-size choices.
 These control the size of the entire text object.
 Currently, you have seven integral choices.

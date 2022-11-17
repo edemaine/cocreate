@@ -2,6 +2,8 @@
 ## Selection class is for maintaining and highlighted set of selected objects
 ## (which often come from Highlighter).
 
+import {createSignal} from 'solid-js'
+
 import {setCurrentArrowStart, setCurrentArrowEnd, setCurrentDash} from './AppState'
 import {minSvgSize} from './BBox'
 import {undoStack} from './UndoStack'
@@ -130,6 +132,7 @@ export class Selection
   constructor: (@board) ->
     @selected = {}  # mapping from object ID to .selected DOM element
     @rehighlighter = new Highlighter @board  # used in redraw()
+    [@justText, @setJustText] = createSignal false
   add: (highlighter) ->
     id = highlighter.id
     return unless id?
@@ -303,6 +306,13 @@ export class Selection
     else
       @rect?.remove()
       @rect = null
+    ## Also update justText
+    justText = @nonempty()
+    for id in @ids()
+      unless Objects.findOne(id)?.type == 'text'
+        justText = false
+        break
+    @setJustText justText
   setAttributes: ->
     ## Set user's attributes to match selected objects, if they're all same.
     return unless @nonempty()

@@ -12,6 +12,8 @@ instead of version numbers.
 * Arrowheads now work with pen tool
   [[#35](https://github.com/edemaine/cocreate/issues/35)]
 * Arrowhead bug fixes
+* Selecting text objects (only) shows font size attribute
+  [[#117](https://github.com/edemaine/cocreate/issues/117)]
 
 ## 2022-11-16
 
