@@ -23,7 +23,7 @@ for {direction, attribute, hotkey, currentArrow, setCurrentArrow} in [
       category: 'arrow'
       class: 'arrow attrib'
       hotkey: hotkey
-      help: "Toggle arrow at #{direction} of line segments"
+      help: "Toggle arrow at #{direction} of pen and line segments"
       active: -> Boolean currentArrow()
       click: ->
         setCurrentArrow if currentArrow() then null else 'arrow'

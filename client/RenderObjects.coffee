@@ -11,6 +11,26 @@ import {anchorObjectTypes, anchorsOf, anchorRadius, anchorStroke} from './Anchor
 import {BBox, minSvgSize} from './BBox'
 #import {DBVT} from './DBVT'
 
+## Arrowheads of pen tool are rendered on unit line segments in the average
+## direction of the first/last 20 points of the stroke.
+penArrowAverage = 20
+averageDirection = (pts) ->
+  {x: ox, y: oy} = pts[0]
+  dx = dy = 0
+  for i in [1...pts.length]
+    {x, y} = pts[i]
+    dx += x - ox
+    dy += y - oy
+  #dx /= pts.length - 1
+  #dy /= pts.length - 1
+  length = Math.sqrt dx * dx + dy * dy
+  if length > 0.01
+    dx /= length
+    dy /= length
+  else
+    dx = dy = 0
+  {dx, dy}
+
 export class RenderObjects
   constructor: (@board) ->
     @root = @board.root
@@ -20,9 +40,12 @@ export class RenderObjects
     @texById = {}
     @bbox = {}
     @dashOffset = {}
+    @arrows = new Set
     #@dbvt = new DBVT()
   stop: ->
     @stopped = true
+    for arrowId from @arrows
+      document.getElementById(arrowId)?.remove()
   id: (obj) ->
     ###
     `obj` can be an `ObjectDiff` object, in which case `id` is the object ID
@@ -30,13 +53,28 @@ export class RenderObjects
     `_id` is the object ID.  Also allow raw ID string for `delete`.
     ###
     obj.id ? obj._id ? obj
+  makeArrow: (color) ->
+    ## Dreaming of `context-stroke` when one marker will suffice.
+    ## [https://svgwg.org/svg2-draft/painting.html#TermContextElement]
+    arrowId = "arrow-#{color}"
+    unless @arrows.has arrowId
+      arrow = document.getElementById 'arrow'
+      coloredArrow = arrow.cloneNode true
+      coloredArrow.id = arrowId
+      coloredArrow.firstChild.setAttribute 'fill', color
+      arrow.parentNode.insertBefore coloredArrow, arrow
+      @arrows.add arrowId
+    "url(##{arrowId})"
   renderPen: (obj, options) ->
     id = @id obj
     transparent = obj.opacity? and obj.opacity != 1
     ## Pen consists of a <g> containing <line>s and/or <polyline>s; see below.
+    ## Redraw from scratch if no `start` specified,
+    ## or if color/width/dash/arrow/opacity changed,
+    ## or if object has any transparency.
     ## Redraw from scratch if no `start` specified, or if color/width/opacity
     ## changed, or object has any transparency.
-    if options?.start? and not (options.color or options.width or options.dash or options.opacity or transparent)
+    if options?.start? and not (options.color or options.width or options.dash or options.arrowStart or options.arrowEnd or options.opacity or transparent)
       start = options.start
       dashOffset = @dashOffset[id] ? 0
     else
@@ -109,6 +147,42 @@ export class RenderObjects
         #frag.appendChild edge obj, prev, next
         #frag.appendChild dot obj, pt  # alternative to linecap: round
     @dashOffset[id] = dashOffset if obj.dash
+    ## Arrowheads
+    if (obj.arrowStart or obj.arrowEnd) and obj.pts.length > 1
+      arrow = @makeArrow obj.color
+      if obj.arrowStart
+        if exists? and start > 1
+          arrowStart = exists.querySelector '[marker-start]'
+        else
+          frag.insertBefore (arrowStart = dom.create 'line',
+            stroke: obj.color
+            'stroke-opacity': obj.opacity
+            'stroke-width': obj.width
+            'marker-start': arrow
+            x1: obj.pts[0].x
+            y1: obj.pts[0].y
+          ), frag.firstChild
+        {dx, dy} = averageDirection obj.pts[...penArrowAverage]
+        dom.attr arrowStart,
+          x2: obj.pts[0].x + dx
+          y2: obj.pts[0].y + dy
+      if obj.arrowEnd
+        if exists? and start > 1
+          arrowEnd = exists.querySelector '[marker-end]'
+        else
+          frag.insertBefore (arrowEnd = dom.create 'line',
+            stroke: obj.color
+            'stroke-opacity': obj.opacity
+            'stroke-width': obj.width
+            'marker-end': arrow
+          ), frag.firstChild
+        {dx, dy} = averageDirection obj.pts[-penArrowAverage..].reverse()
+        {x, y} = obj.pts[obj.pts.length-1]
+        dom.attr arrowEnd,
+          x1: x + dx
+          y1: y + dy
+          x2: x
+          y2: y
     ## Outside dash mode, we add to the DOM tree at the end for fewer renders.
     unless obj.dash
       if exists
@@ -121,16 +195,7 @@ export class RenderObjects
     unless (poly = @dom[id])?
       @root.appendChild @dom[id] = poly =
         dom.create 'polyline', null, dataset: id: id
-    if obj.arrowStart or obj.arrowEnd
-      ## Dreaming of `context-stroke` when one marker will suffice.
-      ## [https://svgwg.org/svg2-draft/painting.html#TermContextElement]
-      arrowId = "arrow-#{obj.color}"
-      unless (document.getElementById arrowId)?
-        arrow = document.getElementById 'arrow'
-        coloredArrow = arrow.cloneNode true
-        coloredArrow.id = arrowId
-        coloredArrow.firstChild.setAttribute 'fill', obj.color
-        arrow.parentNode.insertBefore coloredArrow, arrow
+    arrow = @makeArrow obj.color if obj.arrowStart or obj.arrowEnd
     dom.attr poly,
       points: ("#{x},#{y}" for {x, y} in obj.pts).join ' '
       stroke: obj.color
@@ -140,8 +205,8 @@ export class RenderObjects
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
       fill: 'none'
-      'marker-start': if obj.arrowStart then "url(##{arrowId})"
-      'marker-end': if obj.arrowEnd then "url(##{arrowId})"
+      'marker-start': if obj.arrowStart then arrow
+      'marker-end': if obj.arrowEnd then arrow
     poly
   renderRect: (obj) ->
     id = @id obj

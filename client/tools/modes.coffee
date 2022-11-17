@@ -419,6 +419,8 @@ defineTool
       color: currentColor()
       width: currentWidth()
       dash: currentDash()
+    object.arrowStart = currentArrowStart() if currentArrowStart()
+    object.arrowEnd = currentArrowEnd() if currentArrowEnd()
     object.opacity = currentOpacity() if currentOpacityOn()
     pointers[e.pointerId] =
       id: Meteor.apply 'objectNew', [object], returnStubValue: true

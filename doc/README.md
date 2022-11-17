@@ -863,6 +863,11 @@ Currently, you have four choices: solid, dotted, dashed, and dot-dashed.
 These buttons toggle whether
 [<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool)
 include arrowheads at the start and/or end.
+Arrowheads are supported by the
+[<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool)
+and
+[<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segment](#-segment-tool)
+tools.
 
 ### <img src="icons/highlighter.svg" width="18" alt="Transparent Icon"> Transparent Toggle
 

@@ -217,7 +217,7 @@ export class Selection
           when 'color'
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse', 'text']
           when 'arrowStart', 'arrowEnd'
-            continue unless obj.type in ['poly']
+            continue unless obj.type in ['pen', 'poly']
         obj
     return unless objs.length
     undoStack.pushAndDo

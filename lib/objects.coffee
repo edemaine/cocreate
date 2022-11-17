@@ -41,7 +41,7 @@ addAttributePattern = (pattern, type, edit) ->
   if type in ['pen', 'poly', 'rect', 'ellipse']
     pattern.width = optionalIfEdit Number
     pattern.dash = Match.Optional dashType
-  if type == 'poly'
+  if type in ['pen', 'poly']
     pattern.arrowStart = pattern.arrowEnd =
       Match.Optional Match.OneOf 'arrow', null  # null for no arrowhead
   if type in ['rect', 'ellipse']

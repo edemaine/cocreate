@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-11-17
+
+* Arrowheads now work with pen tool
+  [[#35](https://github.com/edemaine/cocreate/issues/35)]
+
 ## 2022-11-16
 
 * Dashed and dotted line styles for pen, segments, rectangles, and ellipses
