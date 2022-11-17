@@ -469,7 +469,7 @@ export DrawAppRoom = ->
     <div id="center" class={"nopage" unless pageId()?}>
       {###touch-action="none" attribute triggers Pointer Events Polyfill (pepjs)
       ###}
-      <svg id="mainBoard" class="board" touch-action="none" ref={mainBoardRef}>
+      <svg id="defs" class="board">
         <filter id="selectFilter">
           <feGaussianBlur stdDeviation="5"/>
         </filter>
@@ -480,6 +480,7 @@ export DrawAppRoom = ->
           <path d="M 0 -1 L 10 3.85405 L 10 6.14595 L 0 11 z"/>
         </marker>
       </svg>
+      <svg id="mainBoard" class="board" touch-action="none" ref={mainBoardRef}/>
       <svg id="historyBoard" class="board" touch-action="none"
        ref={historyBoardRef}/>
       <svg id="remotes" class="board overlay" ref={remotesRef}/>
