@@ -31,9 +31,8 @@ export anchorsOf = (obj) ->
     y: y + ty
 
 pointMove = (obj, moved, index, coords) ->
-  if (old = moved[index])? and old.x == coords.x and old.y == coords.y
-    false
-  else if (old = obj.pts[index])? and old.x == coords.x and old.y == coords.y
+  if (old = moved[index] ? obj.pts[index])? and
+     old.x == coords.x and old.y == coords.y
     false
   else
     moved[index] =
@@ -44,11 +43,11 @@ pointMove = (obj, moved, index, coords) ->
 export anchorMove = (obj, moved, index, coords) ->
   if index > 1 and obj.type in ['rect', 'ellipse']
     if index == 2
-      pointMove(obj, moved, 0, {x: coords.x, y: moved[0].y}) or
-      pointMove(obj, moved, 1, {y: coords.y, x: moved[1].x})
+      pointMove(obj, moved, 0, {x: coords.x, y: (moved[0] ? obj.pts[0]).y}) or
+      pointMove(obj, moved, 1, {y: coords.y, x: (moved[1] ? obj.pts[1]).x})
     else if index == 3
-      pointMove(obj, moved, 1, {x: coords.x, y: moved[1].y}) or
-      pointMove(obj, moved, 0, {y: coords.y, x: moved[0].x})
+      pointMove(obj, moved, 1, {x: coords.x, y: (moved[1] ? obj.pts[1]).y}) or
+      pointMove(obj, moved, 0, {y: coords.y, x: (moved[0] ? obj.pts[0]).x})
     else
       console.error "Invalid anchor index #{index}"
   else if 0 <= index < obj.pts.length
@@ -137,7 +136,7 @@ export class AnchorSelection
       ops:
         for obj in objs
           before = pts: obj.pts
-          after = pts: obj.pts[..]
+          after = pts: {}
           anchors = rawAnchorsOf obj
           for index in @indicesForId obj._id
             anchorMove obj, after.pts, index,
