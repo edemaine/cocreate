@@ -12,6 +12,7 @@ instead of version numbers.
 * Fix anchor drag bugs: dragging non-defining corners of rectangles and
   ellipses was broken, and moving to old location was accidentally forbidden
   [[#214](https://github.com/edemaine/cocreate/issues/214)]
+* Fix dotted rectangles not rendering
 
 ## 2022-11-17
 

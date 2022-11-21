@@ -218,6 +218,7 @@ export class RenderObjects
       stroke: obj.color
       'stroke-opacity': obj.opacity
       'stroke-width': obj.width
+      'stroke-linecap': if obj.dash then 'round'
       'stroke-dasharray': scaleDash obj.dash, obj.width
       'stroke-linejoin': 'round'
       fill: obj.fill or 'none'
