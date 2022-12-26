@@ -170,6 +170,7 @@ export DrawAppRoom = ->
            not middleDown and not spaceDown
           middleDown = pushTool 'pan'
         tools[currentTool()].down? e
+        e.target.setPointerCapture e.pointerId
       pointerenter: (e) ->
         e.preventDefault()
         return tools.multitouch.enter? e if restrictTouchDraw e
@@ -182,13 +183,14 @@ export DrawAppRoom = ->
         ## make us think the mouse button is pressed, even after the stylus is
         ## released.
         # tools[currentTool()].down? e if e.buttons
-      pointerup: stop = (e) ->
+      pointerup: (e) ->
         e.preventDefault()
         return tools.multitouch.up? e if restrictTouchDraw e
         tools[currentTool()].up? e
         if e.button == 1 and middleDown  ## end middle-button pan
           middleDown = popTool middleDown
-      pointerleave: stop
+      pointerleave: (e) ->
+        e.preventDefault()
       pointermove: (e) ->
         e.preventDefault()
         return tools.multitouch.move? e if restrictTouchDraw e
