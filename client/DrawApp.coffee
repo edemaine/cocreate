@@ -169,21 +169,29 @@ export DrawAppRoom = ->
         if e.button == 1 and currentTool() != 'pan' and
            not middleDown and not spaceDown
           middleDown = pushTool 'pan'
+        currentBoard()?.svg?.setPointerCapture e.pointerId
         tools[currentTool()].down? e
       pointerenter: (e) ->
         e.preventDefault()
-        return tools.multitouch.enter? e if restrictTouchDraw e
-        ## Stop middle-button pan if we re-enter board with button released
+        #return tools.multitouch.enter? e if restrictTouchDraw e
+        ## Stop middle-button pan if we re-enter board with button released.
+        ## (This shouldn't be necessary anymore with setPointerCapture.)
         if middleDown and (e.buttons & 4) == 0
           middleDown = popTool middleDown
-        tools[currentTool()].down? e if e.buttons
-      pointerup: stop = (e) ->
+        ## The following line allows to start drawing by dragging the cursor
+        ## inside the board with the mouse button pressed.
+        ## But on some systems (Chromium on X11), when using a stylus, it can
+        ## make us think the mouse button is pressed, even after the stylus is
+        ## released.
+        # tools[currentTool()].down? e if e.buttons
+      pointerup: (e) ->
         e.preventDefault()
         return tools.multitouch.up? e if restrictTouchDraw e
         tools[currentTool()].up? e
         if e.button == 1 and middleDown  ## end middle-button pan
           middleDown = popTool middleDown
-      pointerleave: stop
+      pointerleave: (e) ->
+        e.preventDefault()
       pointermove: (e) ->
         e.preventDefault()
         return tools.multitouch.move? e if restrictTouchDraw e

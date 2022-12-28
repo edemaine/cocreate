@@ -7,10 +7,21 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2022-11-28
+
+* Drawing actions are no longer interrupted when your cursor accidentally
+  leaves the Cocreate window.
+  [[#219](https://github.com/edemaine/cocreate/issues/219)]
+* Moving your cursor into the Cocreate window while you have a button pressed
+  no longer starts a drawing action, fixing behavior on e.g. Chromium on X11
+  with a stylus.
+  [[#218](https://github.com/edemaine/cocreate/issues/218)],
+  [[#219](https://github.com/edemaine/cocreate/issues/219)]
+
 ## 2022-11-21
 
 * Fix anchor drag bugs: dragging non-defining corners of rectangles and
-  ellipses was broken, and moving to old location was accidentally forbidden
+  ellipses was broken, and moving to old location was accidentally forbidden.
   [[#214](https://github.com/edemaine/cocreate/issues/214)]
 * Fix dotted rectangles not rendering
 
