@@ -169,8 +169,8 @@ export DrawAppRoom = ->
         if e.button == 1 and currentTool() != 'pan' and
            not middleDown and not spaceDown
           middleDown = pushTool 'pan'
+        currentBoard()?.svg?.setPointerCapture e.pointerId
         tools[currentTool()].down? e
-        e.target.setPointerCapture e.pointerId
       pointerenter: (e) ->
         e.preventDefault()
         return tools.multitouch.enter? e if restrictTouchDraw e
