@@ -173,8 +173,9 @@ export DrawAppRoom = ->
         tools[currentTool()].down? e
       pointerenter: (e) ->
         e.preventDefault()
-        return tools.multitouch.enter? e if restrictTouchDraw e
-        ## Stop middle-button pan if we re-enter board with button released
+        #return tools.multitouch.enter? e if restrictTouchDraw e
+        ## Stop middle-button pan if we re-enter board with button released.
+        ## (This shouldn't be necessary anymore with setPointerCapture.)
         if middleDown and (e.buttons & 4) == 0
           middleDown = popTool middleDown
         ## The following line allows to start drawing by dragging the cursor
