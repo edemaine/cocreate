@@ -49,16 +49,21 @@ export makeSVGSync = ->
   prepend = []
   arrows = new Set
   for elt in elts
-    for attribute in ['marker-start', 'marker-end']
-      if (marker = elt.getAttribute attribute)
-        match = marker.match /^url\(#(.+)\)$/
-        if match?
-          arrowId = match[1]
-          unless arrows.has arrowId
-            arrows.add arrowId
-            prepend.push document.getElementById arrowId
-        else
-          console.warn "Unrecognized #{attribute}: #{marker}"
+    if elt.tagName == 'g'  # pen group may have markers in children
+      subelts = elt.childNodes
+    else
+      subelts = [elt]
+    for subelt in subelts
+      for attribute in ['marker-start', 'marker-end']
+        if (marker = subelt.getAttribute attribute)
+          match = marker.match /^url\(#(.+)\)$/
+          if match?
+            arrowId = match[1]
+            unless arrows.has arrowId
+              arrows.add arrowId
+              prepend.push document.getElementById arrowId
+          else
+            console.warn "Unrecognized #{attribute}: #{marker}"
   ## Temporarily make grid span entire drawing
   if grid?
     grid.update bbox

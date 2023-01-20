@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-01-20
+
+* Fix SVG export of pen strokes with arrows.
+
 ## 2022-11-28
 
 * Drawing actions are no longer interrupted when your cursor accidentally
