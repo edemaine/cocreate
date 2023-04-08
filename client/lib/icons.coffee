@@ -156,10 +156,15 @@ export modIcon = (icon, attrs) ->
     icon
 
 ## Wrap icon in <svg>...</svg> tag
+invertFilter = null
 export svgIcon = (icon, attrs) ->
   icon = getIcon icon
   if typeof icon == 'object'
     {icon, width} = icon
+  ## Include inverting <filter> if needed
+  if attrs?.style?.includes 'invertFilter'
+    invertFilter ?= document.getElementById('invertFilter').outerHTML
+    icon = invertFilter + icon
   """<svg xmlns="http://www.w3.org/2000/svg"#{viewBox width}#{formatAttrs attrs}>#{icon}</svg>"""
 
 ## Stack icons, from bottom to top, just by concatenation

@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-04-08
+
+* Dark mode better preserves color saturation using new SVG color filter
+  from [Dark Reader](https://darkreader.org/)'s Filter+ mode.
+
 ## 2023-01-20
 
 * Fix SVG export of pen strokes with arrows.
