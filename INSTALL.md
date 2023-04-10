@@ -58,9 +58,12 @@ following arrangement of servers:
 
 Number | Tasks | Recommended configuration
 -------|-------|--------------------------
-several (currently 4) | Meteor servers | 2GB RAM (1GB causes occasional crashes), 1 core
+several (currently 4) | Meteor servers | 2GB RAM (1GB causes occasional crashes), 1 core, open to UDP ingress/egress on port 123
 one | MongoDB server | 4GB RAM, 4 cores
-one | Redis and proxy | 1GB RAM, 1 core, open to ports 80 and 443
+one | Redis and proxy | 1GB RAM, 1 core, open to TCP ingress ports 80 and 443
+
+Cocreate assumes that all servers have roughly the same notion of time.
+So be sure to run an NTP client and open UDP port 123 for ingress and egress.
 
 The nginx reverse proxy is the public facing web server (and should be the
 only server with publicly open ports), and automatically distributes
