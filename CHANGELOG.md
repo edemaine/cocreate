@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-05-01
+
+* Anchor drag now translates text and images when selecting their origins.
+  [[#221](https://github.com/edemaine/cocreate/issues/221)]
+
 ## 2023-04-08
 
 * Dark mode better preserves color saturation using new SVG color filter

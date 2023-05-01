@@ -3,7 +3,7 @@ import {undoStack} from './UndoStack'
 export anchorRadius = 4
 export anchorStroke = 2
 #export anchorVisualRadius = anchorRadius + anchorStroke / 2
-export anchorObjectTypes = new Set ['poly', 'rect', 'ellipse']
+export anchorObjectTypes = new Set ['poly', 'rect', 'ellipse', 'text', 'image']
 
 export rawAnchorsOf = (obj) ->
   ## Excluding translation
@@ -18,6 +18,8 @@ export rawAnchorsOf = (obj) ->
         x: obj.pts[1].x
         y: obj.pts[0].y
       ]
+    when 'text', 'image'
+      obj.pts
     else
       []
 
