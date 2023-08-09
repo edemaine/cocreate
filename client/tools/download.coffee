@@ -204,6 +204,7 @@ defineTool
     ]
     pdf = new jsPDF
       format: [width, height]
+      unit: 'pt'
       orientation:
         if width > height
           'landscape'

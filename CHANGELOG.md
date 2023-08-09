@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-08-09
+
+* Fix PDF export of LaTeX text and arrows
+
 ## 2023-05-01
 
 * Anchor drag now translates text and images when selecting their origins.
