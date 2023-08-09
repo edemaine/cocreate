@@ -39,7 +39,7 @@
     "solid-bootstrap": "1.0.8",
     "solid-js": "1.4.7",
     "solid-meteor-data": "0.6.1",
-    "svg2pdf.js": "2.2.0",
+    "svg2pdf.js": "2.2.1",
     "tex2svg-webworker": "0.6.0"
   },
   "devDependencies": {

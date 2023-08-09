@@ -1,8 +1,8 @@
 {
   "public": {
     "cors-anywhere": "https://coproxy.csail.mit.edu:8080/",
-    "jspdf": "https://cdn.skypack.dev/pin/jspdf@v2.5.0-qOUBjLwjpjtUHvljumfc/dist=es2020,mode=imports,min/optimized/jspdf.js",
-    "svg2pdf.js": "https://cdn.skypack.dev/pin/svg2pdf.js@v2.2.0-W0AhuXeM8SE1XLF7XAcx/mode=imports,min/optimized/svg2pdfjs.js",
+    "jspdf": "https://cdn.skypack.dev/pin/jspdf@v2.5.1-DfIA8JrqayYcZ574rjTZ/mode=imports,min/optimized/jspdf.js",
+    "svg2pdf.js": "https://cdn.skypack.dev/pin/svg2pdf.js@v2.2.1-E39EA3q6JjbAU0rSktv0/mode=imports,min/optimized/svg2pdfjs.js",
     "tex2svg": "https://cdn.jsdelivr.net/npm/tex2svg-webworker@0.6.0/dist/tex2svg.js"
   }
 }
