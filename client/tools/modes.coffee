@@ -538,9 +538,7 @@ rectLikeTool = (type, fillable, constrain) ->
     pointers[e.pointerId].alt = e.altKey
     return if JSON.stringify(last) == JSON.stringify(pts)
     pointers[e.pointerId].last = pts
-    edit
-      id: id
-      pts: pts
+    edit {id, pts}
 
 defineTool Object.assign rectLikeTool('poly', false, orthogonalPoint),
   name: 'segment'
@@ -567,6 +565,112 @@ defineTool Object.assign rectLikeTool('ellipse', true, equalXYPoint),
   hotspot: [0.201888, 0.75728]
   help: <>Draw axis-aligned ellipsis inside rectangle between endpoints (drag). Hold <kbd>Shift</kbd> to constrain to circle, <kbd>{Alt}</kbd> to center at first point. Click without dragging to center a circular dot proportional to line width.</>
   hotkey: 'o'
+
+defineTool
+  name: 'poly'
+  category: 'mode'
+  icon: 'draw-polygon'
+  hotspot: [0.1875, 0.83]
+  hotkey: ['P', 'g']
+  help: <>Draw polygonal line by clicking successive points. Right click or double click last point; or type <kbd>Escape</kbd> or switch modes to finish. <kbd>Backspace</kbd>/<kbd>Delete</kbd> removes last vertex. Hold <kbd>Shift</kbd> to constrain to horizontal/vertical.</>
+  stop: ->
+    return unless pointers.active?
+    ## Remove last vertex by simulating Escape key
+    @key key: 'Escape'
+    return unless pointers.active?
+    @finish()
+  finish: (del) ->
+    ## Finish and optionally delete current poly
+    return unless pointers.active?
+    {id, prev, last, edit} = pointers.active
+    if JSON.stringify(prev) == JSON.stringify(last)  # duplicate last vertex
+      edit
+        id: id
+        pts:
+          "#{pointers.active.index}": null
+    edit.flush()
+    obj = Objects.findOne id
+    if del or obj.pts.length == 1
+      Meteor.call 'objectDel', id
+    else
+      undoStack.push
+        type: 'new'
+        obj: obj
+    delete pointers.active
+  key: (e) ->
+    return unless pointers.active?
+    return unless e.key in ['Delete', 'Backspace', 'Escape']
+    {id, index, last, edit} = pointers.active
+    ## If we hit Escape or Delete/Backspace and we've only clicked one point,
+    ## delete the object.
+    del = index <= 1
+    unless del
+      if e.key == 'Escape'
+        ## If we hit Escape, pop the last vertex.
+        edit
+          id: id
+          pts:
+            "#{index}": null
+      else
+        ## If we hit Delete/Backspace, pop the previous vertex.
+        pointers.active.prev = Objects.findOne(id).pts[index-2]
+        edit
+          id: id
+          pts:
+            "#{index-1}": last
+            "#{index}": null
+        pointers.active.index--
+    @finish del if del or e.key == 'Escape'
+    true
+  down: (e) ->
+    pt = maybeSnapPointToGrid currentBoard().eventToPoint e
+    if pointers.active?  # new point in existing poly
+      {last, prev, edit} = pointers.active
+      pt = orthogonalPoint pt, e, prev
+      unless (same = (JSON.stringify(pt) == JSON.stringify(last)))
+        edit
+          id: pointers.active.id
+          pts: "#{pointers.active.index}": pt
+      if (dupe = (JSON.stringify(prev) == JSON.stringify(pt)))
+        ## Avoid duplicate vertex
+        pointers.active.last = pt
+      else
+        pointers.active.prev = pt
+        pointers.active.index++
+        pointers.active.last = null  # haven't sent new point yet
+      ## Right click or double click to finish
+      @finish() if e.button == 2 or (dupe and (same or not last?))
+    else  # new poly
+      object =
+        room: currentRoom().id
+        page: currentPage().id
+        type: 'poly'
+        pts: [pt]
+        color: currentColor()
+        width: currentWidth()
+      object.dash = currentDash() if currentDash()
+      object.fill = currentFill() if currentFillOn()
+      object.opacity = currentOpacity() if currentOpacityOn()
+      object.arrowStart = currentArrowStart() if currentArrowStart()
+      object.arrowEnd = currentArrowEnd() if currentArrowEnd()
+      pointers.active =
+        origin: pt  # TODO: snap to close polygon
+        prev: pt    # previous fixed vertex
+        last: null  # last sent coordinates for current vertex
+        index: 1    # current vertex index in pts array
+        id: Meteor.apply 'objectNew', [object], returnStubValue: true
+        edit: throttle.method 'objectEdit', ([edit1], [edit2]) ->
+          edit2.pts = Object.assign {}, edit1.pts, edit2.pts
+          [edit2]
+  move: (e) ->
+    return unless pointers.active?
+    {id, index, last, prev, edit} = pointers.active
+    pt = maybeSnapPointToGrid currentBoard().eventToPoint e
+    pt = orthogonalPoint pt, e, prev
+    return if JSON.stringify(pt) == JSON.stringify(last)
+    pts = "#{index}": pt
+    edit {id, pts}
+    pointers.active.last = pt
 
 defineTool
   name: 'eraser'

@@ -44,7 +44,7 @@ addAttributePattern = (pattern, type, edit) ->
   if type in ['pen', 'poly']
     pattern.arrowStart = pattern.arrowEnd =
       Match.Optional Match.OneOf 'arrow', null  # null for no arrowhead
-  if type in ['rect', 'ellipse']
+  if type in ['rect', 'ellipse', 'poly']
     pattern.fill = Match.Optional Match.OneOf String, null  # null to turn off
   if type == 'text'
     pattern.text = optionalIfEdit String
@@ -131,6 +131,8 @@ Meteor.methods
           return false unless /^\d+$/.test key
           key = parseInt key, 10
           return false if key < 0
+          if obj.type == 'poly'
+            continue if value == null
           check value, ptType
           switch obj.type
             when 'rect', 'ellipse'
@@ -147,7 +149,14 @@ Meteor.methods
       switch key
         when 'pts'
           for subkey, subvalue of value
-            set["#{key}.#{subkey}"] = subvalue
+            if subvalue?
+              set["#{key}.#{subkey}"] = subvalue
+            else # null pops
+              obj = Objects.findOne id
+              if parseInt(subkey, 10) == obj?.pts?.length - 1
+                pop = pts: 1
+              else
+                throw new Meteor.Error "Attempt to pop non-last point"
         else
           set[key] = value
     unless @isSimulation
@@ -156,6 +165,10 @@ Meteor.methods
       diff.type = 'edit'
       diff.updated = set.updated = new Date
       ObjectsDiff.insert diff
+    if pop?
+      Objects.update id,
+        $pop: pop
+      , channel: "rooms::#{obj.room}::objects"
     Objects.update id,
       $set: set
     , channel: "rooms::#{obj.room}::objects"

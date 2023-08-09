@@ -256,8 +256,9 @@ geometry of existing drawn objects.  Specifically, you can drag the points
 that define a
 [<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segment](#-segment-tool),
 [<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangle](#-rectangle-tool),
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipse](#-ellipse-tool),
 or
-[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipse](#-ellipse-tool).
+[<img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygon](#-polygon-tool).
 
 Switching to this mode displays small squares at all the draggable points,
 called "anchors".
@@ -350,6 +351,24 @@ as one bounding-box corner.
 You can use both modifiers at once to draw a circle centered at a point,
 and you can play with these toggles while you're drawing an ellipse.
 (This behavior matches Adobe Illustrator.)
+
+### <img src="icons/polygon.svg" width="18" alt="Polygon Icon"> Polygon Tool
+
+The Polygon Tool is a drawing mode that lets you draw polygonal lines
+(open or closed).
+Click/tap successive points.
+To finish your polygon (e.g. to start a new one), you have several options:
+
+* Right click the final point
+* Double click the final point (easiest to achieve in grid snapping mode)
+* Type <kbd>Escape</kbd> (which removes the floating point of the cursor)
+* Switch drawing modes (which also removes the floating point of the cursor)
+
+You can also type <kbd>Backscape</kbd> or <kbd>Delete</kbd> to undo the
+last clicked point, in case you make a mistake.
+
+If you hold <kbd>Shift</kbd>, then
+the current line segment will be constrained to be horizontal or vertical.
 
 ### <img src="icons/eraser.svg" width="18" alt="Erase Icon"> Erase Tool
 
@@ -584,8 +603,10 @@ or
 [<img src="icons/grid-tri.svg" width="18" alt="Triangular Grid Icon"> Triangular Grid Toggle](#-triangular-grid-toggle).
 (Even if the grid is invisible, the last chosen grid defines the snapping behavior.)
 [<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool),
-[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool), and
-[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool)
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool),
+and
+[<img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygons](#-polygon-tool)
 will have their defining points rounded to the nearest grid point.
 The [<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen Tool](#-pen-tool)
 is unaffected by grid snapping.
@@ -838,7 +859,9 @@ These buttons control the outline/stroke width of objects with an outline:
 [<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool),
 [<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool),
 [<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
-[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool),
+and
+[<img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygons](#-polygon-tool).
 Currently, you have seven integral choices.
 
 ### Font Size
@@ -858,7 +881,9 @@ These buttons control the outline/stroke style of objects with an outline:
 [<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool),
 [<img src="icons/segment.svg" width="18" alt="Segment Icon"> Segments](#-segment-tool),
 [<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
-[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool),
+and
+[<img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygons](#-polygon-tool).
 Currently, you have four choices: solid, dotted, dashed, and dot-dashed.
 
 ### <img src="icons/arrow-start.svg" width="18" alt="Start-Arrow Icon"> <img src="icons/arrow-end.svg" width="18" alt="End-Arrow Icon"> Arrow Toggles
@@ -881,9 +906,10 @@ Click/tap the button to switch between the normal fully opaque mode
 In partially transparent/opaque mode, three additional buttons will display
 for selecting among 25%, 50%, or 75% opacity.
 This setting will affect both stroke and fill opacity for fillable objects:
-[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool)
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool),
 and
-[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+[<img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygons](#-polygon-tool).
 
 Currently,
 [<img src="icons/pencil-alt.svg" width="18" alt="Pen Icon"> Pen](#-pen-tool)
@@ -902,9 +928,10 @@ set by <kbd>Shift</kbd>-clicking on a color in the
 [Color Palette](#color-palette).
 
 This toggle only affects objects that support fill:
-[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool)
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool),
 and
-[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+[<img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygons](#-polygon-tool).
 
 ### Color Palette
 
@@ -913,9 +940,10 @@ These buttons normally control the **outline/stroke** color of objects.
 
 If you hold down <kbd>Shift</kbd> on your keyboard when choosing a color,
 you control the **fill** color of objects that support fill:
-[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool)
+[<img src="icons/rect.svg" width="18" alt="Rectangle Icon"> Rectangles](#-rectangle-tool),
+[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool),
 and
-[<img src="icons/ellipse.svg" width="18" alt="Ellipse Icon"> Ellipses](#-ellipse-tool).
+[<img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygons](#-polygon-tool).
 When you choose a fill color, you automatically turn on
 [<img src="icons/tint.svg" width="18" alt="Fill Icon"> Fill](#-fill---no-fill-toggle).
 

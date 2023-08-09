@@ -34,6 +34,7 @@ export drawingTools =
   segment: true
   rect: true
   ellipse: true
+  poly: true
   text: true
 export historyTools =
   pan: true

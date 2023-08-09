@@ -204,7 +204,8 @@ export class RenderObjects
       'stroke-dasharray': scaleDash obj.dash, obj.width
       'stroke-linecap': 'round'
       'stroke-linejoin': 'round'
-      fill: 'none'
+      fill: obj.fill or 'none'
+      'fill-opacity': obj.opacity
       'marker-start': if obj.arrowStart then arrow
       'marker-end': if obj.arrowEnd then arrow
     poly

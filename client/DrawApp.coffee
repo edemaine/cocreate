@@ -238,6 +238,7 @@ export DrawAppRoom = ->
     onCleanup dom.listen window,
       keydown: (e) ->
         return if e.target.classList.contains 'modal'
+        return if tools[currentTool()].key? e
         switch e.key
           when 'z', 'Z'
             if e.ctrlKey or e.metaKey
@@ -487,7 +488,7 @@ export DrawAppRoom = ->
         </filter>
         {### Filter+ from Dark Reader, https://github.com/darkreader/darkreader/blob/7f047b20909b09b8cdb3e45550d0c586abeb98a4/src/generators/utils/matrix.ts#L42 ###}
         <filter id="invertFilter" x="0" y="0" width="999999" height="999999"
-         style="color-interpolation-filters: srgb">
+         style={"color-interpolation-filters": "srgb"}>
           <feColorMatrix type="matrix"
            values="0.33333 -0.66667 -0.66667 0 1 -0.66667 0.33333 -0.66667 0 1 -0.66667 -0.66667 0.33333 0 1 0 0 0 1 0"/>
         </filter>

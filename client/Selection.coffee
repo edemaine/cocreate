@@ -216,7 +216,7 @@ export class Selection
           when 'width'
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse']
           when 'fill'
-            continue unless obj.type in ['rect', 'ellipse']
+            continue unless obj.type in ['poly', 'rect', 'ellipse']
           when 'color'
             continue unless obj.type in ['pen', 'poly', 'rect', 'ellipse', 'text']
           when 'arrowStart', 'arrowEnd'

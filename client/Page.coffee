@@ -69,12 +69,13 @@ export class Page
             options.start = old.pts.length
           else
             ## For other types such as `poly`, `rect`, `ellipse`, do a diff
-            for start in [0...old.pts.length]
-              oldPt = old.pts[start]
-              newPt = obj.pts[start]
-              if oldPt.x != newPt.x or oldPt.y != newPt.y or oldPt.w != newPt.w
-                break
-            options.start = start
+            if old.pts.length == obj.pts.length
+              for start in [0...old.pts.length]
+                oldPt = old.pts[start]
+                newPt = obj.pts[start]
+                if oldPt.x != newPt.x or oldPt.y != newPt.y or oldPt.w != newPt.w
+                  break
+              options.start = start
         for own key of obj when key not of noDiff
           options[key] = obj[key] != old[key]
         @render.render obj, options

@@ -80,7 +80,10 @@ defineTool
               switch key
                 when 'pts'
                   for subkey, subvalue of value
-                    obj[key][subkey] = subvalue
+                    if subvalue?
+                      obj[key][subkey] = subvalue
+                    else
+                      obj[key].splice subkey, 1
                 else
                   obj[key] = value
             toRender.add obj.id
