@@ -352,7 +352,7 @@ You can use both modifiers at once to draw a circle centered at a point,
 and you can play with these toggles while you're drawing an ellipse.
 (This behavior matches Adobe Illustrator.)
 
-### <img src="icons/polygon.svg" width="18" alt="Polygon Icon"> Polygon Tool
+### <img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygon Tool
 
 The Polygon Tool is a drawing mode that lets you draw polygonal lines
 (open or closed).
@@ -362,6 +362,8 @@ To finish your polygon (e.g. to start a new one), you have several options:
 * Right click the final point
 * Double click the final point (easiest to achieve in grid snapping mode)
 * Type <kbd>Escape</kbd> (which removes the floating point of the cursor)
+* Click/tap the <img src="icons/draw-polygon.svg" width="18" alt="Polygon Icon"> Polygon Tool button
+  (which also removes the floating point of the cursor)
 * Switch drawing modes (which also removes the floating point of the cursor)
 
 You can also type <kbd>Backscape</kbd> or <kbd>Delete</kbd> to undo the

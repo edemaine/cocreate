@@ -37,5 +37,6 @@ onWheel = (e) ->
 
 export createHorizontalScroll = (ref) ->
   createEffect ->
-    ref().addEventListener 'wheel', onWheel, passive: false
-    onCleanup -> ref().removeEventListener 'wheel', onWheel
+    target = ref()
+    target.addEventListener 'wheel', onWheel, passive: false
+    onCleanup -> target.removeEventListener 'wheel', onWheel

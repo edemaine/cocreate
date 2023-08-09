@@ -11,6 +11,7 @@ import {Highlighter, highlighterClear} from '../Selection'
 import {undoStack} from '../UndoStack'
 import dom from '../lib/dom'
 import {average, centroid, distance, distanceThreshold} from '../lib/geom'
+import icons from '../lib/icons'
 import {Ctrl, Alt} from '../lib/platform'
 import throttle from '../lib/throttle'
 import {BBox, minSvgSize} from '../BBox'
@@ -572,7 +573,7 @@ defineTool
   icon: 'draw-polygon'
   hotspot: [0.1875, 0.83]
   hotkey: ['P', 'g']
-  help: <>Draw polygonal line by clicking successive points. Right click or double click last point; or type <kbd>Escape</kbd> or switch modes to finish. <kbd>Backspace</kbd>/<kbd>Delete</kbd> removes last vertex. Hold <kbd>Shift</kbd> to constrain to horizontal/vertical.</>
+  help: <>Draw polygonal line by clicking successive points. Right click or double click last point; or type <kbd>Escape</kbd>, click <span innerHTML={icons.svgIcon 'draw-polygon'}/>, or switch modes to finish. <kbd>Backspace</kbd>/<kbd>Delete</kbd> removes last vertex. Hold <kbd>Shift</kbd> to constrain to horizontal/vertical.</>
   stop: ->
     return unless pointers.active?
     ## Remove last vertex by simulating Escape key

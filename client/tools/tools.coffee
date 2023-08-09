@@ -43,7 +43,9 @@ export historyTools =
 export lastTool = null
 export selectTool = (tool, options) ->
   previous = currentTool()
-  return if tool == previous
+  ## If we click on the currently selected tool, stop and restart it.
+  ## This is useful for e.g. the Polygon tool to stop the current polygon
+  #return if tool == previous
   selected = stopTool options
   if historyMode() and not historyTools[tool]
     setHistoryMode false
