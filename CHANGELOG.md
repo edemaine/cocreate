@@ -10,6 +10,7 @@ instead of version numbers.
 ## 2023-08-09
 
 * Fix PDF export of LaTeX text and arrows
+* Reduce zoom speed via <kbd>Ctrl</kbd> + mouse wheel by 4x
 
 ## 2023-05-01
 

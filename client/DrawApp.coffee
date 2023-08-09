@@ -225,7 +225,7 @@ export DrawAppRoom = ->
             deltaY *= currentBoard().clientBBox.height
         if e.ctrlKey
           ## Ensure zoom-out motion is inverse of equivalent zoom-in
-          factor = 1 + 0.01 * Math.abs deltaY
+          factor = 1 + 0.0025 * Math.abs deltaY
           factor = 1/factor if deltaY > 0
           currentBoard().setScaleFixingPoint transform.scale * factor,
             x: e.offsetX
