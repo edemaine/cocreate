@@ -349,9 +349,11 @@ defineTool
           h.moved[id] ?= {}
           moved = false
           for index in anchorSelection.indicesForId id
-            x = obj.anchors[index].x + motion.x
-            y = obj.anchors[index].y + motion.y
-            moved or= anchorMove obj, h.moved[id], index, {x, y}
+            # Can't write `moved or=` because we don't want to short-circuit
+            if anchorMove obj, h.moved[id], index,
+              x: obj.anchors[index].x + motion.x
+              y: obj.anchors[index].y + motion.y
+            then moved = true
           continue unless moved
           diffs[id] = {id, pts: h.moved[id]}
         h.edit diffs if (id for id of diffs).length

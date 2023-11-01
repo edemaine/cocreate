@@ -33,6 +33,9 @@ export anchorsOf = (obj) ->
     y: y + ty
 
 pointMove = (obj, moved, index, coords) ->
+  old = moved[index] ? obj.pts[index]
+  if old?
+    console.log old.x, old.y, 'vs', coords.x, coords.y
   if (old = moved[index] ? obj.pts[index])? and
      old.x == coords.x and old.y == coords.y
     false
