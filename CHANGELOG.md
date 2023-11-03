@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-11-03
+
+* Fix arrowheads getting clipped when downloading SVG/PDF
+  [[#225](https://github.com/edemaine/cocreate/issues/225)]
+
 ## 2023-11-01
 
 * Fix dragging multiple anchors of a polyline object

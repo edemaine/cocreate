@@ -95,29 +95,70 @@ export svgTransformPoint = (svg, {x, y}, matrix) ->
   pt.y = y
   pt.matrixTransform matrix
 
+export svgArrowCoords = (pEnd, pAdj, width) ->
+  ###
+  Computes the coordinates of the two corners of an arrow head ending at pEnd,
+  coming from pAdj, given a specified line width (which determines scale)
+  and assuming #arrow heads.
+  ###
+  {x, y} = pEnd
+  dx = pAdj.x - x
+  dy = pAdj.y - y
+  scale = width / Math.sqrt dx*dx + dy*dy
+  dx *= scale
+  dy *= scale
+  px = -dy
+  py = dx
+  for sign in [+1, -1]
+    x: x + sign * 2.4 * px + 3.8 * dx
+    y: y + sign * 2.4 * py + 3.8 * dy
+
 export svgBBox = (svg, elt, relative) ->
   ###
   Compute bounding box of element in global SVG coordinates, or coordinates of
   containing element `relative` if specified, incorporating transformations
   (assuming no rotation, so enough to look at two corners).
   Return value is of the form {min: {x: ..., y: ...}, max: {x: ..., y: ...}}
+  Handling of stroke width and markers is specific to how Cocreate renders.
   ###
-  bbox = elt.getBBox()
+  box = elt.getBBox()
   transform = elt.getCTM()
   if relative?
     relative = relative.getCTM().inverse() if relative.getCTM?
     # The other should be such that parent_transform * relative_transform = transform,
     # so relative_transform = parent_transform.inverse * transform, not the other way around.
     transform = relative.multiply transform
-  ## Look for stroke of first child if element is a group
+  ## Incorporate stroke thickness to SVG's notion of bounding box.
+  ## Look for stroke/markers of first child if element is a group.
   if elt.tagName == 'g'
     elt = elt.firstChild
-  stroke = (parseFloat elt?.getAttribute('stroke-width') ? 0) / 2
-  BBox.fromExtremePoints(
-    svgPoint svg, bbox.x - stroke, bbox.y - stroke, transform
-    svgPoint svg, bbox.x + stroke + bbox.width,
-             bbox.y + stroke + bbox.height, transform
+  stroke = parseFloat elt?.getAttribute('stroke-width') ? 0
+  halfStroke = stroke/2
+  box = BBox.fromExtremePoints(
+    svgPoint svg, box.x - halfStroke, box.y - halfStroke, transform
+    svgPoint svg, box.x + halfStroke + box.width,
+             box.y + halfStroke + box.height, transform
   )
+  ## Incorporate markers (arrow heads) into bounding box.
+  arrows = []
+  if stroke and elt.points? and (len = elt.points.length) >= 2  # polyline
+    if elt?.getAttribute('marker-start')?
+      arrows.push ...svgArrowCoords elt.points[0], elt.points[1], stroke
+    if elt?.getAttribute('marker-end')?
+      arrows.push ...svgArrowCoords elt.points[len-1], elt.points[len-2], stroke
+  else if stroke and elt.x1?  # <line> child of pen stroke <g>
+    for l in [elt, elt.nextSibling]
+      lVertex = (i) ->
+        x: l["x#{i}"].baseVal.value
+        y: l["y#{i}"].baseVal.value
+      if l?.getAttribute('marker-start')?
+        arrows.push ...svgArrowCoords lVertex(1), lVertex(2), stroke
+      if l?.getAttribute('marker-end')?
+        arrows.push ...svgArrowCoords lVertex(2), lVertex(1), stroke
+  if arrows.length
+    box = box.union BBox.fromPoints \
+      (svgPoint svg, p.x, p.y, transform for p in arrows)
+  box
 
 export unionSvgBBox = (svg, elts, relative) ->
   BBox.union(
