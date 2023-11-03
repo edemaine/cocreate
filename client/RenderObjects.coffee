@@ -9,27 +9,8 @@ import {pointers} from './tools/modes'
 import {tools} from './tools/defineTool'
 import {anchorObjectTypes, anchorsOf, anchorRadius, anchorStroke} from './Anchor'
 import {BBox, minSvgSize} from './BBox'
+import {penArrowAverage, averageDirection} from './Collision'
 #import {DBVT} from './DBVT'
-
-## Arrowheads of pen tool are rendered on unit line segments in the average
-## direction of the first/last 20 points of the stroke.
-penArrowAverage = 20
-averageDirection = (pts) ->
-  {x: ox, y: oy} = pts[0]
-  dx = dy = 0
-  for i in [1...pts.length]
-    {x, y} = pts[i]
-    dx += x - ox
-    dy += y - oy
-  #dx /= pts.length - 1
-  #dy /= pts.length - 1
-  length = Math.sqrt dx * dx + dy * dy
-  if length > 0.01
-    dx /= length
-    dy /= length
-  else
-    dx = dy = 0
-  {dx, dy}
 
 export class RenderObjects
   constructor: (@board) ->

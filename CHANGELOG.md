@@ -9,7 +9,8 @@ instead of version numbers.
 
 ## 2023-11-03
 
-* Fix arrowheads getting clipped when downloading SVG/PDF
+* Fix arrowheads getting clipped when downloading SVG/PDF,
+  and rectangular selection of arrowheads.
   [[#225](https://github.com/edemaine/cocreate/issues/225)]
 
 ## 2023-11-01

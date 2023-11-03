@@ -100,10 +100,14 @@ export svgArrowCoords = (pEnd, pAdj, width) ->
   Computes the coordinates of the two corners of an arrow head ending at pEnd,
   coming from pAdj, given a specified line width (which determines scale)
   and assuming #arrow heads.
+  If pAdj has {dx, dy}, it is instead treated like a vector starting at pEnd.
   ###
   {x, y} = pEnd
-  dx = pAdj.x - x
-  dy = pAdj.y - y
+  if pAdj.dx?
+    {dx, dy} = pAdj
+  else
+    dx = pAdj.x - x
+    dy = pAdj.y - y
   scale = width / Math.sqrt dx*dx + dy*dy
   dx *= scale
   dy *= scale

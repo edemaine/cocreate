@@ -1,7 +1,40 @@
 import {BBox} from './BBox'
+import {svgArrowCoords} from './lib/dom'
+
+## Arrowheads of pen tool are rendered on unit line segments in the average
+## direction of the first/last 20 points of the stroke.
+export penArrowAverage = 20
+export averageDirection = (pts) ->
+  {x: ox, y: oy} = pts[0]
+  dx = dy = 0
+  for i in [1...pts.length]
+    {x, y} = pts[i]
+    dx += x - ox
+    dy += y - oy
+  return {dx, dy} if pts.length <= 2
+  #dx /= pts.length - 1
+  #dy /= pts.length - 1
+  length = Math.sqrt dx * dx + dy * dy
+  if length > 0.01
+    dx /= length
+    dy /= length
+  else
+    dx = dy = 0
+  {dx, dy}
+
+intersectsTriangle = (query, a, b, c) ->
+  intersectsSpecific.poly query,
+    pts: [a, b, c]
+    width: 0
+  , null, 2
+  ## Check whether any corner of the triangle is in a query rectangle
+  #for p in [a, b, c]
+  #  return true if query.containsPoint p
+  ## Check whether any edge of the triangle intersects the query rectangle
+  #...
 
 intersectsSpecific =
-  pen: (query, obj) ->
+  pen: (query, obj, bbox, average = penArrowAverage) ->
     ## Untranslate query box if object is translated.
     if obj.tx or obj.ty
       query = query.translate -(obj.tx ? 0), -(obj.ty ? 0)
@@ -65,11 +98,24 @@ intersectsSpecific =
       return true if intersectsSpecific.rect query, {width: obj.width}, \
         (new BBox pt.x, pt.y, pt.x, pt.y).fattened (obj.width / 2)
 
+    # Arrow heads.
+    # Note: v0 is slightly off because of the rounded tip of the arrowhead.
+    if obj.arrowStart
+      [v1, v2] = svgArrowCoords v0 = obj.pts[0],
+        averageDirection(obj.pts[...average]),
+        obj.width
+      return true if intersectsTriangle query, v0, v1, v2
+    if obj.arrowEnd
+      [v1, v2] = svgArrowCoords v0 = obj.pts[obj.pts.length-1],
+        averageDirection(obj.pts[-average..].reverse()),
+        obj.width
+      return true if intersectsTriangle query, v0, v1, v2
+
     false
 
-  poly: (query, obj) ->
+  poly: (query, obj, bbox) ->
     # Currently no fill support
-    intersectsSpecific.pen query, obj
+    intersectsSpecific.pen query, obj, bbox, 2
 
   rect: (query, obj, bbox) ->
     # Minkowski sum to make outer test simpler

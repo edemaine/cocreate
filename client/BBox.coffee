@@ -25,6 +25,20 @@ export class BBox
   @fromRect: (rect) ->
     new BBox rect.x, rect.y, rect.x + rect.width, rect.y + rect.height
 
+  #corners: ->
+  #  [
+  #    x: @minX
+  #    y: @minY
+  #  ,
+  #    x: @maxX
+  #    y: @minY
+  #  ,
+  #    x: @maxX
+  #    y: @maxY
+  #  ,
+  #    x: @minX
+  #    y: @maxY
+  #  ]
   center: ->
     x: (@maxX + @minX) / 2
     y: (@maxY + @minY) / 2
