@@ -617,11 +617,16 @@ export class RenderObjects
     ## BBox update (alternative to DBVT)
     if obj.type == 'pen' and options?.start? and
        not (options.width or options.tx or options.ty)  # only points are added
-      @bbox[id] = @bbox[id].union(
-        BBox.fromPoints obj.pts[options.start...obj.pts.length]
-        .translate obj.tx ? 0, obj.ty ? 0
-        .fattened obj.width / 2
-      ) unless options.start == obj.pts.length
+      unless options.start == obj.pts.length
+        @bbox[id] = @bbox[id].union(
+          BBox.fromPoints obj.pts[options.start...obj.pts.length]
+          .translate obj.tx ? 0, obj.ty ? 0
+          .fattened obj.width / 2
+        )
+        if obj.arrowStart and (line = elt.querySelector '[marker-start]')?
+          @bbox[id] = @bbox[id].union dom.svgBBox @board.svg, line, @board.root
+        if obj.arrowEnd and (line = elt.querySelector '[marker-end]')?
+          @bbox[id] = @bbox[id].union dom.svgBBox @board.svg, line, @board.root
     else
       @bbox[id] = dom.svgBBox @board.svg, elt, @board.root
   delete: (obj, noWarn) ->
