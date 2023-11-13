@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-11-13
+
+* Fix zero-length arrows, in particular fixing crash on Firefox
+
 ## 2023-11-03
 
 * Fix arrowheads getting clipped when downloading SVG/PDF,

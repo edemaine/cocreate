@@ -108,7 +108,13 @@ export svgArrowCoords = (pEnd, pAdj, width) ->
   else
     dx = pAdj.x - x
     dy = pAdj.y - y
-  scale = width / Math.sqrt dx*dx + dy*dy
+  len = Math.sqrt dx*dx + dy*dy
+  ## Zero-length arrows are oriented rightward in Chrome and Firefox.
+  if len < 0.0001
+    dx = -1
+    dy = 0
+    len = 1
+  scale = width / len
   dx *= scale
   dy *= scale
   px = -dy
