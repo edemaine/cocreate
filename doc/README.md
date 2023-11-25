@@ -574,7 +574,10 @@ This toggle affects only your view, not others' views, so one user can be in
 and they see roughly the same diagram.
 Dark mode approximately preserves the hue of colors, but the brightness is
 inverted, so one user's "bright blue" is another user's "dark blue".
-As a warning, reds and purples currently look somewhat similar in dark mode.
+
+Cocreate initially chooses light or dark mode according to your browser or
+operating system's theme/setting.  Once you click button, Cocreate remembers
+and uses your light/dark mode preference.
 
 ### <img src="icons/grid.svg" width="18" alt="Square Grid Icon"> Square Grid Toggle
 

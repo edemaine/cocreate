@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-11-24
+
+* Light/dark mode now initializes to the user's preference according to the
+  browser/OS.  (Previously it defaulted to light.)
+
 ## 2023-11-13
 
 * Fix zero-length arrows, in particular fixing crash on Firefox

@@ -11,7 +11,8 @@ export fancyCursor = new storage.Variable 'fancyCursor', #true
   ## Chromium 86 has a bug with SVG cursors causing an annoying offset.
   ## See https://bugs.chromium.org/p/chromium/issues/detail?id=1138488
   not /Chrom(e|ium)\/86\./.test navigator.userAgent
-export dark = new storage.Variable 'dark', false
+export dark = new storage.Variable 'dark',
+  window.matchMedia?('(prefers-color-scheme: dark)')?.matches
 
 Tracker.autorun ->
   dom.classSet document.body, 'dark', dark.get()
