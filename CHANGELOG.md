@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-12-11
+
+* Fix PDF export with certain mathematical expressions, e.g.,
+  `$\log_2 n$`.
+
 ## 2023-11-24
 
 * Light/dark mode now initializes to the user's preference according to the
