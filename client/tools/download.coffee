@@ -104,6 +104,14 @@ export makeSVGSync = ->
           font = rule.cssText
           continue unless useMono or not /Roboto Mono/.test font
           continue unless useBold or not /font-weight:\s*900/.test font
+          if (match = font.match /unicode-range:([^;}]*)/)?
+            regexp = match[1]
+            .replace /(u\+|-)([0-9a-f]{1,4})/ig, (m, prefix, hex) =>
+              prefix = '' unless prefix == '-'
+              "#{prefix}\\u#{hex.padStart 4, '0'}"
+            .replace /[,\s]/g, ''
+            regexp = "[#{regexp}]"
+            continue unless (new RegExp regexp).test svg
           fonts.push font
     fonts.push ''
   """
