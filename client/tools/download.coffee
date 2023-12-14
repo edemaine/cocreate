@@ -87,13 +87,13 @@ export makeSVGSync = ->
   root.setAttribute 'transform', oldTransform if oldTransform?
   grid?.update()
   ## Create SVG header
-  fonts = ''
+  fonts = []
   if /<text/.test svg
     for styleSheet in document.styleSheets
       if /fonts/.test styleSheet.href
         for rule in styleSheet.rules
-          fonts += (rule.cssText.replace /unicode-range:.*?;/g, '') + '\n'
-    fonts += '''
+          fonts.push rule.cssText
+    fonts.push '''
       text { font-family: 'Roboto Slab', serif }
       tspan.code { font-family: 'Roboto Mono', monospace }
       tspan.emph { font-style: oblique }
@@ -108,7 +108,7 @@ export makeSVGSync = ->
     .pen line { stroke-linecap: round }
     .pen polyline { stroke-linecap: round; stroke-linejoin: round; fill: none }
     .grid { stroke-width: 0.96; stroke: #c4e3f4 }
-    #{fonts}</style>
+    #{fonts.join '\n'}</style>
     #{svg}
     </svg>
   """
