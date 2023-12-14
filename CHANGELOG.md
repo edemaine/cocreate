@@ -7,6 +7,14 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2023-12-14
+
+* Improve SVG export font embedding
+  * Include `unicode-range`, which otherwise caused issues when embedding
+    in Firefox.  This makes exported files slightly bigger.
+  * Include CSS rules only for needed fonts and unicode-ranges.
+    This makes typical exported files smaller.
+
 ## 2023-12-11
 
 * Fix PDF export with certain mathematical expressions, e.g.,
