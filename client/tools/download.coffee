@@ -89,18 +89,23 @@ export makeSVGSync = ->
   ## Create SVG header
   fonts = []
   if /<text/.test svg
+    fonts.push 'text { font-family: "Roboto Slab", serif }'
+    if (useMono = /<[^<>]*class=['"][^'"]*code/.test svg)
+      fonts.push 'tspan.code { font-family: "Roboto Mono", monospace }'
+    if (useItalic = /<[^<>]*class=['"][^'"]*emph/.test svg)
+      fonts.push 'tspan.emph { font-style: oblique }'
+    if (useBold = /<[^<>]*class=['"][^'"]*strong/.test svg)
+      fonts.push 'tspan.strong { font-weight: bold }'
+    if (useStrike = /<[^<>]*class=['"][^'"]*strike/.test svg)
+      fonts.push 'tspan.strike { text-decoration: line-through }'
     for styleSheet in document.styleSheets
       if /fonts/.test styleSheet.href
         for rule in styleSheet.rules
-          fonts.push rule.cssText
-    fonts.push '''
-      text { font-family: 'Roboto Slab', serif }
-      tspan.code { font-family: 'Roboto Mono', monospace }
-      tspan.emph { font-style: oblique }
-      tspan.strong { font-weight: bold }
-      tspan.strike { text-decoration: line-through }
-
-    '''
+          font = rule.cssText
+          continue unless useMono or not /Roboto Mono/.test font
+          continue unless useBold or not /font-weight:\s*900/.test font
+          fonts.push font
+    fonts.push ''
   """
     <?xml version="1.0" encoding="utf-8"?>
     <svg xmlns="#{dom.SVGNS}" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="#{bbox.minX} #{bbox.minY} #{bbox.width()} #{bbox.height()}" width="#{bbox.width()}px" height="#{bbox.height()}px">
