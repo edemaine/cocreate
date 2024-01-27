@@ -251,7 +251,6 @@ export class RenderObjects
       svgG.remove() while (svgG = g.lastChild) != text
       @texDelete id if @texById[id]?
       content = obj.text
-      input = document.getElementById 'textInput'
       ## Extract $math$ and $$display math$$ expressions.
       ## Based loosely on Coauthor's `replaceMathBlocks`.
       readyJobs = []
@@ -619,7 +618,6 @@ export class RenderObjects
     delete @dom[id]
     delete @bbox[id]
     #@dbvt.remove id
-    tools.text.stop() if id == pointers.text
     @texDelete id if @texById[id]?
     @updated id
     @renderAnchors id if @anchors?[id]?

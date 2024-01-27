@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2024-01-27
+
+* Fix text editing tool when text object is deleted (by user or someone else)
+
 ## 2023-12-14
 
 * Improve SVG export font embedding

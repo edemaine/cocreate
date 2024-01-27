@@ -780,12 +780,13 @@ defineTool
     pointers.highlight = new Highlighter currentBoard(), 'text'
     pointers.undoable = null
     pointers.text = null
-    currentBoard().onRemove = (id) =>
+    @resetInput()
+    mainBoard.selection.onRemove = (id) =>
       if pointers.text == id  # someone deleted text object while selected
         @stop()
         @start()
   stop: ->
-    delete currentBoard().onRemove
+    delete mainBoard.selection.onRemove
     pointers.cursor?.remove()
     pointers.cursor = null
     return unless (id = pointers.text)?
@@ -797,8 +798,8 @@ defineTool
     pointers.text = null
   up: (e) ->
     return unless e.type == 'pointerup' # ignore pointerleave
-    ## Stop editing any previous text object.
-    tools.text.stop()
+    ## Stop editing any previous text object, by clearing selection
+    ## which calls onRemove handler and resets mode.
     mainBoard.selection.clear()
     ## In future, may support dragging a rectangular container for text,
     ## but maybe only after SVG 2's <text> flow support...
@@ -840,7 +841,6 @@ defineTool
     return if pointers.text == ids[0]
     obj = Objects.findOne ids[0]
     return unless obj?.type == 'text'
-    tools.text.stop()
     mainBoard.selection.clear()
     pointers.text = obj._id
     mainBoard.selection.addId pointers.text
