@@ -96,14 +96,15 @@ export makeSVGSync = ->
       fonts.push 'tspan.emph { font-style: oblique }'
     if (useBold = /<[^<>]*class=['"][^'"]*strong/.test svg)
       fonts.push 'tspan.strong { font-weight: bold }'
-    if (useStrike = /<[^<>]*class=['"][^'"]*strike/.test svg)
-      fonts.push 'tspan.strike { text-decoration: line-through }'
+    #if (useStrike = /<[^<>]*class=['"][^'"]*strike/.test svg)
+    #  fonts.push 'tspan.strike { text-decoration: line-through }'
     for styleSheet in document.styleSheets
       if /fonts/.test styleSheet.href
         for rule in styleSheet.rules
           font = rule.cssText
           continue unless useMono or not /Roboto Mono/.test font
           continue unless useBold or not /font-weight:\s*900/.test font
+          continue unless useItalic or not /font-style:\s*oblique/.test font
           if (match = font.match /unicode-range:([^;}]*)/)?
             regexp = match[1]
             .replace /(u\+|-)([0-9a-f]{1,4})/ig, (m, prefix, hex) =>
