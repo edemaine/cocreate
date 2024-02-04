@@ -2,7 +2,7 @@ import {createEffect, createRenderEffect, on as on_, onCleanup, onMount, untrack
 import {useLocation, useParams, useNavigate} from 'solid-app-router'
 import {createTracker} from 'solid-meteor-data'
 
-import {setRouterNavigate, historyBoard, historyMode, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, mainBoard, setCurrentPage, setCurrentPageId, setCurrentRoom, setHistoryBoard, setMainBoard, setHistoryMode} from './AppState'
+import {setRouterNavigate, historyBoard, historyMode, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentFontSizeOn, currentOpacity, currentOpacityOn, mainBoard, setCurrentPage, setCurrentPageId, setCurrentRoom, setHistoryBoard, setMainBoard, setHistoryMode} from './AppState'
 import {Board} from './Board'
 import {ConnectionStatus} from './ConnectionStatus'
 import {gridOffset, maybeSnapPointToGrid} from './Grid'
@@ -453,6 +453,11 @@ export DrawAppRoom = ->
             )
               <div id="fontSizes" class="subpalette">
                 <ToolCategory category="fontSize" placement="top"/>
+                {if currentFontSizeOn()
+                  <input id="fontSizeInput" type="text" placeholder={currentFontSize()} style={'width': "64px"}/>
+                else
+                  <ToolCategory category="fontSizeButtons" placement="top"/>
+                }
               </div>
             else
               <div id="widths" class="subpalette">

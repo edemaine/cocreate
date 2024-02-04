@@ -60,6 +60,8 @@ export {currentWidth, setCurrentWidth}
 ## Initialized in ./tools/font.coffee:
 [currentFontSize, setCurrentFontSize] = createSignal()
 export {currentFontSize, setCurrentFontSize}
+[currentFontSizeOn, setCurrentFontSizeOn] = createSignal()
+export {currentFontSizeOn, setCurrentFontSizeOn}
 
 export mainBoard = null
 export historyBoard = null
