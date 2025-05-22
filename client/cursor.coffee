@@ -8,7 +8,7 @@ export makeCursor = (icon, xFrac, yFrac) ->
     options = {}
     if dark.get()
       #options.style = 'filter:invert(1) hue-rotate(180deg)'
-      options.style = 'filter:url(#invertFilter)'
+      options.filter = 'url(#invertFilter)'
     icons.cursorCSS icon, xFrac, yFrac, options
   else
     null

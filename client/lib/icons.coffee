@@ -164,9 +164,13 @@ export svgIcon = (icon, attrs) ->
   if typeof icon == 'object'
     {icon, width} = icon
   ## Include inverting <filter> if needed
-  if attrs?.style?.includes 'invertFilter'
+  if attrs?.filter?.includes 'invertFilter'
     invertFilter ?= document.getElementById('invertFilter').outerHTML
     icon = invertFilter + icon
+  ## Firefox can't do url filter at the top level; add an <svg> wrapper
+  if attrs?.filter?
+    icon = "<svg #{formatAttrs filter: attrs.filter}>#{icon}</svg>"
+    delete attrs.filter
   """<svg xmlns="http://www.w3.org/2000/svg"#{viewBox width}#{formatAttrs attrs}>#{icon}</svg>"""
 
 ## Stack icons, from bottom to top, just by concatenation
