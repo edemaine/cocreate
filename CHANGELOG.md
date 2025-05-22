@@ -7,6 +7,11 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2025-05-22
+
+* Fix dark mode color filters on Firefox: mouse cursor was inverted,
+  and some installations had a completely black screen.
+
 ## 2024-01-27
 
 * Fix text editing tool when text object is deleted (by user or someone else)
