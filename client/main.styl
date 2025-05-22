@@ -98,8 +98,9 @@ html, body, #root, #container
 body
   --filter: none
   &.dark
-    //--filter: invert(1) hue-rotate(180deg)
-    --filter: url(#invertFilter)
+    --filter: invert(1) hue-rotate(180deg)
+    @supports (filter: url("#invertFilter"))
+      --filter: url(#invertFilter)
 
 .board, .modal, .overlay
   position: absolute
