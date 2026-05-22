@@ -7,6 +7,10 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2026-05-22
+
+* Fix SVG export of images.
+
 ## 2025-05-22
 
 * Fix dark mode color filters on Firefox: mouse cursor was inverted,

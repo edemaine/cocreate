@@ -173,14 +173,14 @@ export makeSVG = (options) ->
   count = 0
   svg = svg.replace ///<image\b[^<>]*>///g, (match) ->
     image = images[count]
-    size = sizes[count]
+    size = sizes?[count]
     count++
     match = match.replace /<image/, """
       <image width="#{size.width}" height="#{size.height}"
     """ if size
     match
     .replace ///crossorigin="([^"]*)"///, ''
-    .replace ///href="([^"]*)"///, (href, url) ->
+    .replace ///(?:xlink:)?href="([^"]*)"///, (href, url) ->
       "xlink:href=\"#{image ? url}\""
   svg
 
