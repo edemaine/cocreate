@@ -2,6 +2,7 @@ import {onError} from 'solid-js'
 import {Route, Router, Routes} from 'solid-app-router'
 
 import {FrontPage} from './FrontPage'
+import {CloneRoom} from './CloneRoom'
 import {DrawApp} from './DrawApp'
 
 export App = ->
@@ -12,6 +13,7 @@ export AppRouter = ->
   <Router>
     <Routes>
       <Route path="/r/:roomId" element={<DrawApp/>}/>
+      <Route path="/clone/:roomId" element={<CloneRoom/>}/>
       <Route path="/" element={<FrontPage/>}/>
     </Routes>
   </Router>

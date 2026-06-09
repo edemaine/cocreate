@@ -7,6 +7,16 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## 2026-06-09
+
+* Duplicate an entire board to a new board, leaving the original untouched.
+  * New "duplicate board" button (in the room toolbar) copies all pages and
+    drawings into a fresh board and opens it in a new tab.
+  * The "Link to this room/board" dialog now also offers a **clone link**.
+    Anyone who visits it gets their own separate editable copy of the board.
+    This is handy for handing out a problem for people (e.g., students) to
+    work on and export individually.
+
 ## 2026-05-22
 
 * Fix SVG export of images.
