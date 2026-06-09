@@ -3,6 +3,7 @@ import Modal from 'solid-bootstrap/esm/Modal'
 import {useLocation} from 'solid-app-router'
 
 import {defineTool} from './defineTool'
+import {currentRoom} from '../AppState'
 import {CloseIcon} from '../lib/icons'
 
 [show, setShow] = createSignal false
@@ -19,6 +20,11 @@ defineTool
     location = useLocation()
     here = createMemo -> Meteor.absoluteUrl location.pathname +
       (if location.hash then '#' else '') + location.hash
+    ## Clone link: visiting it gives each person their own separate copy
+    cloneHere = createMemo -> Meteor.absoluteUrl "clone/#{currentRoom().id}"
+    copyCloneLink = ->
+      try
+        navigator.clipboard.writeText cloneHere()
     ## Save URL to clipboard when shown
     createEffect ->
       return unless show()
@@ -51,6 +57,15 @@ defineTool
           <p>To send the board to your mobile device (phone or tablet), scan this <b>QR code</b>:</p>
           <div class="qrCode" innerHTML={qr()}/>
         </Show>
+        <hr/>
+        <p class="center linkToRoom">
+          <a href={cloneHere()}>{cloneHere()}</a>
+        </p>
+        <p>Send this <b>clone link</b> instead to give each person their own
+        separate editable <b>copy</b> of this board (all pages and drawings
+        included). The original board stays unchanged &mdash; handy for handing
+        out a problem for students to work on and export individually.
+        <button type="button" class="btn btn-secondary" onClick={copyCloneLink}>Copy clone link</button></p>
       </Modal.Body>
     </Modal>
 
@@ -61,3 +76,14 @@ defineTool
   help: 'Create a new room/board (with new URL) in a new browser tab/window'
   click: ->
     window.open '/'
+
+defineTool
+  name: 'dupRoom'
+  category: 'room'
+  icon: 'clone'
+  help: 'Duplicate this entire board (all pages and drawings) to a new room/board, and open the copy in a new browser tab/window'
+  click: ->
+    Meteor.call 'roomDup', currentRoom().id, (error, roomId) ->
+      if error?
+        return console.error "Failed to duplicate room on server: #{error}"
+      window.open "/r/#{roomId}"
