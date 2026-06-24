@@ -30,7 +30,7 @@
   "dependencies": {
     "@babel/runtime": "7.18.6",
     "debounce": "1.2.1",
-    "jspdf": "2.5.1",
+    "jspdf": "3.0.1",
     "meteor-node-stubs": "1.2.3",
     "pepjs": "0.5.3",
     "pug": "3.0.2",
