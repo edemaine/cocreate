@@ -11,6 +11,9 @@ import {BBox, minSvgSize} from './BBox'
 import {penArrowAverage, averageDirection} from './Collision'
 #import {DBVT} from './DBVT'
 
+## How long `whenSettled` waits for images and formulas, unless told otherwise
+settleTimeout = 3000
+
 export class RenderObjects
   constructor: (@board) ->
     @root = @board.root
@@ -18,14 +21,64 @@ export class RenderObjects
     @tex = {}
     @texQueue = []
     @texById = {}
+    @imagesLoading = new Set  # images that have not loaded (or failed) yet
+    @settledWaiters = []
+    @arrivalListeners = []
     @bbox = {}
     @dashOffset = {}
     @arrows = new Set
     #@dbvt = new DBVT()
   stop: ->
     @stopped = true
+    @settledWaiters = []
+    @arrivalListeners = []
     for arrowId from @arrows
       document.getElementById(arrowId)?.remove()
+  ## Images and LaTeX formulas show up a little after their objects are
+  ## rendered, and take up their space only then.  `settled` tells whether
+  ## all of those on the board are displayed.
+  settled: ->
+    for image from @imagesLoading when not image.isConnected
+      @imagesLoading.delete image  # its object is gone
+    return false if @imagesLoading.size
+    for formula, job of @tex when not job.svg?
+      return false
+    true
+  ## Call `callback(true)` once everything is displayed (at once if it is), or
+  ## `callback(false)` after `maxWait` milliseconds if something has still not
+  ## shown up (e.g., a formula that is slow, or an image that does not load).
+  ## Without a `maxWait` (`Infinity`) it waits for as long as it takes.
+  ## Returns a function that cancels the call.
+  whenSettled: (callback, maxWait = settleTimeout) ->
+    if @settled()
+      callback true
+      return ->
+    timer = null
+    cancel = =>
+      clearTimeout timer
+      @settledWaiters = (w for w in @settledWaiters when w != waiter)
+      return
+    waiter = (settled) =>
+      cancel()
+      callback settled
+      return
+    timer = setTimeout (-> waiter false), maxWait if isFinite maxWait
+    @settledWaiters.push waiter
+    cancel
+  ## Call `callback(settled)` each time an image or a formula has shown up (or
+  ## failed to), where `settled` is whether everything is displayed by now.
+  ## Returns a function that stops the calls.
+  onArrival: (callback) ->
+    @arrivalListeners.push callback
+    =>
+      @arrivalListeners = (l for l in @arrivalListeners when l != callback)
+      return
+  settledCheck: ->
+    settled = @settled()
+    if settled
+      waiter true for waiter in @settledWaiters[..]
+    listener settled for listener in @arrivalListeners[..]
+    return
   id: (obj) ->
     ###
     `obj` can be an `ObjectDiff` object, in which case `id` is the object ID
@@ -459,6 +512,7 @@ export class RenderObjects
       for id of job.texts
         @texRender job, id
       @texJob()
+      @settledCheck()
   texRender: (job, id) ->
     ###
     Render all instances of `job` within text object with ID `id`.
@@ -537,10 +591,29 @@ export class RenderObjects
       y: obj.pts[0].y
       style: "opacity:#{obj.opacity}" if obj.opacity?
     if not options? or options.url or options.proxy or options.credentials
+      href = if obj.proxy then proxyUrl obj.url else obj.url
+      ## (An image whose address does not change does not load again.)
+      @watchImage image, href unless image.getAttribute('href') == href
       dom.attr image,
-        href: if obj.proxy then proxyUrl obj.url else obj.url
+        href: href
         crossorigin: if obj.credentials then 'use-credentials' else 'anonymous'
     image
+  ## Note that `image` (which is to show `href`) is loading until it has loaded
+  ## or failed to.  A failed image is replaced by an icon, which has to load, too.
+  watchImage: (image, href) ->
+    return if @imagesLoading.has image
+    @imagesLoading.add image
+    done = (e) =>
+      if e.type == 'error' and (now = image.getAttribute 'href') != href
+        href = now  # (see `onerror` in `renderImage`)
+        return
+      image.removeEventListener 'load', done
+      image.removeEventListener 'error', done
+      @imagesLoading.delete image
+      @settledCheck()
+    image.addEventListener 'load', done
+    image.addEventListener 'error', done
+    return
   render: (obj, options) ->
     ## `options` should be an object mapping changed keys of `obj` to `true`,
     ## or absent (`undefined`, not `{}`), meaning `obj` is brand new.

@@ -2,13 +2,14 @@ import {createEffect, createRenderEffect, on as on_, onCleanup, onMount, untrack
 import {useLocation, useParams, useNavigate} from 'solid-app-router'
 import {createTracker} from 'solid-meteor-data'
 
-import {setRouterNavigate, historyBoard, historyMode, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, mainBoard, setCurrentPage, setCurrentPageId, setCurrentRoom, setHistoryBoard, setMainBoard, setHistoryMode} from './AppState'
+import {gotoPageId, setRouterNavigate, historyBoard, historyMode, currentBoard, currentPage, currentPageId, currentRoom, currentTool, currentColor, currentFill, currentFillOn, currentFontSize, currentOpacity, currentOpacityOn, mainBoard, setCurrentPage, setCurrentPageId, setCurrentRoom, setHistoryBoard, setMainBoard, setHistoryMode} from './AppState'
 import {Board} from './Board'
 import {ConnectionStatus} from './ConnectionStatus'
 import {gridOffset, maybeSnapPointToGrid} from './Grid'
 import {Name, name} from './Name'
 import {Page} from './Page'
 import {PageList} from './PageList'
+import {DeletedNotice, LockedNotice} from './PageTrash'
 import {Room} from './Room'
 import {ToolCategory} from './Tool'
 import {undoStack} from './UndoStack'
@@ -23,6 +24,7 @@ import {LoadingIcon} from './lib/icons'
 import dom from './lib/dom'
 import remotes from './lib/remotes'
 import storage from './lib/storage'
+import {pageAfterRemoval} from '/lib/pageOrder'
 
 onResize = ->
   mainBoard.resize()
@@ -72,10 +74,23 @@ export DrawAppRoom = ->
   location = useLocation()
   navigate = useNavigate()
   setRouterNavigate navigate
+  lastIndex = 0
+  lastPages = []
   pageId = createTracker ->
     id = currentPageId()
     hashId = location.hash.replace /^#/, ''
     pages = currentRoom()?.data()?.pages
+    ## Remember the position of the current page.  If it then disappears
+    ## (deleted by us or another user), go to the page that took its place,
+    ## or to the previous page if it was the last one.
+    if id and pages?
+      index = pages.indexOf id
+      if index >= 0
+        lastIndex = index
+        lastPages = pages[..]
+      else if pages.length and not loading()
+        newId = pageAfterRemoval lastPages, lastIndex, pages
+        Meteor.defer -> gotoPageId newId if currentPageId() == id
     pageStorage = new storage.StringVariable "#{params.roomId}.page", undefined, false
     ## Check for initial or changed hash indicating page ID
     if hashId
@@ -94,6 +109,12 @@ export DrawAppRoom = ->
         ## Auto load first page by default
         setCurrentPageId pages[0]
     id
+  ## Adding or removing pages can change the page list's height (scrollbar),
+  ## and thus the board's size, without a window resize event.
+  pageCount = createTracker -> currentRoom()?.data()?.pages?.length
+  createEffect on_ pageCount, ->
+    requestAnimationFrame onResize
+  , defer: true
   remotesRef = null
   createEffect -> # wait for mainBoard to be set
     return unless pageId()?
@@ -504,6 +525,10 @@ export DrawAppRoom = ->
       <svg id="remotes" class="board overlay" ref={remotesRef}/>
       <div id="dragzone" class="overlay"/>
       <ConnectionStatus/>
+    </div>
+    <div class="pageNotices">
+      <LockedNotice/>
+      <DeletedNotice/>
     </div>
     {if loading()
       <LoadingIcon/>

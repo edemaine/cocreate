@@ -4,12 +4,28 @@ import Tooltip from 'solid-bootstrap/esm/Tooltip'
 import {createTracker} from 'solid-meteor-data'
 
 import {currentRoom, currentPage} from './AppState'
+import {lockHolders} from './PageTrash'
 import {SoloTooltip} from './SoloTooltip'
 import {Icon} from './lib/icons'
+import {lockSummary} from '/lib/pageLocks'
 #import remotes from './lib/remotes'
 
 export PageList = ->
   pages = createTracker -> currentRoom()?.data()?.pages
+  locks = createTracker -> currentRoom()?.data()?.locks
+
+  ## How many users have a lock on a page (see /lib/pageLocks.coffee), and
+  ## whether this browser is one of them
+  lockedBy = (pageId) -> lockSummary({locks: locks()}, pageId, lockHolders()).count
+  lockText = (pageId) ->
+    {count, mine, others} = lockSummary {locks: locks()}, pageId, lockHolders()
+    if mine
+      if others
+        "Locked by you and #{others} other #{if others == 1 then 'user' else 'users'}"
+      else
+        'Locked by you'
+    else
+      "Locked by #{count} #{if count == 1 then 'user' else 'users'}"
 
   ## Monitor state of remotes
   [remotesByPage, setRemotesByPage] = createStore {}
@@ -49,6 +65,9 @@ export PageList = ->
             <div class="pageHeader">
               Page {index()+1} {if active() then '(this page)'}
             </div>
+            {if lockedBy pageId
+              <div class="pageLockInfo">{lockText pageId}</div>
+            }
             {if pageRemotesCount()
               <>
                 <hr/>
@@ -76,6 +95,12 @@ export PageList = ->
                 <Icon class="icon" icon="users" fill="currentColor"/>
             }
             &nbsp;
+            {if lockedBy pageId
+              <>
+                <Icon class="icon lock" icon="lock" fill="currentColor"/>
+                &nbsp;
+              </>
+            }
             {index()+1}
           </a>
         </SoloTooltip>

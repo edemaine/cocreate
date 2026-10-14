@@ -14,6 +14,7 @@ globals:
   WebApp: readonly
   Objects: readonly
   ObjectsDiff: readonly
+  PageDeletions: readonly
   Pages: readonly
   Remotes: readonly
   Rooms: readonly

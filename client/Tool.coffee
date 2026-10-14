@@ -17,6 +17,12 @@ export Tool = (props) ->
   selected = -> currentTool() == props.tool
   active = createTracker -> toolSpec().active?()
 
+  ## The help may depend on the room (like that of Lock Page), so it follows
+  ## the room while it is shown
+  help = createTracker ->
+    spec = toolSpec().help
+    if typeof spec == 'function' then spec() else spec
+
   icon = createTracker ->
     icon = toolSpec().icon
     icon = icon() if typeof icon == 'function'
@@ -40,7 +46,7 @@ export Tool = (props) ->
   <Show when={toolSpec().help?} fallback={div}>
     <SoloTooltip id="tool:#{props.tool}" placement={props.placement} overlay={
       <Tooltip>
-        {toolSpec().help}
+        {help()}
         {if toolSpec().hotkey.length
           <>
             <span class="hotkeys">

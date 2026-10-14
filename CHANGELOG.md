@@ -7,6 +7,40 @@ To see every change with descriptions aimed at developers, see
 As a continuously updated web app, Cocreate uses dates
 instead of version numbers.
 
+## Unreleased
+
+* Add Delete Pages button, with choices to delete the current page, all pages
+  to its left, all pages to its right, or all pages (leaving one blank page),
+  for everyone in the room.  Each choice asks for confirmation.
+  Deleting the only page of a room (with either of the first and last choices)
+  leaves one new blank page.
+* Deleting pages is reversible, and no data is removed.
+  The same dropdown has **Undo Delete** and **Redo Delete** buttons, separate
+  from the normal Undo/Redo, which bring back the pages of the room's last
+  deletions (up to 40, one history shared by everyone in the room, kept on the
+  server) next to their old neighbors, and delete them again.
+  Anyone in the room can undo or redo anyone's deletion.
+  You stay on the page you are viewing, unless Redo Delete deletes it.
+  Everyone else in the room is asked whether to bring the latest deletion back,
+  live and when they next open the room, with the page numbers they will have.
+  A newer deletion replaces the question.  The question has a close button and
+  closes when pressing outside it, and after 8 seconds, all counting as No.
+  Pages that are brought back open zoomed to fit.
+* Add Lock Page button: any user in the room can lock any page so that nobody,
+  including themselves, can delete it, and remove their own lock again.
+  A page stays locked while any user has a lock on it.  Only the browser that
+  placed a lock can remove it, from any of its tabs: the room sees an owner
+  that is made from a secret key of the browser, never the key itself.  Locks
+  are shared with the room live, saved with it, and shown in the page list.
+  Deleting several pages skips the locked ones and deletes the rest, and the
+  user who tried is told which pages are locked (a message with a close button
+  that goes away when clicking outside it, and after 6 seconds).  Both
+  messages slide in from the top and out again.  A deletion only ever deletes
+  the pages that the person was asked about, and when every page is locked
+  nothing is sent at all.  A deletion of locked pages only is not recorded
+  in the deletion history.  Deletions can now be of pages that are not next to
+  each other, and Undo Delete brings each page back next to its own neighbors.
+
 ## 2026-05-22
 
 * Fix SVG export of images.
